@@ -15,30 +15,45 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Blainnflare\src\Core\Window.h">
+    <ClInclude Include="Blainn\src\Core\Window.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Blainnflare\src\Core\Application.h">
+    <ClInclude Include="Blainn\src\Core\Application.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Blainnflare\pch.h">
+    <ClInclude Include="Blainn\pch.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Blainnflare\src\Core\DXSwapChain.h">
+    <ClInclude Include="Blainn\src\Core\DXSwapChain.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Blainn\src\DX12\DXDevice.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Blainn\src\Util\Util.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Blainnflare\pch.cpp">
+    <ClCompile Include="Blainn\pch.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Blainnflare\src\Core\DXSwapChain.cpp">
+    <ClCompile Include="Blainn\src\Core\DXSwapChain.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Blainnflare\src\Core\Window.cpp">
+    <ClCompile Include="Blainn\src\Core\Window.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Blainnflare\EntryPoint.cpp">
+    <ClCompile Include="Blainn\EntryPoint.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Blainn\src\Core\Application.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Blainn\src\DX12\DXDevice.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Blainn\src\Util\Util.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

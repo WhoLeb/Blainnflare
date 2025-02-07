@@ -130,16 +130,21 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="Blainnflare\pch.h" />
-    <ClInclude Include="Blainnflare\src\Core\Application.h" />
-    <ClInclude Include="Blainnflare\src\Core\Window.h" />
-    <ClInclude Include="Blainnflare\src\Core\DXSwapChain.h" />
+    <ClInclude Include="Blainn\pch.h" />
+    <ClInclude Include="Blainn\src\Core\Application.h" />
+    <ClInclude Include="Blainn\src\Core\Window.h" />
+    <ClInclude Include="Blainn\src\Core\DXSwapChain.h" />
+    <ClInclude Include="Blainn\src\DX12\DXDevice.h" />
+    <ClInclude Include="Blainn\src\Util\Util.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Blainnflare\EntryPoint.cpp" />
-    <ClCompile Include="Blainnflare\pch.cpp" />
-    <ClCompile Include="Blainnflare\src\Core\DXSwapChain.cpp" />
-    <ClCompile Include="Blainnflare\src\Core\Window.cpp" />
+    <ClCompile Include="Blainn\EntryPoint.cpp" />
+    <ClCompile Include="Blainn\pch.cpp" />
+    <ClCompile Include="Blainn\src\Core\Application.cpp" />
+    <ClCompile Include="Blainn\src\Core\DXSwapChain.cpp" />
+    <ClCompile Include="Blainn\src\Core\Window.cpp" />
+    <ClCompile Include="Blainn\src\DX12\DXDevice.cpp" />
+    <ClCompile Include="Blainn\src\Util\Util.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -12,6 +12,8 @@ namespace Blainn
 		bool Decorated = true;
 		bool Fullscreen = false;
 		bool VSync = true;
+		bool Minimized = false;
+		bool Resizing = false;
 	};
 
 	class DXSwapChain;
@@ -19,12 +21,12 @@ namespace Blainn
 	class Window
 	{
 	public:
-		//using EventCallbackFn = std::is_function<void(Event&)>; // TODO: Events
+		//using EventCallbackFn = std::function<void(Event&)>; // TODO: Events
 
 		Window(const HINSTANCE hInstance, const WindowDesc& description);
 		virtual ~Window();
 
-		virtual void Init();
+		virtual bool Init();
 		//virtual void ProcessEvents(); // TODO: handel input events and process them here
 		//virtual void SwapBuffers();
 
@@ -65,6 +67,7 @@ namespace Blainn
 		{
 			std::string Title;
 			UINT32 Width, Height;
+
 		};
 		WindowData m_Data;
 

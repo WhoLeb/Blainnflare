@@ -1,4 +1,6 @@
 #include "Window.h"
+
+#include "Application.h"
 namespace
 {
 }
@@ -13,7 +15,6 @@ namespace Blainn
 	Window::Window(const HINSTANCE hInstance, const WindowDesc& description)
 		: m_ApplicationInstance(hInstance), m_Description(description)
 	{
-		Init();
 	}
 
 	Window::~Window()
@@ -21,7 +22,7 @@ namespace Blainn
 		Shutdown();
 	}
 
-	void Window::Init()
+	bool Window::Init()
 	{
 		m_Data.Title = m_Description.Title;
 		m_Data.Width = m_Description.Width;
@@ -29,30 +30,38 @@ namespace Blainn
 
 		if (!m_bIsInitialized)
 		{
-			//std::wstring wideTitle = std::wstring(m_Data.Title.begin(), m_Data.Title.end()).c_str();
-			const wchar_t CLASS_NAME[] = L"WindowName";// wideTitle.c_str();
+			std::wstring wideTitle = std::wstring(m_Data.Title.begin(), m_Data.Title.end()).c_str();
+			const wchar_t* CLASS_NAME = wideTitle.c_str();
 
 			WNDCLASS wc = {};
+			wc.style = CS_HREDRAW | CS_VREDRAW;
+			wc.lpfnWndProc = WindowProc;
 			wc.cbClsExtra = 0;
 			wc.cbWndExtra = 0;
-			wc.hCursor = LoadCursor(0, IDC_ARROW);
-			wc.hIcon = LoadIcon(0, IDI_WINLOGO);
-			wc.lpszMenuName = 0;
-			wc.style = CS_HREDRAW | CS_VREDRAW;
-			wc.hbrBackground = (HBRUSH)GetStockObject(NULL_BRUSH);
-			wc.lpfnWndProc = WindowProc;
 			wc.hInstance = m_ApplicationInstance;
+			wc.hIcon = LoadIcon(0, IDI_WINLOGO);
+			wc.hCursor = LoadCursor(0, IDC_ARROW);
+			wc.hbrBackground = (HBRUSH)GetStockObject(NULL_BRUSH);
+			wc.lpszMenuName = 0;
 			wc.lpszClassName = CLASS_NAME;
 
-			if(!RegisterClass(&wc))
-				throw std::exception("Failed to register window class");
+			if (!RegisterClass(&wc))
+			{
+				MessageBox(0, L"Failed to register window class", 0, 0);
+				return false;
+			}
+
+			RECT R = { 0, 0, m_Data.Width, m_Data.Height };
+			AdjustWindowRect(&R, WS_OVERLAPPEDWINDOW, false);
+			int width = R.right - R.left;
+			int height = R.bottom - R.top;
 
 			m_Window = CreateWindow(
 				CLASS_NAME,
-				L"Winodw",
+				CLASS_NAME,
 				WS_OVERLAPPEDWINDOW,
 				CW_USEDEFAULT, CW_USEDEFAULT,
-				m_Data.Width, m_Data.Height,
+				width, height,
 				NULL,
 				NULL,
 				m_ApplicationInstance,
@@ -60,12 +69,16 @@ namespace Blainn
 			);
 
 			if (!m_Window)
-				throw std::exception("Failed to instanciate window");
+			{
+				MessageBox(0, L"Failed to Create main window", 0, 0);
+				return false;
+			}
 			m_bIsInitialized = true;
 
 			ShowWindow(m_Window, SW_SHOW);
 			UpdateWindow(m_Window);
 		}
+		return true;
 	}
 
 	void Window::Shutdown()
@@ -74,25 +87,6 @@ namespace Blainn
 
 	LRESULT Window::WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	{
-		switch (uMsg) {
-		case WM_PAINT:
-		{
-			PAINTSTRUCT ps;
-			HDC hDc = BeginPaint(hwnd, &ps);
-
-			FillRect(hDc, &ps.rcPaint, (HBRUSH)(COLOR_WINDOW + 1));
-
-			EndPaint(hwnd, &ps);
-
-			return 0;
-		}
-		case WM_DESTROY:
-		{
-			PostQuitMessage(0);
-			return 0;
-		}
-		}
-
-		return DefWindowProc(hwnd, uMsg, wParam, lParam);
+		return Application::Get().MsgProc(hwnd, uMsg, wParam, lParam);
 	}
 }
