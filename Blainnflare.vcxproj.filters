@@ -33,6 +33,9 @@
     <ClInclude Include="Blainn\src\Util\Util.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Blainn\src\Util\d3dx12.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Blainn\pch.cpp">

@@ -22,13 +22,17 @@ namespace Blainn
 
 	class Application
 	{
-	public:
+	protected:
 		Application(HINSTANCE hinstance, const ApplicationDesc& description);
+
+	public:
 		virtual ~Application();
 
 		static inline Application& Get() { return *s_Instance; }
 
-		void Run();
+		static bool Initialize(HINSTANCE hInstance, const ApplicationDesc& description = ApplicationDesc());
+
+		int Run();
 		void Close();
 
 		virtual void OnInit() {};
@@ -37,11 +41,21 @@ namespace Blainn
 
 		virtual LRESULT MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
+		inline HINSTANCE GetAppInstance() const { return m_hInstance; }
 		inline Window& GetWindow() const { return *m_Window; }
 
 		HINSTANCE GetNativeInstance() const { return m_hInstance; }
 
-	private:
+	protected:
+		virtual void OnResize();
+		virtual void Update();
+		virtual void Draw();
+
+		virtual void OnMouseDown(WPARAM btnState, int x, int y) {}
+		virtual void OnMouseUp(WPARAM btnState, int x, int y)	{}
+		virtual void OnMouseMove(WPARAM btnState, int x, int y) {}
+
+	protected:
 		bool InitializeMainWindow(HINSTANCE hInstance, const ApplicationDesc& description);
 		bool InitializeD3D();
 
@@ -51,17 +65,27 @@ namespace Blainn
 
 		void FlushCommandQueue();
 
-	private:
+		ID3D12Resource* CurrentBackBuffer() const
+			{ return m_SwapChainBuffer[m_CurrBackBuffer].Get(); }
+		D3D12_CPU_DESCRIPTOR_HANDLE DepthStencilView() const
+			{ return m_DsvHeap->GetCPUDescriptorHandleForHeapStart(); }
+		D3D12_CPU_DESCRIPTOR_HANDLE CurrentBackBufferView() const;
+
+		//void CalculateFrameStats();
+
+		void LogAdapters();
+		void LogAdapterOutputs(IDXGIAdapter* adapter);
+		void LogOutputDisplayModes(IDXGIOutput* output, DXGI_FORMAT format);
+
+	protected:
+		ApplicationDesc m_AppDescription;
+
+		static Application* s_Instance;
 		HINSTANCE m_hInstance;
 
 		std::unique_ptr<Window> m_Window;
 
 		float m_lastFrameTime = 0.f;
-		UINT32 m_CurrentFrameIndex = 0;
-
-		ApplicationDesc m_AppDescription;
-
-		static Application* s_Instance;
 
 		Microsoft::WRL::ComPtr<IDXGIFactory4> m_DxgiFactory;
 		Microsoft::WRL::ComPtr<IDXGISwapChain> m_SwapChain;
@@ -95,6 +119,15 @@ namespace Blainn
 		DXGI_FORMAT m_DepthStencilFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
 
 		UINT m_4xMsaaQuality;
+
+		int m_ClientWidth;
+		int m_ClientHeight;
+
+		bool m_bPaused = false;
+		bool m_bMinimized = false;
+		bool m_bMaximized = false;
+		bool m_bResizing = false;
+		bool m_bFullscreen = false;
 	};
 
 }
