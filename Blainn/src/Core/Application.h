@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Window.h"
+#include "GameTimer.h"
 
 #include "../Util/Util.h"
 
@@ -48,8 +49,8 @@ namespace Blainn
 
 	protected:
 		virtual void OnResize();
-		virtual void Update();
-		virtual void Draw();
+		virtual void Update(const GameTimer& timer);
+		virtual void Draw(const GameTimer& timer);
 
 		virtual void OnMouseDown(WPARAM btnState, int x, int y) {}
 		virtual void OnMouseUp(WPARAM btnState, int x, int y)	{}
@@ -71,7 +72,7 @@ namespace Blainn
 			{ return m_DsvHeap->GetCPUDescriptorHandleForHeapStart(); }
 		D3D12_CPU_DESCRIPTOR_HANDLE CurrentBackBufferView() const;
 
-		//void CalculateFrameStats();
+		void CalculateFrameStats();
 
 		void LogAdapters();
 		void LogAdapterOutputs(IDXGIAdapter* adapter);
@@ -84,6 +85,8 @@ namespace Blainn
 		HINSTANCE m_hInstance;
 
 		std::unique_ptr<Window> m_Window;
+
+		GameTimer m_Timer;
 
 		float m_lastFrameTime = 0.f;
 

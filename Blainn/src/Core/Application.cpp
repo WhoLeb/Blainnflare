@@ -43,6 +43,8 @@ namespace Blainn
 	{
 		MSG msg = { 0 };
 
+		m_Timer.Reset();
+
 		while (msg.message != WM_QUIT)
 		{
 			if (PeekMessage(&msg, 0, 0, 0, PM_REMOVE))
@@ -52,10 +54,13 @@ namespace Blainn
 			}
 			else
 			{
+				m_Timer.Tick();
+
 				if (!m_bPaused)
 				{
-					Update();
-					Draw();
+					CalculateFrameStats();
+					Update(m_Timer);
+					Draw(m_Timer);
 				}
 				else
 					Sleep(100);
@@ -160,11 +165,11 @@ namespace Blainn
 		m_ScissorRect = { 0, 0, m_ClientWidth, m_ClientHeight };
 	}
 
-	void Application::Update()
+	void Application::Update(const GameTimer& timer)
 	{
 	}
 
-	void Application::Draw()
+	void Application::Draw(const GameTimer& timer)
 	{
 		ThrowIfFailed(m_DirectCmdListAlloc->Reset());
 		
@@ -381,6 +386,35 @@ namespace Blainn
 		);
 	}
 
+	void Application::CalculateFrameStats()
+	{
+		static int frameCnt = 0;
+		static float timeElapsed = 0.0f;
+
+		frameCnt++;
+
+		// Compute averages over one second period.
+		if ((m_Timer.TotalTime() - timeElapsed) >= 1.0f)
+		{
+			float fps = (float)frameCnt; // fps = frameCnt / 1
+			float mspf = 1000.0f / fps;
+
+			std::wstring fpsStr = std::to_wstring(fps);
+			std::wstring mspfStr = std::to_wstring(mspf);
+
+			std::wstring wndName(m_AppDescription.Name.begin(), m_AppDescription.Name.end());
+			std::wstring windowText = wndName +
+				L"    fps: " + fpsStr +
+				L"   mspf: " + mspfStr;
+
+			SetWindowText(m_Window->GetNativeWindow(), windowText.c_str());
+
+			// Reset for next average.
+			frameCnt = 0;
+			timeElapsed += 1.0f;
+		}
+	}
+
 	void Application::LogAdapters()
 	{
 		UINT i = 0;
@@ -470,10 +504,12 @@ namespace Blainn
 			if (LOWORD(wParam) == WA_INACTIVE)
 			{
 				m_bPaused = true;
+				m_Timer.Stop();
 			}
 			else
 			{
 				m_bPaused = false;
+				m_Timer.Start();
 			}
 			return 0;
 		}
@@ -527,6 +563,7 @@ namespace Blainn
 		{
 			m_bPaused = true;
 			m_bResizing = true;
+			m_Timer.Stop();
 			return 0;
 		}
 		// when the user releases the resize bars. Here everithing is reset based on
@@ -535,6 +572,7 @@ namespace Blainn
 		{
 			m_bPaused = false;
 			m_bResizing = false;
+			m_Timer.Start();
 			OnResize();
 			return 0;
 		}
