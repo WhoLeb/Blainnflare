@@ -1,14 +1,13 @@
-#include "src/Core/Application.h"
+#include "Core/Application.h"
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 		PSTR pCmdLine, int nCmdShow)
 {
-
 	try
 	{
-		if (!Blainn::Application::Initialize(hInstance))
+		Blainn::Application app(hInstance);
+		if (!app.Initialize())
 			return -1;
-		Blainn::Application& app = Blainn::Application::Get();
 		return app.Run();
 	}
 	catch (DxException& e)

@@ -1,6 +1,6 @@
 #pragma once
-#include "string"
-#include "Windows.h"
+
+#include "Events/Event.h"
 
 namespace Blainn
 {
@@ -21,13 +21,15 @@ namespace Blainn
 	class Window
 	{
 	public:
-		//using EventCallbackFn = std::function<void(Event&)>; // TODO: Events
+		using EventCallbackFn = std::function<void(Event&)>; // TODO: Events
 
 		Window(const HINSTANCE hInstance, const WindowDesc& description);
 		virtual ~Window();
 
+		static Window* Create(const HINSTANCE hInstance, const WindowDesc& description = WindowDesc());
+
 		virtual bool Init();
-		//virtual void ProcessEvents(); // TODO: handel input events and process them here
+		//virtual void ProcessEvents();
 		//virtual void SwapBuffers();
 
 		inline UINT32 GetWidth() const { return m_Data.Width; }
@@ -36,7 +38,7 @@ namespace Blainn
 		virtual inline std::pair<UINT32, UINT32> GetSize() const { return { m_Data.Width, m_Data.Height }; }
 		//virtual inline std::pair<float, float> GetWindowPos() const;
 
-		//virtual void SetEventCallback(); // TODO
+		virtual void SetEventCallback(const EventCallbackFn& callback) = 0; // TODO
 		//virtual void SetVSync(bool enabled);
 		//virtual bool IsVSync() const;
 		//virtual void SetResizable(bool resizable);
@@ -49,8 +51,6 @@ namespace Blainn
 
 		inline HWND GetNativeWindow() const { return m_Window; }
 
-	public:
-		static Window* Create(const HINSTANCE hInstance, const WindowDesc& description = WindowDesc());
 
 	private:
 		virtual void Shutdown();
@@ -63,6 +63,7 @@ namespace Blainn
 		bool m_bIsInitialized = false;
 
 		WindowDesc m_Description;
+
 		struct WindowData
 		{
 			std::string Title;

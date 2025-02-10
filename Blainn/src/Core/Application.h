@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Events/ApplicationEvent.h"
+#include "GameTimer.h"
 #include "Window.h"
 
 #include "../Util/Util.h"
@@ -22,15 +24,13 @@ namespace Blainn
 
 	class Application
 	{
-	protected:
-		Application(HINSTANCE hinstance, const ApplicationDesc& description);
-
 	public:
+		Application(HINSTANCE hinstance, const ApplicationDesc& description = ApplicationDesc());
 		virtual ~Application();
 
 		static inline Application& Get() { return *s_Instance; }
 
-		static bool Initialize(HINSTANCE hInstance, const ApplicationDesc& description = ApplicationDesc());
+		bool Initialize();
 
 		int Run();
 		void Close();
@@ -48,10 +48,14 @@ namespace Blainn
 
 	protected:
 		virtual void OnResize();
-		virtual void Update();
-		virtual void Draw();
+		virtual void Update(const GameTimer& timer);
+		virtual void Draw(const GameTimer& timer);
 
-		virtual void OnMouseDown(WPARAM btnState, int x, int y) {}
+		virtual void OnMouseDown(WPARAM btnState, int x, int y)
+		{
+			std::string message = WindowResizeEvent(1800, 299).ToString();
+			MessageBox(nullptr, std::wstring(message.begin(), message.end()).c_str(), L"Hello", MB_OK);
+		}
 		virtual void OnMouseUp(WPARAM btnState, int x, int y)	{}
 		virtual void OnMouseMove(WPARAM btnState, int x, int y) {}
 
@@ -71,7 +75,7 @@ namespace Blainn
 			{ return m_DsvHeap->GetCPUDescriptorHandleForHeapStart(); }
 		D3D12_CPU_DESCRIPTOR_HANDLE CurrentBackBufferView() const;
 
-		//void CalculateFrameStats();
+		void CalculateFrameStats();
 
 		void LogAdapters();
 		void LogAdapterOutputs(IDXGIAdapter* adapter);
@@ -80,10 +84,13 @@ namespace Blainn
 	protected:
 		ApplicationDesc m_AppDescription;
 
-		static Application* s_Instance;
 		HINSTANCE m_hInstance;
 
+		static Application* s_Instance;
+
 		std::unique_ptr<Window> m_Window;
+
+		GameTimer m_Timer;
 
 		float m_lastFrameTime = 0.f;
 

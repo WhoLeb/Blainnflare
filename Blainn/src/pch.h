@@ -42,7 +42,7 @@
 #include <sstream>
 #include <cassert>
 
-#include "src/Util/d3dx12.h"
+#include "Util/d3dx12.h"
 
-#include "src/Util/Util.h"
+#include "Util/Util.h"
 
