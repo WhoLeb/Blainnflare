@@ -21,8 +21,16 @@ namespace Blainn
 		m_AppDescription = description;
 		m_ClientWidth = description.WindowWidth;
 		m_ClientHeight = description.WindowHeight;
+		s_Instance = this;
 
+	}
 
+	Application::~Application()
+	{
+	}
+
+	bool Application::Initialize()
+	{
 		WindowDesc windowDesc = {};
 		windowDesc.Title = m_AppDescription.Name;
 		windowDesc.Width = m_AppDescription.WindowWidth;
@@ -33,23 +41,14 @@ namespace Blainn
 
 		m_Window = std::unique_ptr<Window>(Window::Create(m_hInstance, windowDesc));
 		m_Window->SetEventCallback([this](Event& e) { OnEvent(e); });
-		m_Window->Init();
+
+		if (!m_Window->Init())
+			return false;
 
 		if (!InitializeD3D())
-			return;
-
-		s_Instance = this;
+			return false;
 
 		OnResize();
-	}
-
-	Application::~Application()
-	{
-	}
-
-	bool Application::Initialize()
-	{
-		
 
 		return true;
 	}
@@ -200,7 +199,7 @@ namespace Blainn
 		m_CommandList->RSSetViewports(1, &m_ScreenViewport);
 		m_CommandList->RSSetScissorRects(1, &m_ScissorRect);
 
-		m_CommandList->ClearRenderTargetView(CurrentBackBufferView(), Colors::Red, 0, nullptr);
+		m_CommandList->ClearRenderTargetView(CurrentBackBufferView(), Colors::SteelBlue, 0, nullptr);
 		m_CommandList->ClearDepthStencilView(DepthStencilView(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.f, 0, 0, nullptr);
 		
 		m_CommandList->OMSetRenderTargets(1, &CurrentBackBufferView(), true, &DepthStencilView());
@@ -279,7 +278,6 @@ namespace Blainn
 			m_bPaused = false;
 			m_bResizing = false;
 			m_Timer.Start();
-			OnResize();
 		}
 		return true;
 	}
@@ -314,12 +312,16 @@ namespace Blainn
 		dispatcher.Dispatch<WindowMinimizeEvent>([this](WindowMinimizeEvent& e) { return OnWindowMinimize(e); });
 
 		dispatcher.Dispatch<MouseButtonDownEvent>([this](MouseButtonDownEvent& e) { return OnMouseDown(e); });
+
+		dispatcher.Dispatch<KeyPressedEvent>([this](KeyPressedEvent& e) { return OnKeyPressed(e); });
 	}
 
-	void Application::OnKeyPressed(KeyPressedEvent& e)
+	bool Application::OnKeyPressed(KeyPressedEvent& e)
 	{
 		if (e.GetKeyCode() == VK_ESCAPE)
 			Close();
+
+		return false;
 	}
 
 	bool Application::InitializeMainWindow()

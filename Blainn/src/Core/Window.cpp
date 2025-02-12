@@ -225,11 +225,21 @@ namespace Blainn
 			int offsetX = (int)(short)LOWORD(lParam);
 			int offsetY = (int)(short)HIWORD(lParam);
 			MouseMovedEvent event((float)offsetX, (float)offsetY);
+			m_Data.EventCallback(event);
 			return 0;
 		}
 		case WM_KEYUP:
-			KeyReleasedEvent((int)wParam);
+		{
+			KeyReleasedEvent event((int)wParam);
+			m_Data.EventCallback(event);
 			return 0;
+		}
+		case WM_KEYDOWN:
+		{
+			KeyPressedEvent event((int)wParam, 1);
+			m_Data.EventCallback(event);
+			return 0;
+		}
 		}
 
 		return DefWindowProc(hwnd, msg, wParam, lParam);

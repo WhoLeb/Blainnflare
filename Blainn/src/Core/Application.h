@@ -70,7 +70,7 @@ namespace Blainn
 		virtual bool OnMouseUp(MouseButtonReleasedEvent& e) { return false; }
 		virtual bool OnMouseMove(MouseButtonDownEvent& e) { return false; }
 
-		void OnKeyPressed(KeyPressedEvent& e);
+		bool OnKeyPressed(KeyPressedEvent& e);
 
 	protected:
 		bool InitializeMainWindow();
