@@ -11,11 +11,11 @@ namespace Blainn
 	class MouseMovedEvent : public Event
 	{
 	public:
-		MouseMovedEvent(float x, float y)
+		MouseMovedEvent(int x, int y)
 			: m_MouseX(x), m_MouseY(y) {}
 
-		inline float GetX() const { return m_MouseX; }
-		inline float GetY() const { return m_MouseY; }
+		inline int GetX() const { return m_MouseX; }
+		inline int GetY() const { return m_MouseY; }
 
 		std::string ToString() const override
 		{
@@ -28,17 +28,17 @@ namespace Blainn
 		EVENT_CLASS_CATEGORY(EventCategoryMouse | EventCategoryInput)
 
 	protected:
-		float m_MouseX, m_MouseY;
+		int m_MouseX, m_MouseY;
 	};
 
 	class MouseScrolledEvent : public Event
 	{
 	public:
-		MouseScrolledEvent(float x, float y)
+		MouseScrolledEvent(int x, int y)
 			: m_XOffset(x), m_YOffset(y) {}
 
-		inline float GetXOffset() const { return m_XOffset; }
-		inline float GetYOffset() const { return m_YOffset; }
+		inline int GetXOffset() const { return m_XOffset; }
+		inline int GetYOffset() const { return m_YOffset; }
 
 		std::string ToString() const override
 		{
@@ -51,7 +51,7 @@ namespace Blainn
 		EVENT_CLASS_CATEGORY(EventCategoryMouse | EventCategoryInput)
 
 	private:
-		float m_XOffset, m_YOffset;
+		int m_XOffset, m_YOffset;
 	};
 
 	class MouseButtonEvent : public Event
@@ -62,22 +62,24 @@ namespace Blainn
 		EVENT_CLASS_CATEGORY(EventCategoryMouse | EventCategoryInput)
 		
 	protected:
-		MouseButtonEvent(MouseButton button)
-			: m_Button(button) {}
+		MouseButtonEvent(MouseButton button, int xOffset, int yOffset)
+			: m_Button(button), m_XOffset(xOffset), m_YOffset(yOffset) {}
 
 		MouseButton m_Button;
+
+		int m_XOffset, m_YOffset;
 	};
 
 	class MouseButtonPressedEvent : public MouseButtonEvent
 	{
 	public:
-		MouseButtonPressedEvent(MouseButton button)
-			: MouseButtonEvent(button) {}
+		MouseButtonPressedEvent(MouseButton button, int xOffset, int yOffset)
+			: MouseButtonEvent(button, xOffset, yOffset) {}
 
 		std::string ToString() const override
 		{
 			std::stringstream ss;
-			ss << "MouseButtonPressedEvent: " << m_Button;
+			ss << "MouseButtonPressedEvent: " << m_Button << " (" << m_XOffset << ", " << m_YOffset << ")";
 			return ss.str();
 		}
 
@@ -87,13 +89,13 @@ namespace Blainn
 	class MouseButtonReleasedEvent : public MouseButtonEvent
 	{
 	public:
-		MouseButtonReleasedEvent(MouseButton button)
-			: MouseButtonEvent(button) {}
+		MouseButtonReleasedEvent(MouseButton button, int xOffset, int yOffset)
+			: MouseButtonEvent(button, xOffset, yOffset) {}
 
 		std::string ToString() const override
 		{
 			std::stringstream ss;
-			ss << "MouseButtonReleasedEvent: " << m_Button;
+			ss << "MouseButtonReleasedEvent: " << m_Button << " (" << m_XOffset << ", " << m_YOffset << ")";
 			return ss.str();
 		}
 
@@ -103,13 +105,13 @@ namespace Blainn
 	class MouseButtonDownEvent : public MouseButtonEvent
 	{
 	public:
-		MouseButtonDownEvent(MouseButton button)
-			: MouseButtonEvent(button) {}
+		MouseButtonDownEvent(MouseButton button, int xOffset, int yOffset)
+			: MouseButtonEvent(button, xOffset, yOffset) {}
 
 		std::string ToString() const override
 		{
 			std::stringstream ss;
-			ss << "MouseButtonDownEvent: " << m_Button;
+			ss << "MouseButtonDownEvent: " << m_Button << " (" << m_XOffset << ", " << m_YOffset << ")";
 			return ss.str();
 		}
 

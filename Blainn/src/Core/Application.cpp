@@ -22,7 +22,25 @@ namespace Blainn
 		m_ClientWidth = description.WindowWidth;
 		m_ClientHeight = description.WindowHeight;
 
+
+		WindowDesc windowDesc = {};
+		windowDesc.Title = m_AppDescription.Name;
+		windowDesc.Width = m_AppDescription.WindowWidth;
+		windowDesc.Height = m_AppDescription.WindowHeight;
+		windowDesc.Decorated = m_AppDescription.WindowDecorated;
+		windowDesc.Fullscreen = m_AppDescription.Fullscreen;
+		windowDesc.VSync = m_AppDescription.VSync;
+
+		m_Window = std::unique_ptr<Window>(Window::Create(m_hInstance, windowDesc));
+		m_Window->SetEventCallback([this](Event& e) { OnEvent(e); });
+		m_Window->Init();
+
+		if (!InitializeD3D())
+			return;
+
 		s_Instance = this;
+
+		OnResize();
 	}
 
 	Application::~Application()
@@ -32,13 +50,6 @@ namespace Blainn
 	bool Application::Initialize()
 	{
 		
-		if (!InitializeMainWindow(m_hInstance, m_AppDescription))
-			return false;
-
-		if (!InitializeD3D())
-			return false;
-
-		OnResize();
 
 		return true;
 	}
@@ -75,6 +86,7 @@ namespace Blainn
 
 	void Application::Close()
 	{
+		PostQuitMessage(0);
 	}
 
 	void Application::OnResize()
@@ -211,18 +223,108 @@ namespace Blainn
 		FlushCommandQueue();
 	}
 
-	bool Application::InitializeMainWindow(HINSTANCE hInstance, const ApplicationDesc& description)
+	bool Application::OnWindowResize(WindowResizeEvent& e)
 	{
-		WindowDesc windowDesc = {};
-		windowDesc.Title = description.Name;
-		windowDesc.Width = description.WindowWidth;
-		windowDesc.Height = description.WindowHeight;
-		windowDesc.Decorated = description.WindowDecorated;
-		windowDesc.Fullscreen = description.Fullscreen;
-		windowDesc.VSync = description.VSync;
+		m_ClientWidth = e.GetWidth();
+		m_ClientHeight = e.GetHeight();
+		if (m_D3dDevice)
+		{
+			if (e.GetWParam() == SIZE_MINIMIZED)
+			{
+				m_bPaused = true;
+				m_bMinimized = true;
+				m_bMaximized = false;
+			}
+			else if (e.GetWParam() == SIZE_MAXIMIZED)
+			{
+				m_bPaused = false;
+				m_bMinimized = false;
+				m_bMaximized = true;
+				OnResize();
+			}
+			else if (e.GetWParam() == SIZE_RESTORED)
+			{
+				if (m_bMinimized)
+				{
+					m_bPaused = false;
+					m_bMinimized = false;
+					OnResize();
+				}
+				else if (m_bMaximized)
+				{
+					m_bPaused = false;
+					m_bMaximized = false;
+					OnResize();
+				}
+				if (m_bResizing)
+				{
+				}
+				else
+					OnResize();
+			}
+		}
+		return false;
+	}
 
-		m_Window = std::unique_ptr<Window>(Window::Create(hInstance, windowDesc));
-		return m_Window->Init();
+	bool Application::OnWindowMoved(WindowMovedEvent& e)
+	{
+		if (e.GetMoveStarted())
+		{
+			m_bPaused = true;
+			m_bResizing = true;
+			m_Timer.Stop();
+		}
+		else
+		{
+			m_bPaused = false;
+			m_bResizing = false;
+			m_Timer.Start();
+			OnResize();
+		}
+		return true;
+	}
+
+	bool Application::OnWindowMinimize(WindowMinimizeEvent& e)
+	{
+		if (e.IsMinimized())
+		{
+			m_bPaused = true;
+			m_Timer.Stop();
+		}
+		else
+		{
+			m_bPaused = false;
+			m_Timer.Start();
+		}
+		return false;
+	}
+
+	bool Application::OnWindowClose(WindowCloseEvent& e)
+	{
+		Close();
+		return false;
+	}
+
+	void Application::OnEvent(Event& event)
+	{
+		EventDispatcher dispatcher(event);
+		dispatcher.Dispatch<WindowCloseEvent>([this](WindowCloseEvent& e) { return OnWindowClose(e); });
+		dispatcher.Dispatch<WindowResizeEvent>([this](WindowResizeEvent& e) { return OnWindowResize(e); });
+		dispatcher.Dispatch<WindowMovedEvent>([this](WindowMovedEvent& e) { return OnWindowMoved(e); });
+		dispatcher.Dispatch<WindowMinimizeEvent>([this](WindowMinimizeEvent& e) { return OnWindowMinimize(e); });
+
+		dispatcher.Dispatch<MouseButtonDownEvent>([this](MouseButtonDownEvent& e) { return OnMouseDown(e); });
+	}
+
+	void Application::OnKeyPressed(KeyPressedEvent& e)
+	{
+		if (e.GetKeyCode() == VK_ESCAPE)
+			Close();
+	}
+
+	bool Application::InitializeMainWindow()
+	{
+		return true;
 	}
 
 	bool Application::InitializeD3D()
@@ -499,137 +601,6 @@ namespace Blainn
 
 	}
 
-	LRESULT Application::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
-	{
-		switch (msg)
-		{
-		// when the window is activated or deactivated
-		case WM_ACTIVATE:
-		{
-			if (LOWORD(wParam) == WA_INACTIVE)
-			{
-				m_bPaused = true;
-				m_Timer.Stop();
-			}
-			else
-			{
-				m_bPaused = false;
-				m_Timer.Start();
-			}
-			return 0;
-		}
-		// when the user resizes the window
-		case WM_SIZE:
-		{
-			m_ClientWidth = LOWORD(lParam);
-			m_ClientHeight = HIWORD(lParam);
-			if (m_D3dDevice)
-			{
-				if (wParam == SIZE_MINIMIZED)
-				{
-					m_bPaused = true;
-					m_bMinimized = true;
-					m_bMaximized = false;
-				}
-				else if (wParam == SIZE_MAXIMIZED)
-				{
-					m_bPaused = false;
-					m_bMinimized = false;
-					m_bMaximized = true;
-					OnResize();
-				}
-				else if (wParam == SIZE_RESTORED)
-				{
-					if (m_bMinimized)
-					{
-						m_bPaused = false;
-						m_bMinimized = false;
-						OnResize();
-					}
-					else if (m_bMaximized)
-					{
-						m_bPaused = false;
-						m_bMaximized = false;
-						OnResize();
-					}
-					else if (m_bResizing)
-					{
-					}
-					else
-					{
-						OnResize();
-					}
-				}
-			}
-			return 0;
-		}
-		// when the user grabs the resize bars
-		case WM_ENTERSIZEMOVE:
-		{
-			m_bPaused = true;
-			m_bResizing = true;
-			m_Timer.Stop();
-			return 0;
-		}
-		// when the user releases the resize bars. Here everithing is reset based on
-		// the new dimensions
-		case WM_EXITSIZEMOVE:
-		{
-			m_bPaused = false;
-			m_bResizing = false;
-			m_Timer.Start();
-			OnResize();
-			return 0;
-		}
-		// when the window is destroyed
-		case WM_DESTROY:
-		{
-			PostQuitMessage(0);
-			return 0;
-		}
-		// When a user presses a key not corresponding to a mnemonic or accelerator key.
-		case WM_MENUCHAR:
-			// Don't beep on Alt+Enter
-			return MAKELRESULT(0, MNC_CLOSE);
-
-		case WM_GETMINMAXINFO:
-		{
-			((MINMAXINFO*)lParam)->ptMinTrackSize.x = 200;
-			((MINMAXINFO*)lParam)->ptMinTrackSize.y= 200;
-			return 0;
-		}
-		case WM_LBUTTONDOWN:
-		case WM_MBUTTONDOWN:
-		case WM_RBUTTONDOWN:
-		{
-			// TODO: On mouse down
-			OnMouseDown(wParam, (int)(short)LOWORD(lParam), (int)(short)HIWORD(lParam));
-			return 0;
-		}
-		case WM_LBUTTONUP:
-		case WM_MBUTTONUP:
-		case WM_RBUTTONUP:
-		{
-			// TODO: On mouse up
-			OnMouseUp(wParam, (int)(short)LOWORD(lParam), (int)(short)HIWORD(lParam));
-			return 0;
-		}
-		case WM_MOUSEMOVE:
-		{
-			// TODO: On mouse move
-			OnMouseMove(wParam, (int)(short)LOWORD(lParam), (int)(short)HIWORD(lParam));
-			return 0;
-		}
-		case WM_KEYUP:
-			if (wParam == VK_ESCAPE)
-				PostQuitMessage(0);
-			else if ((int)wParam == VK_F2)
-				// TODO: Set 4xMsaaState
-				return 0;
-		}
-
-		return DefWindowProc(hwnd, msg, wParam, lParam);
-	}
 
 
 }

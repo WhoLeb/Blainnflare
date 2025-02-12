@@ -159,6 +159,7 @@
     <ClInclude Include="src\Core\Events\Event.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\DX12\DXContext.cpp" />
     <ClCompile Include="src\EntryPoint.cpp" />
     <ClCompile Include="src\pch.cpp" />
     <ClCompile Include="src\Core\Application.cpp" />

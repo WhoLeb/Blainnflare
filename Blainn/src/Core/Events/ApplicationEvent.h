@@ -9,11 +9,12 @@ namespace Blainn
 	class WindowResizeEvent : public Event
 	{
 	public:
-		WindowResizeEvent(unsigned int width, unsigned int height)
-			: m_Width(width), m_Height(height) {}
+		WindowResizeEvent(WPARAM wParam, unsigned int width, unsigned int height)
+			: m_wParam(wParam), m_Width(width), m_Height(height) {}
 
 		inline unsigned int GetWidth() const { return m_Width; }
 		inline unsigned int GetHeight() const { return m_Height; }
+		inline WPARAM GetWParam() const { return m_wParam; }
 
 		std::string ToString() const override
 		{
@@ -27,6 +28,27 @@ namespace Blainn
 
 	private:
 		unsigned int m_Width, m_Height;
+		WPARAM m_wParam;
+	};
+
+	class WindowMovedEvent : public Event
+	{
+	public:
+		WindowMovedEvent(bool moveStarted) : m_bMoveStarted(moveStarted) {}
+
+		bool GetMoveStarted() const { return m_bMoveStarted; }
+
+		std::string ToString() const override
+		{
+			std::stringstream ss;
+			ss << "WindowMovedEvent: " << m_bMoveStarted;
+			return ss.str();
+		}
+
+		EVENT_CLASS_TYPE(WindowResize)
+		EVENT_CLASS_CATEGORY(EventCategoryApplication)
+	private:
+		bool m_bMoveStarted;
 	};
 
 	class WindowMinimizeEvent : public Event

@@ -1,16 +1,19 @@
 #pragma once
 
+
 namespace Blainn
 {
-	class RendererContext
+	class Window;
+
+	class RenderContext
 	{
 	public:
-		RendererContext() = default;
-		virtual ~RendererContext() = default;
+		RenderContext() = default;
+		virtual ~RenderContext() = default;
 
-		virtual void Init() = 0;
+		virtual void Init(Window wnd) = 0;
 
-		static std::shared_ptr<RendererContext> Create();
+		static std::shared_ptr<RenderContext> Create();
 	};
 
 }

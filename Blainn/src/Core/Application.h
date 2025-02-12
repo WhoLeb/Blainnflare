@@ -1,6 +1,9 @@
 #pragma once
 
 #include "Events/ApplicationEvent.h"
+#include "Events/MouseEvent.h"
+#include "Events/KeyEvent.h"
+#include "Events/ApplicationEvent.h"
 #include "GameTimer.h"
 #include "Window.h"
 
@@ -39,7 +42,7 @@ namespace Blainn
 		virtual void OnShutdown() {};
 		virtual void OnUpdate() {};
 
-		virtual LRESULT MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
+		virtual void OnEvent(Event& event);
 
 		inline HINSTANCE GetAppInstance() const { return m_hInstance; }
 		inline Window& GetWindow() const { return *m_Window; }
@@ -51,16 +54,26 @@ namespace Blainn
 		virtual void Update(const GameTimer& timer);
 		virtual void Draw(const GameTimer& timer);
 
-		virtual void OnMouseDown(WPARAM btnState, int x, int y)
+		// Window events
+		bool OnWindowResize(WindowResizeEvent& e);
+		bool OnWindowMoved(WindowMovedEvent& e);
+		bool OnWindowMinimize(WindowMinimizeEvent& e);
+		bool OnWindowClose(WindowCloseEvent& e);
+
+		virtual bool OnMouseDown(MouseButtonDownEvent& e)
 		{
-			std::string message = WindowResizeEvent(1800, 299).ToString();
-			MessageBox(nullptr, std::wstring(message.begin(), message.end()).c_str(), L"Hello", MB_OK);
+			std::string text = e.ToString();
+			std::wstring wText = std::wstring(text.begin(), text.end());
+			MessageBox(nullptr, wText.c_str(), L"Mouse pressed", MB_OK);
+			return false;
 		}
-		virtual void OnMouseUp(WPARAM btnState, int x, int y)	{}
-		virtual void OnMouseMove(WPARAM btnState, int x, int y) {}
+		virtual bool OnMouseUp(MouseButtonReleasedEvent& e) { return false; }
+		virtual bool OnMouseMove(MouseButtonDownEvent& e) { return false; }
+
+		void OnKeyPressed(KeyPressedEvent& e);
 
 	protected:
-		bool InitializeMainWindow(HINSTANCE hInstance, const ApplicationDesc& description);
+		bool InitializeMainWindow();
 		bool InitializeD3D();
 
 		void CreateCommandObjects();

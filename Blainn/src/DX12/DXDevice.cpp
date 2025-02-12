@@ -7,6 +7,5 @@ namespace Blainn
 {
 	DXDevice::DXDevice()
 	{
-		//ThrowIfFailed();
 	}
 }

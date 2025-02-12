@@ -6,7 +6,7 @@
 namespace Blainn
 {
 
-	std::shared_ptr<RendererContext> RendererContext::Create()
+	std::shared_ptr<RenderContext> RenderContext::Create()
 	{
 		return std::make_shared<DXContext>();
 	}
