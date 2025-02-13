@@ -4,16 +4,21 @@
 #include "Events/KeyEvent.h"
 #include "Events/MouseEvent.h"
 
+#ifndef HINST_THISCOMPONENT
+EXTERN_C IMAGE_DOS_HEADER __ImageBase;
+#define HINST_THISCOMPONENT ((HINSTANCE)&__ImageBase)
+#endif
+
 namespace Blainn
 {
-	Window* Window::Create(const HINSTANCE hInstance, const WindowDesc& description)
+	Window* Window::Create(const WindowDesc& description)
 	{
-		return new Window(hInstance, description);
+		return new Window(description);
 	}
 
 
-	Window::Window(const HINSTANCE hInstance, const WindowDesc& description)
-		: m_ApplicationInstance(hInstance), m_Description(description)
+	Window::Window(const WindowDesc& description)
+		: m_Description(description)
 	{
 	}
 
@@ -39,7 +44,7 @@ namespace Blainn
 			wc.lpfnWndProc = StaticWindowProc;
 			wc.cbClsExtra = 0;
 			wc.cbWndExtra = 0;
-			wc.hInstance = m_ApplicationInstance;
+			wc.hInstance = HINST_THISCOMPONENT;
 			wc.hIcon = LoadIcon(0, IDI_WINLOGO);
 			wc.hCursor = LoadCursor(0, IDC_ARROW);
 			wc.hbrBackground = (HBRUSH)GetStockObject(NULL_BRUSH);
@@ -66,7 +71,7 @@ namespace Blainn
 				width, height,
 				NULL,
 				NULL,
-				m_ApplicationInstance,
+				HINST_THISCOMPONENT,
 				this
 			);
 
@@ -92,6 +97,7 @@ namespace Blainn
 
 	void Window::Shutdown()
 	{
+		DestroyWindow(m_Window);
 	}
 
 	LRESULT Window::StaticWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -138,10 +144,11 @@ namespace Blainn
 		case WM_SIZE:
 		{
 			int width = LOWORD(lParam), height = HIWORD(lParam);
-			WindowResizeEvent event(wParam, width, height);
-			m_Data.EventCallback(event);
 			m_Data.Width = width;
 			m_Data.Height = height;
+
+			WindowResizeEvent event(wParam, width, height);
+			m_Data.EventCallback(event);
 			return 0;
 		}
 		// when the user grabs the resize bars
@@ -221,7 +228,6 @@ namespace Blainn
 		}
 		case WM_MOUSEMOVE:
 		{
-			// TODO: On mouse move
 			int offsetX = (int)(short)LOWORD(lParam);
 			int offsetY = (int)(short)HIWORD(lParam);
 			MouseMovedEvent event((float)offsetX, (float)offsetY);
@@ -236,9 +242,34 @@ namespace Blainn
 		}
 		case WM_KEYDOWN:
 		{
-			KeyPressedEvent event((int)wParam, 1);
+			// 30th bit is set to 1 if the button was already pressed when the
+			// message is sent. So it is set to 1 if the button is held.
+			KeyPressedEvent event((int)wParam, (lParam & BIT(30)) != 0);
 			m_Data.EventCallback(event);
 			return 0;
+		}
+		case WM_COMMAND:
+		{
+			if (HIWORD(wParam) == CBN_SELCHANGE)
+			{
+				int ItemIndex = SendMessage(
+					(HWND)lParam,
+					(UINT)CB_GETCURSEL,
+					(WPARAM)0,
+					(LPARAM)0
+				);
+				TCHAR ListItem[256];
+				SendMessage(
+					(HWND)lParam,
+					(UINT)CB_GETLBTEXT,
+					(WPARAM)ItemIndex,
+					(LPARAM)ListItem
+				);
+
+				std::wstring wStr = ListItem;
+				ComboboxOptionSelectedEvent(ItemIndex, wStr);
+				return 0;
+			}
 		}
 		}
 

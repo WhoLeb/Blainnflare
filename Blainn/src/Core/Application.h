@@ -1,10 +1,11 @@
 #pragma once
 
+#include "DX12/DXContext.h"
 #include "Events/ApplicationEvent.h"
-#include "Events/MouseEvent.h"
 #include "Events/KeyEvent.h"
-#include "Events/ApplicationEvent.h"
+#include "Events/MouseEvent.h"
 #include "GameTimer.h"
+#include "LayerStack.h"
 #include "Window.h"
 
 #include "../Util/Util.h"
@@ -44,6 +45,11 @@ namespace Blainn
 
 		virtual void OnEvent(Event& event);
 
+		void PushLayer(Layer* layer);
+		void PushOverlay(Layer* overlay);
+		void PopLayer(Layer* layer);
+		void PopOverlay(Layer* overlay);
+
 		inline HINSTANCE GetAppInstance() const { return m_hInstance; }
 		inline Window& GetWindow() const { return *m_Window; }
 
@@ -73,7 +79,12 @@ namespace Blainn
 		bool OnKeyPressed(KeyPressedEvent& e);
 
 	protected:
-		bool InitializeMainWindow();
+		IDXGIAdapter* SelectAdapter();
+
+		void LogAdapters();
+		void LogAdapterOutputs(IDXGIAdapter* adapter);
+		void LogOutputDisplayModes(IDXGIOutput* output, DXGI_FORMAT format);
+
 		bool InitializeD3D();
 
 		void CreateCommandObjects();
@@ -90,9 +101,6 @@ namespace Blainn
 
 		void CalculateFrameStats();
 
-		void LogAdapters();
-		void LogAdapterOutputs(IDXGIAdapter* adapter);
-		void LogOutputDisplayModes(IDXGIOutput* output, DXGI_FORMAT format);
 
 	protected:
 		ApplicationDesc m_AppDescription;
@@ -106,6 +114,10 @@ namespace Blainn
 		GameTimer m_Timer;
 
 		float m_lastFrameTime = 0.f;
+
+		LayerStack m_LayerStack;
+
+		DXContext m_MainContext;
 
 		Microsoft::WRL::ComPtr<IDXGIFactory4> m_DxgiFactory;
 		Microsoft::WRL::ComPtr<IDXGISwapChain> m_SwapChain;
@@ -126,6 +138,7 @@ namespace Blainn
 
 		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_RtvHeap;
 		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_DsvHeap;
+		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_SrvHeap;
 
 		D3D12_VIEWPORT m_ScreenViewport;
 		D3D12_RECT m_ScissorRect;

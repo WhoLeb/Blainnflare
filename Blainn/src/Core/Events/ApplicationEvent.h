@@ -100,6 +100,28 @@ namespace Blainn
 		int& m_Hit;
 	};
 
+	class ComboboxOptionSelectedEvent : public Event
+	{
+	public:
+		ComboboxOptionSelectedEvent(int itemIndex, const std::wstring& itemString)
+			: m_ItemIndex(itemIndex), m_ItemString(itemString)
+		{}
+
+		EVENT_CLASS_TYPE(ComboboxOptionSelected)
+		EVENT_CLASS_CATEGORY(EventCategoryInput)
+
+		std::wstring ToWString() const
+		{
+			std::wstringstream wss;
+			wss << L"Chose item " << m_ItemIndex << ": " << m_ItemString << L"\n";
+			return wss.str();
+		}
+
+	private:
+		int m_ItemIndex;
+		std::wstring m_ItemString;
+	};
+
 	class AppTickEvent : public Event
 	{
 	public:

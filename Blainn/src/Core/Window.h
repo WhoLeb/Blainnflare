@@ -20,13 +20,13 @@ namespace Blainn
 
 	class Window
 	{
+		Window(const WindowDesc& description);
 	public:
 		using EventCallbackFn = std::function<void(Event&)>; // TODO: Events
 
-		Window(const HINSTANCE hInstance, const WindowDesc& description);
 		virtual ~Window();
 
-		static Window* Create(const HINSTANCE hInstance, const WindowDesc& description = WindowDesc());
+		static Window* Create(const WindowDesc& description = WindowDesc());
 
 		virtual bool Init();
 		virtual void Show();

@@ -2,8 +2,27 @@
 
 #include "pch.h"
 
+#include "CommCtrl.h"
+
 using Microsoft::WRL::ComPtr;
 using namespace DirectX;
+
+#include <iostream>
+
+#ifndef HINST_THISCOMPONENT
+EXTERN_C IMAGE_DOS_HEADER __ImageBase;
+#define HINST_THISCOMPONENT ((HINSTANCE)&__ImageBase)
+#endif
+
+namespace
+{
+	static HANDLE s_ComboboxSelectedEventH = CreateEventEx(nullptr, nullptr, false, EVENT_ALL_ACCESS);
+	bool OnComboboxSelected(Blainn::ComboboxOptionSelectedEvent& event)
+	{
+		MessageBox(nullptr, event.ToWString().c_str(), L"ItemSelected!", MB_OK);
+		return false;
+	}
+}
 
 namespace Blainn
 {
@@ -39,15 +58,17 @@ namespace Blainn
 		windowDesc.Fullscreen = m_AppDescription.Fullscreen;
 		windowDesc.VSync = m_AppDescription.VSync;
 
-		m_Window = std::unique_ptr<Window>(Window::Create(m_hInstance, windowDesc));
+		m_Window = std::unique_ptr<Window>(Window::Create(windowDesc));
 		m_Window->SetEventCallback([this](Event& e) { OnEvent(e); });
 
 		if (!m_Window->Init())
 			return false;
+		IDXGIAdapter* adapter = SelectAdapter();
 
 		if (!InitializeD3D())
 			return false;
 
+		m_bPaused = false;
 		OnResize();
 
 		return true;
@@ -182,6 +203,8 @@ namespace Blainn
 
 	void Application::Update(const GameTimer& timer)
 	{
+		for (Layer* layer : m_LayerStack)
+			layer->OnUpdate();
 	}
 
 	void Application::Draw(const GameTimer& timer)
@@ -220,6 +243,28 @@ namespace Blainn
 		m_CurrBackBuffer = (m_CurrBackBuffer + 1) % s_SwapChainBufferCount;
 
 		FlushCommandQueue();
+	}
+
+#pragma region Window Event Callbacks
+	void Application::OnEvent(Event& event)
+	{
+		EventDispatcher dispatcher(event);
+		dispatcher.Dispatch<WindowCloseEvent>([this](WindowCloseEvent& e) { return OnWindowClose(e); });
+		dispatcher.Dispatch<WindowResizeEvent>([this](WindowResizeEvent& e) { return OnWindowResize(e); });
+		dispatcher.Dispatch<WindowMovedEvent>([this](WindowMovedEvent& e) { return OnWindowMoved(e); });
+		dispatcher.Dispatch<WindowMinimizeEvent>([this](WindowMinimizeEvent& e) { return OnWindowMinimize(e); });
+
+		dispatcher.Dispatch<MouseButtonDownEvent>([this](MouseButtonDownEvent& e) { return OnMouseDown(e); });
+
+		dispatcher.Dispatch<KeyPressedEvent>([this](KeyPressedEvent& e) { return OnKeyPressed(e); });
+		dispatcher.Dispatch<ComboboxOptionSelectedEvent>([this](ComboboxOptionSelectedEvent& e) { return OnComboboxSelected(e); });
+
+		for (auto it = m_LayerStack.end(); it != m_LayerStack.begin();)
+		{
+			(*--it)->OnEvent(event);
+			if (event.Handled)
+				break;
+		}
 	}
 
 	bool Application::OnWindowResize(WindowResizeEvent& e)
@@ -303,30 +348,44 @@ namespace Blainn
 		return false;
 	}
 
-	void Application::OnEvent(Event& event)
-	{
-		EventDispatcher dispatcher(event);
-		dispatcher.Dispatch<WindowCloseEvent>([this](WindowCloseEvent& e) { return OnWindowClose(e); });
-		dispatcher.Dispatch<WindowResizeEvent>([this](WindowResizeEvent& e) { return OnWindowResize(e); });
-		dispatcher.Dispatch<WindowMovedEvent>([this](WindowMovedEvent& e) { return OnWindowMoved(e); });
-		dispatcher.Dispatch<WindowMinimizeEvent>([this](WindowMinimizeEvent& e) { return OnWindowMinimize(e); });
-
-		dispatcher.Dispatch<MouseButtonDownEvent>([this](MouseButtonDownEvent& e) { return OnMouseDown(e); });
-
-		dispatcher.Dispatch<KeyPressedEvent>([this](KeyPressedEvent& e) { return OnKeyPressed(e); });
-	}
-
 	bool Application::OnKeyPressed(KeyPressedEvent& e)
 	{
 		if (e.GetKeyCode() == VK_ESCAPE)
 			Close();
 
+#if defined DEBUG || defined _DEBUG
+		std::string tmpstr = e.ToString();
+		std::wstring dbgMsg = std::wstring(tmpstr.begin(), tmpstr.end());
+		std::cout << tmpstr << "\n";
+		FlushFileBuffers(GetStdHandle(STD_OUTPUT_HANDLE));
+#endif
+
 		return false;
 	}
+#pragma endregion
 
-	bool Application::InitializeMainWindow()
+	void Application::PushLayer(Layer* layer)
 	{
-		return true;
+		m_LayerStack.PushLayer(layer);
+		layer->OnAttach();
+	}
+
+	void Application::PushOverlay(Layer* overlay)
+	{
+		m_LayerStack.PushOverlay(overlay);
+		overlay->OnAttach();
+	}
+
+	void Application::PopLayer(Layer* layer)
+	{
+		m_LayerStack.PopLayer(layer);
+		layer->OnDetach();
+	}
+
+	void Application::PopOverlay(Layer* overlay)
+	{
+		m_LayerStack.PopOverlay(overlay);
+		overlay->OnDetach();
 	}
 
 	bool Application::InitializeD3D()
@@ -522,6 +581,64 @@ namespace Blainn
 			frameCnt = 0;
 			timeElapsed += 1.0f;
 		}
+	}
+
+	IDXGIAdapter* Application::SelectAdapter()
+	{
+		Microsoft::WRL::ComPtr<IDXGIFactory4> tmpDxgiFac;
+
+		ThrowIfFailed(CreateDXGIFactory1(IID_PPV_ARGS(&tmpDxgiFac)));
+
+		UINT i = 0;
+
+		IDXGIAdapter* adapter = nullptr;
+		std::vector<IDXGIAdapter*> adapterList;
+
+		int xpos = 100, ypos = 100;
+		int nWidth = 200, nHeight = 200;
+		HWND hwndParent = m_Window->GetNativeWindow();
+
+		HWND hWndComboBox = CreateWindowEx(
+			WS_EX_TOPMOST,
+			WC_COMBOBOX,
+			TEXT(""),
+			CBS_DROPDOWN | CBS_HASSTRINGS  | WS_OVERLAPPED | WS_VISIBLE,
+			xpos, ypos, nWidth, nHeight,
+			nullptr,
+			nullptr,
+			GetModuleHandle(nullptr),
+			nullptr
+		);
+
+		if (!hWndComboBox)
+		{
+			assert(false);
+		}
+
+		while (tmpDxgiFac->EnumAdapters(i, &adapter) != DXGI_ERROR_NOT_FOUND)
+		{
+			DXGI_ADAPTER_DESC desc;
+			adapter->GetDesc(&desc);
+
+			std::wstring text = L"***Adapter: ";
+			text += desc.Description;
+			text += L"\n";
+
+			OutputDebugString(text.c_str());
+
+			adapterList.push_back(adapter);
+
+			TCHAR A[32];
+			wcscpy_s(A, sizeof(A) / sizeof(TCHAR), (TCHAR*)desc.Description);
+			SendMessage(hWndComboBox, (UINT)CB_ADDSTRING, (WPARAM)0, (LPARAM)A);
+
+			++i;
+		}
+		
+		if (i == 0)
+			return nullptr;
+
+		SendMessage(hWndComboBox, CB_SETCURSEL, (WPARAM)0, (LPARAM)0);
 	}
 
 	void Application::LogAdapters()
