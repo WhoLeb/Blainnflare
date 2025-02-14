@@ -157,6 +157,7 @@
     <ClInclude Include="src\DX12\DXSwapChain.h" />
     <ClInclude Include="src\DX12\DXDevice.h" />
     <ClInclude Include="src\Renderer\RenderContext.h" />
+    <ClInclude Include="src\Util\ComboboxSelector.h" />
     <ClInclude Include="src\Util\d3dx12.h" />
     <ClInclude Include="src\Util\Util.h" />
     <ClInclude Include="src\Core\Events\Event.h" />
@@ -174,6 +175,7 @@
     <ClCompile Include="src\Core\Window.cpp" />
     <ClCompile Include="src\DX12\DXDevice.cpp" />
     <ClCompile Include="src\Renderer\RenderContext.cpp" />
+    <ClCompile Include="src\Util\ComboboxSelector.cpp" />
     <ClCompile Include="src\Util\Util.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

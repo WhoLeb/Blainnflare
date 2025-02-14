@@ -2,27 +2,13 @@
 
 #include "pch.h"
 
-#include "CommCtrl.h"
+#include "Util/ComboboxSelector.h"
 
 using Microsoft::WRL::ComPtr;
 using namespace DirectX;
 
 #include <iostream>
 
-#ifndef HINST_THISCOMPONENT
-EXTERN_C IMAGE_DOS_HEADER __ImageBase;
-#define HINST_THISCOMPONENT ((HINSTANCE)&__ImageBase)
-#endif
-
-namespace
-{
-	static HANDLE s_ComboboxSelectedEventH = CreateEventEx(nullptr, nullptr, false, EVENT_ALL_ACCESS);
-	bool OnComboboxSelected(Blainn::ComboboxOptionSelectedEvent& event)
-	{
-		MessageBox(nullptr, event.ToWString().c_str(), L"ItemSelected!", MB_OK);
-		return false;
-	}
-}
 
 namespace Blainn
 {
@@ -257,7 +243,6 @@ namespace Blainn
 		dispatcher.Dispatch<MouseButtonDownEvent>([this](MouseButtonDownEvent& e) { return OnMouseDown(e); });
 
 		dispatcher.Dispatch<KeyPressedEvent>([this](KeyPressedEvent& e) { return OnKeyPressed(e); });
-		dispatcher.Dispatch<ComboboxOptionSelectedEvent>([this](ComboboxOptionSelectedEvent& e) { return OnComboboxSelected(e); });
 
 		for (auto it = m_LayerStack.end(); it != m_LayerStack.begin();)
 		{
@@ -592,53 +577,29 @@ namespace Blainn
 		UINT i = 0;
 
 		IDXGIAdapter* adapter = nullptr;
-		std::vector<IDXGIAdapter*> adapterList;
-
-		int xpos = 100, ypos = 100;
-		int nWidth = 200, nHeight = 200;
-		HWND hwndParent = m_Window->GetNativeWindow();
-
-		HWND hWndComboBox = CreateWindowEx(
-			WS_EX_TOPMOST,
-			WC_COMBOBOX,
-			TEXT(""),
-			CBS_DROPDOWN | CBS_HASSTRINGS  | WS_OVERLAPPED | WS_VISIBLE,
-			xpos, ypos, nWidth, nHeight,
-			nullptr,
-			nullptr,
-			GetModuleHandle(nullptr),
-			nullptr
-		);
-
-		if (!hWndComboBox)
-		{
-			assert(false);
-		}
+		std::vector<IDXGIAdapter*> adapters;
+		std::vector<std::wstring> adapterNames;
 
 		while (tmpDxgiFac->EnumAdapters(i, &adapter) != DXGI_ERROR_NOT_FOUND)
 		{
 			DXGI_ADAPTER_DESC desc;
 			adapter->GetDesc(&desc);
 
-			std::wstring text = L"***Adapter: ";
-			text += desc.Description;
-			text += L"\n";
-
-			OutputDebugString(text.c_str());
-
-			adapterList.push_back(adapter);
-
-			TCHAR A[32];
-			wcscpy_s(A, sizeof(A) / sizeof(TCHAR), (TCHAR*)desc.Description);
-			SendMessage(hWndComboBox, (UINT)CB_ADDSTRING, (WPARAM)0, (LPARAM)A);
-
+			adapters.push_back(adapter);
+			adapterNames.push_back(desc.Description);
 			++i;
 		}
-		
-		if (i == 0)
-			return nullptr;
 
-		SendMessage(hWndComboBox, CB_SETCURSEL, (WPARAM)0, (LPARAM)0);
+		ComboBoxSelector cmbb(GetModuleHandle(nullptr), m_Window->GetNativeWindow(), adapterNames);
+		int selectedAdapterIndex = cmbb.ShowModal();
+
+		if (selectedAdapterIndex >= 0)
+			return adapters[selectedAdapterIndex];
+		else
+		{
+			MessageBox(nullptr, L"You didn't select an adapter. Falling back to default adapter.", L"Warning", MB_OK);
+			return nullptr;
+		}
 	}
 
 	void Application::LogAdapters()
