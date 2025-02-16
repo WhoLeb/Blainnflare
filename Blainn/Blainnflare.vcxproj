@@ -142,24 +142,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="Blainn\pch.h" />
-    <ClInclude Include="Blainn\src\Core\Application.h" />
-    <ClInclude Include="Blainn\src\Core\GameTimer.h" />
-    <ClInclude Include="Blainn\src\Core\Window.h" />
-    <ClInclude Include="Blainn\src\Core\DXSwapChain.h" />
-    <ClInclude Include="Blainn\src\DX12\DXDevice.h" />
-    <ClInclude Include="Blainn\src\Util\d3dx12.h" />
-    <ClInclude Include="Blainn\src\Util\Util.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="Blainn\EntryPoint.cpp" />
-    <ClCompile Include="Blainn\pch.cpp" />
-    <ClCompile Include="Blainn\src\Core\Application.cpp" />
-    <ClCompile Include="Blainn\src\Core\DXSwapChain.cpp" />
-    <ClCompile Include="Blainn\src\Core\GameTimer.cpp" />
-    <ClCompile Include="Blainn\src\Core\Window.cpp" />
-    <ClCompile Include="Blainn\src\DX12\DXDevice.cpp" />
-    <ClCompile Include="Blainn\src\Util\Util.cpp" />
     <ClInclude Include="src\Core\Layer.h" />
     <ClInclude Include="src\Core\LayerStack.h" />
     <ClInclude Include="src\Core\UUID.h" />

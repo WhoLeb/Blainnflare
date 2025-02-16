@@ -94,8 +94,6 @@ namespace Blainn
 
 		GameTimer m_Timer;
 
-		GameTimer m_Timer;
-
 		float m_lastFrameTime = 0.f;
 
 		LayerStack m_LayerStack;
