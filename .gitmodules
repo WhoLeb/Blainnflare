@@ -2,3 +2,6 @@
 	path = vendor/imgui
 	url = https://github.com/ocornut/imgui.git
 	branch = docking
+[submodule "Blainn/vendor/spdlog"]
+	path = Blainn/vendor/spdlog
+	url = https://github.com/gabime/spdlog.git
