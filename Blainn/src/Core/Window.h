@@ -1,6 +1,6 @@
 #pragma once
-#include "string"
-#include "Windows.h"
+
+#include "Events/Event.h"
 
 namespace Blainn
 {
@@ -20,15 +20,17 @@ namespace Blainn
 
 	class Window
 	{
+		Window(const WindowDesc& description);
 	public:
-		//using EventCallbackFn = std::function<void(Event&)>; // TODO: Events
+		using EventCallbackFn = std::function<void(Event&)>; // TODO: Events
 
-		Window(const HINSTANCE hInstance, const WindowDesc& description);
 		virtual ~Window();
 
+		static Window* Create(const WindowDesc& description = WindowDesc());
+
 		virtual bool Init();
-		//virtual void ProcessEvents(); // TODO: handel input events and process them here
-		//virtual void SwapBuffers();
+		virtual void Show();
+		//virtual void ProcessEvents();
 
 		inline UINT32 GetWidth() const { return m_Data.Width; }
 		inline UINT32 GetHeight() const { return m_Data.Height; }
@@ -36,26 +38,17 @@ namespace Blainn
 		virtual inline std::pair<UINT32, UINT32> GetSize() const { return { m_Data.Width, m_Data.Height }; }
 		//virtual inline std::pair<float, float> GetWindowPos() const;
 
-		//virtual void SetEventCallback(); // TODO
-		//virtual void SetVSync(bool enabled);
-		//virtual bool IsVSync() const;
-		//virtual void SetResizable(bool resizable);
-
-		//virtual void Maximize();
-		//virtual void CenterWindow();
-
+		virtual void SetEventCallback(const EventCallbackFn& callback) { m_Data.EventCallback = callback; };
 		virtual const std::string& GetTitle() const { return m_Data.Title; }
-		//virtual void SetTitle(const std::string& title);
 
 		inline HWND GetNativeWindow() const { return m_Window; }
 
-	public:
-		static Window* Create(const HINSTANCE hInstance, const WindowDesc& description = WindowDesc());
 
 	private:
 		virtual void Shutdown();
 		
-		static LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+		static LRESULT CALLBACK StaticWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+		LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 	private:
 		HWND m_Window;
@@ -63,11 +56,13 @@ namespace Blainn
 		bool m_bIsInitialized = false;
 
 		WindowDesc m_Description;
+
 		struct WindowData
 		{
 			std::string Title;
 			UINT32 Width, Height;
 
+			EventCallbackFn EventCallback;
 		};
 		WindowData m_Data;
 
