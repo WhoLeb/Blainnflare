@@ -144,7 +144,8 @@
   <ItemGroup>
     <ClInclude Include="src\Core\Layer.h" />
     <ClInclude Include="src\Core\LayerStack.h" />
-    <ClInclude Include="src\DX12\DXContext.h" />
+    <ClInclude Include="src\Core\UUID.h" />
+    <ClInclude Include="src\DX12\DXRenderingContext.h" />
     <ClInclude Include="src\ImGui\ImGuiLayer.h" />
     <ClInclude Include="src\pch.h" />
     <ClInclude Include="src\Core\Application.h" />
@@ -156,7 +157,6 @@
     <ClInclude Include="src\Core\Window.h" />
     <ClInclude Include="src\DX12\DXSwapChain.h" />
     <ClInclude Include="src\DX12\DXDevice.h" />
-    <ClInclude Include="src\Renderer\RenderContext.h" />
     <ClInclude Include="src\Util\ComboboxSelector.h" />
     <ClInclude Include="src\Util\d3dx12.h" />
     <ClInclude Include="src\Util\Util.h" />
@@ -165,7 +165,8 @@
   <ItemGroup>
     <ClCompile Include="src\Core\Layer.cpp" />
     <ClCompile Include="src\Core\LayerStack.cpp" />
-    <ClCompile Include="src\DX12\DXContext.cpp" />
+    <ClCompile Include="src\Core\UUID.cpp" />
+    <ClCompile Include="src\DX12\DXRenderingContext.cpp" />
     <ClCompile Include="src\EntryPoint.cpp" />
     <ClCompile Include="src\ImGui\ImGuiLayer.cpp" />
     <ClCompile Include="src\pch.cpp" />
@@ -174,7 +175,6 @@
     <ClCompile Include="src\Core\GameTimer.cpp" />
     <ClCompile Include="src\Core\Window.cpp" />
     <ClCompile Include="src\DX12\DXDevice.cpp" />
-    <ClCompile Include="src\Renderer\RenderContext.cpp" />
     <ClCompile Include="src\Util\ComboboxSelector.cpp" />
     <ClCompile Include="src\Util\Util.cpp" />
   </ItemGroup>
