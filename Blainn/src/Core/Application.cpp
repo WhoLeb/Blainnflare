@@ -2,6 +2,7 @@
 
 #include "pch.h"
 
+#include "DX12/DXGraphicsPrimitive.h"
 #include "Util/ComboboxSelector.h"
 
 using Microsoft::WRL::ComPtr;
@@ -53,6 +54,11 @@ namespace Blainn
 		m_RenderingContext = std::make_shared<DXRenderingContext>();
 		m_RenderingContext->Init(m_Window);
 
+		m_ResourceManager = std::make_shared<DXResourceManager>(
+			m_RenderingContext->GetDevice()->Device(),
+			m_RenderingContext->GetCommandQueue()
+		);
+
 		m_bPaused = false;
 		OnResize();
 
@@ -83,7 +89,7 @@ namespace Blainn
 					Draw(m_Timer);
 				}
 				else
-					Sleep(100);
+					Sleep(10);
 			}
 		}
 		return (int)msg.wParam;
@@ -96,7 +102,8 @@ namespace Blainn
 
 	void Application::OnResize()
 	{
-		m_RenderingContext->Resize(m_ClientWidth, m_ClientWidth);
+		if(m_ClientWidth > 0 && m_ClientHeight > 0)
+			m_RenderingContext->Resize(m_ClientWidth, m_ClientWidth);
 	}
 
 	void Application::Update(const GameTimer& timer)
@@ -108,6 +115,45 @@ namespace Blainn
 	void Application::Draw(const GameTimer& timer)
 	{
 		m_RenderingContext->BeginFrame();
+
+		static std::vector<DXGraphicsPrimitive::Vertex> vertices =
+		{
+		{ XMFLOAT3(-1.0f, -1.0f, -1.0f), XMFLOAT3(0, 0, 0), XMFLOAT4(Colors::White),	XMFLOAT2(0,0)},
+		{ XMFLOAT3(-1.0f, +1.0f, -1.0f), XMFLOAT3(0, 0, 0), XMFLOAT4(Colors::Black),	XMFLOAT2(0,0)},
+		{ XMFLOAT3(+1.0f, +1.0f, -1.0f), XMFLOAT3(0, 0, 0), XMFLOAT4(Colors::Red),		XMFLOAT2(0,0)},
+		{ XMFLOAT3(+1.0f, -1.0f, -1.0f), XMFLOAT3(0, 0, 0), XMFLOAT4(Colors::Green),	XMFLOAT2(0,0)},
+		{ XMFLOAT3(-1.0f, -1.0f, +1.0f), XMFLOAT3(0, 0, 0), XMFLOAT4(Colors::Blue),		XMFLOAT2(0,0)},
+		{ XMFLOAT3(-1.0f, +1.0f, +1.0f), XMFLOAT3(0, 0, 0), XMFLOAT4(Colors::Yellow),	XMFLOAT2(0,0)},
+		{ XMFLOAT3(+1.0f, +1.0f, +1.0f), XMFLOAT3(0, 0, 0), XMFLOAT4(Colors::Cyan),		XMFLOAT2(0,0)},
+		{ XMFLOAT3(+1.0f, -1.0f, +1.0f), XMFLOAT3(0, 0, 0), XMFLOAT4(Colors::Magenta),	XMFLOAT2(0,0)},
+		};
+
+		static std::vector<UINT32> indices =
+		{
+			// front face
+			0, 1, 2,
+			0, 2, 3,
+			// back face
+			4, 6, 5,
+			4, 7, 6,
+			// left face
+			4, 5, 1,
+			4, 1, 0,
+			// right face
+			3, 2, 6,
+			3, 6, 7,
+			// top face
+			1, 5, 6,
+			1, 6, 2,
+			// bottom face
+			4, 0, 3,
+			4, 3, 7
+		};
+
+		DXGraphicsPrimitive box(m_ResourceManager, vertices, &indices);
+
+		box.Bind(m_RenderingContext);
+		box.Draw(m_RenderingContext);
 
 		m_RenderingContext->EndFrame();
 	}

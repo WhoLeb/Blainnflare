@@ -25,6 +25,11 @@ namespace Blainn
 
 		bool IsInitialized() const { return m_bIsInitialized; }
 
+		std::shared_ptr<DXDevice> GetDevice() const { return m_Device; }
+		Microsoft::WRL::ComPtr<ID3D12CommandQueue> GetCommandQueue() const { return m_CommandQueue; } 
+
+		Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> GetCommandList() const { return m_CommandList; } 
+
 	private:
 		void CreateDepthStencilBuffer(int width, int height);
 
@@ -43,7 +48,7 @@ namespace Blainn
 
 	private:
 		Microsoft::WRL::ComPtr<IDXGIFactory4> m_DXGIFactory;
-		std::unique_ptr<DXDevice> m_Device;
+		std::shared_ptr<DXDevice> m_Device;
 
 		Microsoft::WRL::ComPtr<IDXGISwapChain> m_SwapChain;
 		static const int s_SwapChainBufferCount = 2;

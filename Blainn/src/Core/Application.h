@@ -1,13 +1,13 @@
 #pragma once
 
 #include "DX12/DXRenderingContext.h"
+#include "DX12/DXResourceManager.h"
 #include "Events/ApplicationEvent.h"
 #include "Events/KeyEvent.h"
 #include "Events/MouseEvent.h"
 #include "GameTimer.h"
 #include "LayerStack.h"
 #include "Window.h"
-#include "GameTimer.h"
 
 #include "../Util/Util.h"
 
@@ -91,6 +91,7 @@ namespace Blainn
 
 		std::shared_ptr<Window> m_Window;
 		std::shared_ptr<DXRenderingContext> m_RenderingContext;
+		std::shared_ptr<DXResourceManager> m_ResourceManager;
 
 		GameTimer m_Timer;
 

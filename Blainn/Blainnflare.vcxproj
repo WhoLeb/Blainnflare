@@ -142,10 +142,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="src\Core\Buffer.h" />
+    <ClInclude Include="src\DX12\DXGraphicsPrimitive.h" />
     <ClInclude Include="src\Core\Layer.h" />
     <ClInclude Include="src\Core\LayerStack.h" />
     <ClInclude Include="src\Core\UUID.h" />
+    <ClInclude Include="src\DX12\DXBuffer.h" />
     <ClInclude Include="src\DX12\DXRenderingContext.h" />
+    <ClInclude Include="src\DX12\DXResourceManager.h" />
     <ClInclude Include="src\ImGui\ImGuiLayer.h" />
     <ClInclude Include="src\pch.h" />
     <ClInclude Include="src\Core\Application.h" />
@@ -166,7 +170,10 @@
     <ClCompile Include="src\Core\Layer.cpp" />
     <ClCompile Include="src\Core\LayerStack.cpp" />
     <ClCompile Include="src\Core\UUID.cpp" />
+    <ClCompile Include="src\DX12\DXBuffer.cpp" />
+    <ClCompile Include="src\DX12\DXGraphicsPrimitive.cpp" />
     <ClCompile Include="src\DX12\DXRenderingContext.cpp" />
+    <ClCompile Include="src\DX12\DXResourceManager.cpp" />
     <ClCompile Include="src\EntryPoint.cpp" />
     <ClCompile Include="src\ImGui\ImGuiLayer.cpp" />
     <ClCompile Include="src\pch.cpp" />

@@ -17,7 +17,7 @@ namespace Blainn
 	{
 		ThrowIfFailed(CreateDXGIFactory1(IID_PPV_ARGS(&m_DXGIFactory)));
 
-		m_Device = std::make_unique<DXDevice>();
+		m_Device = std::make_shared<DXDevice>();
 
 		ThrowIfFailed(m_Device->Device()->CreateFence(
 			0,
