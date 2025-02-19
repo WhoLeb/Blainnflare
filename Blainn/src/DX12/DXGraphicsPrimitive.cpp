@@ -61,6 +61,7 @@ namespace Blainn
 
 			cmdList->IASetIndexBuffer(&ibv);
 		}
+		cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	}
 
 	void DXGraphicsPrimitive::Draw(std::shared_ptr<DXRenderingContext> renderingContext)

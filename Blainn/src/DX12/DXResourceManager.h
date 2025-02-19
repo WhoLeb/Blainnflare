@@ -18,6 +18,11 @@ namespace Blainn
 			D3D12_RESOURCE_STATES initialResourceState
 		);
 
+		void Map(Microsoft::WRL::ComPtr<ID3D12Resource> buffer, void* mappedData)
+		{
+			buffer->Map(0, nullptr, &mappedData);
+		}
+
 	private:
 		Microsoft::WRL::ComPtr<ID3D12Device> m_Device;
 		Microsoft::WRL::ComPtr<ID3D12CommandQueue> m_CommandQueue;

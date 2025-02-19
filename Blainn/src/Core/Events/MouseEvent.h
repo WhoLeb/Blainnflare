@@ -58,6 +58,8 @@ namespace Blainn
 	{
 	public:
 		inline MouseButton GetMouseButton() const { return m_Button; }
+		inline int GetXOffset() const { return m_XOffset; }
+		inline int GetYOffset() const { return m_YOffset; }
 
 		EVENT_CLASS_CATEGORY(EventCategoryMouse | EventCategoryInput)
 		

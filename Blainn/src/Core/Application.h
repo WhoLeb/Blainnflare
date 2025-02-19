@@ -1,7 +1,9 @@
 #pragma once
 
+#include "DX12/DXGraphicsPrimitive.h"
 #include "DX12/DXRenderingContext.h"
 #include "DX12/DXResourceManager.h"
+#include "DX12/DXShader.h"
 #include "Events/ApplicationEvent.h"
 #include "Events/KeyEvent.h"
 #include "Events/MouseEvent.h"
@@ -9,14 +11,28 @@
 #include "LayerStack.h"
 #include "Window.h"
 
+#include "DX12/DXUploadBuffer.h"
+
+#include "Util/MathHelper.h"
 #include "../Util/Util.h"
 
 #pragma comment(lib, "d3dcompiler.lib")
 #pragma comment(lib, "D3D12.lib")
 #pragma comment(lib, "dxgi.lib")
 
+
 namespace Blainn
 {
+	struct ObjectConstants
+	{
+		DirectX::XMFLOAT4X4 WorldViewProj = DirectX::XMFLOAT4X4(
+			1.0f, 0.0f, 0.0f, 0.0f,
+			0.0f, 1.0f, 0.0f, 0.0f,
+			0.0f, 0.0f, 1.0f, 0.0f,
+			0.0f, 0.0f, 0.0f, 1.0f
+		);
+	};
+
 
 	struct ApplicationDesc
 	{
@@ -67,17 +83,20 @@ namespace Blainn
 		bool OnWindowMinimize(WindowMinimizeEvent& e);
 		bool OnWindowClose(WindowCloseEvent& e);
 
-		virtual bool OnMouseDown(MouseButtonDownEvent& e)
-		{
-			std::string text = e.ToString();
-			std::wstring wText = std::wstring(text.begin(), text.end());
-			MessageBox(nullptr, wText.c_str(), L"Mouse pressed", MB_OK);
-			return false;
-		}
-		virtual bool OnMouseUp(MouseButtonReleasedEvent& e) { return false; }
-		virtual bool OnMouseMove(MouseButtonDownEvent& e) { return false; }
+		virtual bool OnMouseDown(MouseButtonDownEvent& e);
+		virtual bool OnMouseUp(MouseButtonReleasedEvent& e);
+		virtual bool OnMouseMove(MouseMovedEvent& e);
 
 		bool OnKeyPressed(KeyPressedEvent& e);
+
+
+		void BuildDescriptorHeaps();
+		void BuildConstantBuffers();
+		void BuildRootSignature();
+		void BuildShaders();
+		void BuildPSO();
+
+		float AspectRatio() const;
 
 	protected:
 		void CalculateFrameStats();
@@ -107,6 +126,26 @@ namespace Blainn
 		bool m_bMaximized = false;
 		bool m_bResizing = false;
 		bool m_bFullscreen = false;
+
+		std::shared_ptr<DXGraphicsPrimitive> box;
+
+		std::shared_ptr<DXShader> m_VShader;
+		std::shared_ptr<DXShader> m_PShader;
+
+		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_CBVHeap;
+		Microsoft::WRL::ComPtr<ID3D12RootSignature> m_RootSignature;
+		Microsoft::WRL::ComPtr<ID3D12PipelineState> m_PSO;
+		std::unique_ptr<DXUploadBuffer<ObjectConstants>> m_OjbectCB;
+
+		DirectX::XMFLOAT4X4 m_View = MathHelper::Identity4x4();
+		DirectX::XMFLOAT4X4 m_World = MathHelper::Identity4x4();
+		DirectX::XMFLOAT4X4 m_Proj = MathHelper::Identity4x4();
+
+		float m_Theta = 1.5 * DirectX::XM_PI;
+		float m_Phi = DirectX::XM_PIDIV4;
+		float m_Radius = 5.f;
+
+		POINT m_LastMousePos;
 	};
 
 }

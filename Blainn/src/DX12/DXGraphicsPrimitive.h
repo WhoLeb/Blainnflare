@@ -16,20 +16,21 @@ namespace Blainn
 			DirectX::XMFLOAT4 Color;
 			DirectX::XMFLOAT2 UV;
 
-			static D3D12_INPUT_LAYOUT_DESC GetLayoutDescription()
+			static std::vector<D3D12_INPUT_ELEMENT_DESC> GetElementLayout()
 			{
-				D3D12_INPUT_ELEMENT_DESC vertexDesc[] =
+				std::vector<D3D12_INPUT_ELEMENT_DESC> vertexDesc =
 				{
 					{"POSITION",	0, DXGI_FORMAT_R32G32B32_FLOAT,	0, offsetof(Vertex, Position),	D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
 					{"NORMAL",		0, DXGI_FORMAT_R32G32B32_FLOAT,	0, offsetof(Vertex, Normal),	D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
 					{"COLOR",		0, DXGI_FORMAT_R32G32B32_FLOAT,	0, offsetof(Vertex, Color),		D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
 					{"UV",			0, DXGI_FORMAT_R32G32_FLOAT,	0, offsetof(Vertex, UV),		D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
 				};
+				return vertexDesc;
 
-				D3D12_INPUT_LAYOUT_DESC ld = {};
-				ld.NumElements = 4;
-				ld.pInputElementDescs = vertexDesc;
-				return ld;
+				//D3D12_INPUT_LAYOUT_DESC ld = {};
+				//ld.NumElements = 4;
+				//ld.pInputElementDescs = vertexDesc;
+				//return ld;
 			}
 		};
 
