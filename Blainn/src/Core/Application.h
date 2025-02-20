@@ -14,7 +14,7 @@
 #include "DX12/DXUploadBuffer.h"
 
 #include "Util/MathHelper.h"
-#include "../Util/Util.h"
+#include "Util/Util.h"
 
 #pragma comment(lib, "d3dcompiler.lib")
 #pragma comment(lib, "D3D12.lib")
@@ -25,12 +25,7 @@ namespace Blainn
 {
 	struct ObjectConstants
 	{
-		DirectX::XMFLOAT4X4 WorldViewProj = DirectX::XMFLOAT4X4(
-			1.0f, 0.0f, 0.0f, 0.0f,
-			0.0f, 1.0f, 0.0f, 0.0f,
-			0.0f, 0.0f, 1.0f, 0.0f,
-			0.0f, 0.0f, 0.0f, 1.0f
-		);
+		DirectX::XMFLOAT4X4 WorldViewProj = MathHelper::Identity4x4();
 	};
 
 
@@ -128,6 +123,7 @@ namespace Blainn
 		bool m_bFullscreen = false;
 
 		std::shared_ptr<DXGraphicsPrimitive> box;
+		std::shared_ptr<DXGraphicsPrimitive> m_Square;
 
 		std::shared_ptr<DXShader> m_VShader;
 		std::shared_ptr<DXShader> m_PShader;
@@ -137,6 +133,7 @@ namespace Blainn
 		Microsoft::WRL::ComPtr<ID3D12PipelineState> m_PSO;
 		std::unique_ptr<DXUploadBuffer<ObjectConstants>> m_OjbectCB;
 
+		// Should probably be a part of a camera class.
 		DirectX::XMFLOAT4X4 m_View = MathHelper::Identity4x4();
 		DirectX::XMFLOAT4X4 m_World = MathHelper::Identity4x4();
 		DirectX::XMFLOAT4X4 m_Proj = MathHelper::Identity4x4();
@@ -144,6 +141,7 @@ namespace Blainn
 		float m_Theta = 1.5 * DirectX::XM_PI;
 		float m_Phi = DirectX::XM_PIDIV4;
 		float m_Radius = 5.f;
+		// ...
 
 		POINT m_LastMousePos;
 	};

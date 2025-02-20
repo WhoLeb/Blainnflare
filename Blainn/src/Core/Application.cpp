@@ -112,6 +112,23 @@ namespace Blainn
 
 		box = std::make_shared<DXGraphicsPrimitive>(m_ResourceManager, vertices, &indices);
 
+		static std::vector<DXGraphicsPrimitive::Vertex> vertices2 =
+		{
+		{ XMFLOAT3(-1.5f, -1.0f, 0.0f), XMFLOAT3(0, 0, 0), XMFLOAT4(Colors::White),	XMFLOAT2(0,0)},
+		{ XMFLOAT3(-1.5f, +1.0f, 0.0f), XMFLOAT3(0, 0, 0), XMFLOAT4(Colors::Black),	XMFLOAT2(0,0)},
+		{ XMFLOAT3(-3.5f, +1.0f, 0.0f), XMFLOAT3(0, 0, 0), XMFLOAT4(Colors::Red),	XMFLOAT2(0,0)},
+		{ XMFLOAT3(-3.5f, -1.0f, 0.0f), XMFLOAT3(0, 0, 0), XMFLOAT4(Colors::Green),	XMFLOAT2(0,0)}
+		};
+
+		static std::vector<UINT32> indices2 =
+		{
+			// front face
+			0, 1, 2,
+			0, 2, 3
+		};
+
+		m_Square = std::make_shared<DXGraphicsPrimitive>(m_ResourceManager, vertices2, &indices2);
+
 		while (msg.message != WM_QUIT)
 		{
 			if (PeekMessage(&msg, 0, 0, 0, PM_REMOVE))
@@ -189,12 +206,13 @@ namespace Blainn
 		m_RenderingContext->GetCommandList()->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 
 		CD3DX12_GPU_DESCRIPTOR_HANDLE cbv(m_CBVHeap->GetGPUDescriptorHandleForHeapStart());
-		//cbv.Offset(cbvI)
 		m_RenderingContext->GetCommandList()->SetGraphicsRootDescriptorTable(0, m_CBVHeap->GetGPUDescriptorHandleForHeapStart());
-
 
 		box->Bind(m_RenderingContext);
 		box->Draw(m_RenderingContext);
+		
+		m_Square->Bind(m_RenderingContext);
+		m_Square->Draw(m_RenderingContext);
 
 		m_RenderingContext->EndFrame();
 	}
@@ -339,8 +357,6 @@ namespace Blainn
 
 		return false;
 	}
-
-
 
 	bool Application::OnKeyPressed(KeyPressedEvent& e)
 	{
@@ -499,6 +515,7 @@ namespace Blainn
 			m_PShader->GetByteCode()->GetBufferSize()
 		};
 		psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+		psoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
 		psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
 		psoDesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
 		psoDesc.SampleMask = UINT_MAX;

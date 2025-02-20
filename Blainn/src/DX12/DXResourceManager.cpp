@@ -19,13 +19,13 @@ namespace Blainn
 			IID_PPV_ARGS(&m_UploadFence)
 		));
 
-		D3D12_COMMAND_QUEUE_DESC queueDesc = {};
-		queueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
-		queueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
-		ThrowIfFailed(m_Device->CreateCommandQueue(
-			&queueDesc,
-			IID_PPV_ARGS(&m_CommandQueue)
-		));
+		//D3D12_COMMAND_QUEUE_DESC queueDesc = {};
+		//queueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
+		//queueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
+		//ThrowIfFailed(m_Device->CreateCommandQueue(
+		//	&queueDesc,
+		//	IID_PPV_ARGS(&m_CommandQueue)
+		//));
 
 		ThrowIfFailed(m_Device->CreateCommandAllocator(
 			D3D12_COMMAND_LIST_TYPE_DIRECT,
@@ -43,7 +43,6 @@ namespace Blainn
 	}
 
 	ComPtr<ID3D12Resource> DXResourceManager::CreateBuffer(
-		const void* data,
 		UINT64 size,
 		D3D12_HEAP_TYPE heapType,
 		D3D12_HEAP_FLAGS heapFlags,
@@ -51,7 +50,6 @@ namespace Blainn
 		)
 	{
 		ComPtr<ID3D12Resource> defaultBuffer;
-		ComPtr<ID3D12Resource> uploadBuffer;
 
 		ThrowIfFailed(m_Device->CreateCommittedResource(
 			&CD3DX12_HEAP_PROPERTIES(heapType),
@@ -61,6 +59,19 @@ namespace Blainn
 			nullptr,
 			IID_PPV_ARGS(&defaultBuffer)
 		));
+
+		return defaultBuffer;
+	}
+
+	void DXResourceManager::WriteToUploadBuffer(void* mappedData, const void* data, UINT64 size, UINT64 offset)
+	{
+		BYTE* byteMappedData = static_cast<BYTE*>(mappedData);
+		memcpy(&byteMappedData[offset], data, size);
+	}
+
+	void DXResourceManager::WriteToDefaultBuffer(Microsoft::WRL::ComPtr<ID3D12Resource> buffer, const void* data, UINT64 size)
+	{
+		ComPtr<ID3D12Resource> uploadBuffer;
 
 		ThrowIfFailed(m_Device->CreateCommittedResource(
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
@@ -81,18 +92,18 @@ namespace Blainn
 
 		m_UploadCommandList->ResourceBarrier(1,
 			&CD3DX12_RESOURCE_BARRIER::Transition(
-				defaultBuffer.Get(),
-				initialResourceState,
+				buffer.Get(),
+				D3D12_RESOURCE_STATE_COMMON,
 				D3D12_RESOURCE_STATE_COPY_DEST
 			));
 
 		UpdateSubresources<1>(m_UploadCommandList.Get(),
-			defaultBuffer.Get(), uploadBuffer.Get(),
+			buffer.Get(), uploadBuffer.Get(),
 			0, 0, 1, &subResourceData);
 		
 		m_UploadCommandList->ResourceBarrier(1,
 			&CD3DX12_RESOURCE_BARRIER::Transition(
-				defaultBuffer.Get(),
+				buffer.Get(),
 				D3D12_RESOURCE_STATE_COPY_DEST,
 				D3D12_RESOURCE_STATE_GENERIC_READ
 			));
@@ -102,7 +113,11 @@ namespace Blainn
 		ID3D12CommandList* cmdLists[] = { m_UploadCommandList.Get() };
 
 		m_CommandQueue->ExecuteCommandLists(_countof(cmdLists), cmdLists);
+		FlushUploadCommands();
+	}
 
+	void DXResourceManager::FlushUploadCommands()
+	{
 		m_CurrentFence++;
 		ThrowIfFailed(m_CommandQueue->Signal(m_UploadFence.Get(), m_CurrentFence));
 
@@ -115,7 +130,5 @@ namespace Blainn
 			WaitForSingleObject(eventHandle, INFINITE);
 			CloseHandle(eventHandle);
 		}
-
-		return defaultBuffer;
 	}
 }

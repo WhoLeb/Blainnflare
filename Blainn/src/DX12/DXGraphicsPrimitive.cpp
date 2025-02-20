@@ -16,12 +16,12 @@ namespace Blainn
 		UINT64 vertexSize = sizeof(Vertex);
 
 		m_VertexBuffer = m_ResourceManager->CreateBuffer(
-			vertices.data(),
 			bufferSize,
 			D3D12_HEAP_TYPE_DEFAULT,
 			D3D12_HEAP_FLAG_NONE,
 			D3D12_RESOURCE_STATE_COMMON
 		);
+		m_ResourceManager->WriteToDefaultBuffer(m_VertexBuffer, vertices.data(), bufferSize);
 
 		if (indices)
 		{
@@ -32,14 +32,15 @@ namespace Blainn
 
 			bufferSize = sizeof(UINT32) * m_IndexCount;
 			m_IndexBuffer = m_ResourceManager->CreateBuffer(
-				indices->data(),
 				bufferSize,
 				D3D12_HEAP_TYPE_DEFAULT,
 				D3D12_HEAP_FLAG_NONE,
 				D3D12_RESOURCE_STATE_COMMON
 			);
+			m_ResourceManager->WriteToDefaultBuffer(m_IndexBuffer, indices->data(), bufferSize);
 		}
 	}
+
 	void DXGraphicsPrimitive::Bind(std::shared_ptr<DXRenderingContext> renderingContext)
 	{
 		Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> cmdList = renderingContext->GetCommandList();
