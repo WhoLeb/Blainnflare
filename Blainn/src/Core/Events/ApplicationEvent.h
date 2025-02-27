@@ -12,8 +12,8 @@ namespace Blainn
 		WindowResizeEvent(WPARAM wParam, unsigned int width, unsigned int height)
 			: m_wParam(wParam), m_Width(width), m_Height(height) {}
 
-		inline unsigned int GetWidth() const { return m_Width; }
-		inline unsigned int GetHeight() const { return m_Height; }
+		inline int GetWidth() const { return m_Width; }
+		inline int GetHeight() const { return m_Height; }
 		inline WPARAM GetWParam() const { return m_wParam; }
 
 		std::string ToString() const override
@@ -27,7 +27,7 @@ namespace Blainn
 		EVENT_CLASS_CATEGORY(EventCategoryApplication)
 
 	private:
-		unsigned int m_Width, m_Height;
+		int m_Width, m_Height;
 		WPARAM m_wParam;
 	};
 

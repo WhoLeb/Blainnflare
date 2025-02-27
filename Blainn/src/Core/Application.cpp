@@ -72,7 +72,7 @@ namespace Blainn
 
 	int Application::Run()
 	{
-		MSG msg = { 0 };
+		MSG msg = { nullptr };
 
 		m_Timer.Reset();
 
@@ -131,7 +131,7 @@ namespace Blainn
 
 		while (msg.message != WM_QUIT)
 		{
-			if (PeekMessage(&msg, 0, 0, 0, PM_REMOVE))
+			if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
 			{
 				TranslateMessage(&msg);
 				DispatchMessage(&msg);
@@ -242,8 +242,11 @@ namespace Blainn
 
 	bool Application::OnWindowResize(WindowResizeEvent& e)
 	{
-		m_ClientWidth = e.GetWidth();
-		m_ClientHeight = e.GetHeight();
+		if (e.GetWidth() > 0 && e.GetHeight() > 0)
+		{
+			m_ClientWidth = e.GetWidth();
+			m_ClientHeight = e.GetHeight();
+		}
 		if (m_RenderingContext && m_RenderingContext->IsInitialized())
 		{
 			if (e.GetWParam() == SIZE_MINIMIZED)
@@ -408,7 +411,7 @@ namespace Blainn
 		// Compute averages over one second period.
 		if ((m_Timer.TotalTime() - timeElapsed) >= 1.0f)
 		{
-			float fps = (float)frameCnt; // fps = frameCnt / 1
+			auto fps = (float)frameCnt; // fps = frameCnt / 1
 			float mspf = 1000.0f / fps;
 
 			std::wstring fpsStr = std::to_wstring(fps);
