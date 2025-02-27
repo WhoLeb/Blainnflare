@@ -1,7 +1,12 @@
 #pragma once
 
 #include "DXDevice.h"
+
+#include <dxgi1_4.h>
+#include <d3d12.h>
+#include <memory>
 #include <wrl.h>
+#include "Util/d3dx12.h"
 
 
 namespace Blainn

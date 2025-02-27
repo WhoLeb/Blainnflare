@@ -96,11 +96,11 @@
     <ClInclude Include="src\Util\MathHelper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\EntryPoint.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\EntryPoint.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\pch.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

@@ -20,14 +20,12 @@
 #pragma comment(lib, "D3D12.lib")
 #pragma comment(lib, "dxgi.lib")
 
-
 namespace Blainn
 {
 	struct ObjectConstants
 	{
 		DirectX::XMFLOAT4X4 WorldViewProj = MathHelper::Identity4x4();
 	};
-
 
 	struct ApplicationDesc
 	{
@@ -146,4 +144,6 @@ namespace Blainn
 		POINT m_LastMousePos;
 	};
 
+
+	Application* CreateApplication(HINSTANCE hInstance);
 }

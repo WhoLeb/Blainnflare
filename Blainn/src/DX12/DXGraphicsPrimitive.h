@@ -3,6 +3,10 @@
 #include "DXRenderingContext.h"
 #include "DXResourceManager.h"
 
+#include "DirectXMath.h"
+#include <d3d12.h>
+#include <vector>
+
 namespace Blainn
 {
 

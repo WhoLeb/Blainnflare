@@ -1,5 +1,7 @@
 #pragma once
 
+#include <xstring>
+
 namespace Blainn
 {
 	class DXShader

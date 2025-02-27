@@ -2,6 +2,8 @@
 
 #include "DXRenderingContext.h"
 
+#include "Util/Util.h"
+
 namespace Blainn
 {
 	template<typename T>
