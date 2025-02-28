@@ -3,7 +3,7 @@
 #include "DXRenderingContext.h"
 #include "DXResourceManager.h"
 
-#include "DirectXMath.h"
+#include "SimpleMath.h"
 #include <d3d12.h>
 #include <vector>
 
@@ -15,10 +15,10 @@ namespace Blainn
 	public:
 		struct Vertex
 		{
-			DirectX::XMFLOAT3 Position;
-			DirectX::XMFLOAT3 Normal;
-			DirectX::XMFLOAT4 Color;
-			DirectX::XMFLOAT2 UV;
+			DirectX::SimpleMath::Vector3 Position;
+			DirectX::SimpleMath::Vector3 Normal;
+			DirectX::SimpleMath::Vector4 Color;
+			DirectX::SimpleMath::Vector2 UV;
 
 			static std::vector<D3D12_INPUT_ELEMENT_DESC> GetElementLayout()
 			{
@@ -44,8 +44,7 @@ namespace Blainn
 			const std::vector<UINT32>* indices = nullptr
 		);
 
-		void Bind(std::shared_ptr<DXRenderingContext> renderingContext);
-		void Draw(std::shared_ptr<DXRenderingContext> renderingContext);
+		void Draw();
 
 	private:
 		std::shared_ptr<DXResourceManager> m_ResourceManager;

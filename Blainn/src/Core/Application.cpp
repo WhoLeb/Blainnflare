@@ -72,62 +72,63 @@ namespace Blainn
 
 	int Application::Run()
 	{
+		OnInit();
 		MSG msg = { nullptr };
 
 		m_Timer.Reset();
 
-		static std::vector<DXGraphicsPrimitive::Vertex> vertices =
-		{
-		{ XMFLOAT3(-1.0f, -1.0f, -1.0f), XMFLOAT3(0, 0, 0), XMFLOAT4(Colors::White),	XMFLOAT2(0,0)},
-		{ XMFLOAT3(-1.0f, +1.0f, -1.0f), XMFLOAT3(0, 0, 0), XMFLOAT4(Colors::Black),	XMFLOAT2(0,0)},
-		{ XMFLOAT3(+1.0f, +1.0f, -1.0f), XMFLOAT3(0, 0, 0), XMFLOAT4(Colors::Red),		XMFLOAT2(0,0)},
-		{ XMFLOAT3(+1.0f, -1.0f, -1.0f), XMFLOAT3(0, 0, 0), XMFLOAT4(Colors::Green),	XMFLOAT2(0,0)},
-		{ XMFLOAT3(-1.0f, -1.0f, +1.0f), XMFLOAT3(0, 0, 0), XMFLOAT4(Colors::Blue),		XMFLOAT2(0,0)},
-		{ XMFLOAT3(-1.0f, +1.0f, +1.0f), XMFLOAT3(0, 0, 0), XMFLOAT4(Colors::Yellow),	XMFLOAT2(0,0)},
-		{ XMFLOAT3(+1.0f, +1.0f, +1.0f), XMFLOAT3(0, 0, 0), XMFLOAT4(Colors::Cyan),		XMFLOAT2(0,0)},
-		{ XMFLOAT3(+1.0f, -1.0f, +1.0f), XMFLOAT3(0, 0, 0), XMFLOAT4(Colors::Magenta),	XMFLOAT2(0,0)},
-		};
+		//static std::vector<DXGraphicsPrimitive::Vertex> vertices =
+		//{
+		//{ XMFLOAT3(-1.0f, -1.0f, -1.0f), XMFLOAT3(0, 0, 0), XMFLOAT4(Colors::White),	XMFLOAT2(0,0)},
+		//{ XMFLOAT3(-1.0f, +1.0f, -1.0f), XMFLOAT3(0, 0, 0), XMFLOAT4(Colors::Black),	XMFLOAT2(0,0)},
+		//{ XMFLOAT3(+1.0f, +1.0f, -1.0f), XMFLOAT3(0, 0, 0), XMFLOAT4(Colors::Red),		XMFLOAT2(0,0)},
+		//{ XMFLOAT3(+1.0f, -1.0f, -1.0f), XMFLOAT3(0, 0, 0), XMFLOAT4(Colors::Green),	XMFLOAT2(0,0)},
+		//{ XMFLOAT3(-1.0f, -1.0f, +1.0f), XMFLOAT3(0, 0, 0), XMFLOAT4(Colors::Blue),		XMFLOAT2(0,0)},
+		//{ XMFLOAT3(-1.0f, +1.0f, +1.0f), XMFLOAT3(0, 0, 0), XMFLOAT4(Colors::Yellow),	XMFLOAT2(0,0)},
+		//{ XMFLOAT3(+1.0f, +1.0f, +1.0f), XMFLOAT3(0, 0, 0), XMFLOAT4(Colors::Cyan),		XMFLOAT2(0,0)},
+		//{ XMFLOAT3(+1.0f, -1.0f, +1.0f), XMFLOAT3(0, 0, 0), XMFLOAT4(Colors::Magenta),	XMFLOAT2(0,0)},
+		//};
 
-		static std::vector<UINT32> indices =
-		{
-			// front face
-			0, 1, 2,
-			0, 2, 3,
-			// back face
-			4, 6, 5,
-			4, 7, 6,
-			// left face
-			4, 5, 1,
-			4, 1, 0,
-			// right face
-			3, 2, 6,
-			3, 6, 7,
-			// top face
-			1, 5, 6,
-			1, 6, 2,
-			// bottom face
-			4, 0, 3,
-			4, 3, 7
-		};
+		//static std::vector<UINT32> indices =
+		//{
+		//	// front face
+		//	0, 1, 2,
+		//	0, 2, 3,
+		//	// back face
+		//	4, 6, 5,
+		//	4, 7, 6,
+		//	// left face
+		//	4, 5, 1,
+		//	4, 1, 0,
+		//	// right face
+		//	3, 2, 6,
+		//	3, 6, 7,
+		//	// top face
+		//	1, 5, 6,
+		//	1, 6, 2,
+		//	// bottom face
+		//	4, 0, 3,
+		//	4, 3, 7
+		//};
 
-		box = std::make_shared<DXGraphicsPrimitive>(m_ResourceManager, vertices, &indices);
+		//box = std::make_shared<DXGraphicsPrimitive>(m_ResourceManager, vertices, &indices);
 
-		static std::vector<DXGraphicsPrimitive::Vertex> vertices2 =
-		{
-		{ XMFLOAT3(-1.5f, -1.0f, 0.0f), XMFLOAT3(0, 0, 0), XMFLOAT4(Colors::White),	XMFLOAT2(0,0)},
-		{ XMFLOAT3(-1.5f, +1.0f, 0.0f), XMFLOAT3(0, 0, 0), XMFLOAT4(Colors::Black),	XMFLOAT2(0,0)},
-		{ XMFLOAT3(-3.5f, +1.0f, 0.0f), XMFLOAT3(0, 0, 0), XMFLOAT4(Colors::Red),	XMFLOAT2(0,0)},
-		{ XMFLOAT3(-3.5f, -1.0f, 0.0f), XMFLOAT3(0, 0, 0), XMFLOAT4(Colors::Green),	XMFLOAT2(0,0)}
-		};
+		//static std::vector<DXGraphicsPrimitive::Vertex> vertices2 =
+		//{
+		//{ XMFLOAT3(-1.5f, -1.0f, 0.0f), XMFLOAT3(0, 0, 0), XMFLOAT4(Colors::White),	XMFLOAT2(0,0)},
+		//{ XMFLOAT3(-1.5f, +1.0f, 0.0f), XMFLOAT3(0, 0, 0), XMFLOAT4(Colors::Black),	XMFLOAT2(0,0)},
+		//{ XMFLOAT3(-3.5f, +1.0f, 0.0f), XMFLOAT3(0, 0, 0), XMFLOAT4(Colors::Red),	XMFLOAT2(0,0)},
+		//{ XMFLOAT3(-3.5f, -1.0f, 0.0f), XMFLOAT3(0, 0, 0), XMFLOAT4(Colors::Green),	XMFLOAT2(0,0)}
+		//};
 
-		static std::vector<UINT32> indices2 =
-		{
-			// front face
-			0, 1, 2,
-			0, 2, 3
-		};
+		//static std::vector<UINT32> indices2 =
+		//{
+		//	// front face
+		//	0, 1, 2,
+		//	0, 2, 3
+		//};
 
-		m_Square = std::make_shared<DXGraphicsPrimitive>(m_ResourceManager, vertices2, &indices2);
+		//m_Square = std::make_shared<DXGraphicsPrimitive>(m_ResourceManager, vertices2, &indices2);
 
 		while (msg.message != WM_QUIT)
 		{
@@ -208,11 +209,13 @@ namespace Blainn
 		CD3DX12_GPU_DESCRIPTOR_HANDLE cbv(m_CBVHeap->GetGPUDescriptorHandleForHeapStart());
 		m_RenderingContext->GetCommandList()->SetGraphicsRootDescriptorTable(0, m_CBVHeap->GetGPUDescriptorHandleForHeapStart());
 
-		box->Bind(m_RenderingContext);
-		box->Draw(m_RenderingContext);
-		
-		m_Square->Bind(m_RenderingContext);
-		m_Square->Draw(m_RenderingContext);
+		//box->Draw();
+		//
+		//m_Square->Draw();
+		AppRenderEvent e;
+		for (Layer* layer : m_LayerStack)
+			layer->OnEvent(e);
+
 
 		m_RenderingContext->EndFrame();
 	}

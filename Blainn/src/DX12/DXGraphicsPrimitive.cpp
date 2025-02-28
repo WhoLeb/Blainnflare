@@ -1,6 +1,8 @@
 #include "pch.h"
 #include "DXGraphicsPrimitive.h"
 
+#include "Core/Application.h"
+
 namespace Blainn
 {
 	DXGraphicsPrimitive::DXGraphicsPrimitive(
@@ -41,9 +43,9 @@ namespace Blainn
 		}
 	}
 
-	void DXGraphicsPrimitive::Bind(std::shared_ptr<DXRenderingContext> renderingContext)
+	void DXGraphicsPrimitive::Draw()
 	{
-		Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> cmdList = renderingContext->GetCommandList();
+		Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> cmdList = Application::Get().GetRenderingContext()->GetCommandList();
 
 		D3D12_VERTEX_BUFFER_VIEW vbv;
 		vbv.BufferLocation = m_VertexBuffer->GetGPUVirtualAddress();
@@ -63,11 +65,7 @@ namespace Blainn
 			cmdList->IASetIndexBuffer(&ibv);
 		}
 		cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	}
 
-	void DXGraphicsPrimitive::Draw(std::shared_ptr<DXRenderingContext> renderingContext)
-	{
-		Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> cmdList = renderingContext->GetCommandList();
 		if (m_bHasIndexBuffer)
 			cmdList->DrawIndexedInstanced(m_IndexCount, 1, 0, 0, 0);
 		else

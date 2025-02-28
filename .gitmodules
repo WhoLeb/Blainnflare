@@ -5,3 +5,6 @@
 [submodule "Blainn/vendor/spdlog"]
 	path = Blainn/vendor/spdlog
 	url = https://github.com/gabime/spdlog.git
+[submodule "vendor/DXTK"]
+	path = vendor/DXTK
+	url = https://github.com/microsoft/DirectXTK12.git

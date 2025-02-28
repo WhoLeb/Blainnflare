@@ -1,4 +1,5 @@
 #include "Core/Application.h"
+#include "PongLayer.h"
 
 #include "EntryPoint.h"
 
@@ -13,7 +14,10 @@ namespace Pong
 
 		}
 
-		void OnInit() {}
+		void OnInit()
+		{
+			m_LayerStack.PushLayer(new PongLayer());
+		}
 
 	private:
 

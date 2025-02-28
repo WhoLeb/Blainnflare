@@ -64,6 +64,8 @@ namespace Blainn
 		inline Window& GetWindow() const { return *m_Window; }
 
 		HINSTANCE GetNativeInstance() const { return m_hInstance; }
+		std::shared_ptr<DXResourceManager> GetResourceManager() const { return m_ResourceManager; }
+		std::shared_ptr<DXRenderingContext> GetRenderingContext() const { return m_RenderingContext; }
 
 	protected:
 		virtual void OnResize();
