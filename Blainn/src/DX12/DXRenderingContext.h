@@ -1,6 +1,10 @@
 #pragma once
 
+#include "Core/GameTimer.h"
 #include "DXDevice.h"
+#include "DXFrameResource.h"
+#include "DXShader.h"
+#include "Scene/Actor.h"
 
 #include <dxgi1_4.h>
 #include <d3d12.h>
@@ -8,6 +12,8 @@
 #include <wrl.h>
 #include "Util/d3dx12.h"
 
+extern const int g_NumFrameResources;
+extern const UINT32 g_NumObjects;
 
 namespace Blainn
 {
@@ -20,9 +26,22 @@ namespace Blainn
 		~DXRenderingContext();
 
 		void Init(std::shared_ptr<Window> wnd);
+		void CreateResources();
 
-		void BeginFrame();
+		Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> BeginFrame();
 		void EndFrame();
+
+		void DrawRenderActors(ID3D12GraphicsCommandList* cmdList, const std::vector<std::shared_ptr<Actor>>& actors);
+
+		void OnUpdate();
+		void UpdateObjectsConstantBuffers(const std::vector<std::shared_ptr<Actor>>& objects);
+		// TODO: a temporary solution, should probably pass a camera instead
+		void UpdateMainPassConstantBuffers(
+			const GameTimer& gt,
+			const DirectX::SimpleMath::Matrix& viewM,
+			const DirectX::SimpleMath::Matrix& projM,
+			const DirectX::SimpleMath::Vector3& eyePos
+		);
 
 		void Resize(int newWidth, int newHeight);
 		void FlushCommandQueue();
@@ -38,14 +57,20 @@ namespace Blainn
 	private:
 		void CreateDepthStencilBuffer(int width, int height);
 
+		void BuildDescriptorHeaps();
+		void BuildConstantBufferViews();
+		void BuildRootSignature();
+		void BuildPipelineState(); // the legendary PSO
+		void BuildFrameResources();
+
 		ID3D12Resource* CurrentBackBuffer() const
 			{ return m_SwapChainBuffer[m_CurrBackBuffer].Get(); }
 		D3D12_CPU_DESCRIPTOR_HANDLE DepthStencilView() const
-			{ return m_DsvHeap->GetCPUDescriptorHandleForHeapStart(); }
+			{ return m_DSVHeap->GetCPUDescriptorHandleForHeapStart(); }
 		D3D12_CPU_DESCRIPTOR_HANDLE CurrentBackBufferView() const
 		{
 			return CD3DX12_CPU_DESCRIPTOR_HANDLE(
-				m_RtvHeap->GetCPUDescriptorHandleForHeapStart(),
+				m_RTVHeap->GetCPUDescriptorHandleForHeapStart(),
 				m_CurrBackBuffer,
 				m_RtvDescriptorSize
 			);
@@ -64,15 +89,35 @@ namespace Blainn
 		UINT64 m_CurrentFence;
 		HANDLE m_FenceEvent;
 
+		// TODO: should probably create some Pipeline class that would encapsulate
+		// the pipeline creation and some pipeline manager to bind pipeline and stuff
+		Microsoft::WRL::ComPtr<ID3D12RootSignature> m_RootSignature;
+
+		std::unordered_map<std::string, Microsoft::WRL::ComPtr<ID3D12PipelineState>> m_PSOs;
+
+		// TODO: this should also be moved into another shader manager(or library, 
+		// like in Hazel) class that would manage shaders and give them based
+		// on what the pipeline asks for
+		std::unordered_map<std::string, std::shared_ptr<DXShader>> m_Shaders;
+
 		Microsoft::WRL::ComPtr<ID3D12CommandQueue> m_CommandQueue;
 		Microsoft::WRL::ComPtr<ID3D12CommandAllocator> m_DirectCmdListAlloc;
 		Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> m_CommandList;
 
 		Microsoft::WRL::ComPtr<ID3D12Resource> m_DepthStencilBuffer;
 
-		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_RtvHeap;
-		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_DsvHeap;
-		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_SrvHeap;
+		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_RTVHeap;
+		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_DSVHeap;
+		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_SRVHeap;
+		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_CBVHeap;
+
+		// These frame resources hold per object and per-frame data
+		std::vector<std::unique_ptr<DXFrameResource>> m_FrameResources;
+		DXFrameResource* m_CurrentFrameResource;
+		UINT m_CurrentFrameResourceIndex = 0;
+		UINT m_PassConstantBufferOffset;
+
+		PassConstants m_MainPassCB;
 
 		UINT m_RtvDescriptorSize = 0;
 		UINT m_DsvDescriptorSize = 0;

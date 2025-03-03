@@ -69,17 +69,18 @@ namespace Blainn
 		memcpy(&byteMappedData[offset], data, size);
 	}
 
-	void DXResourceManager::WriteToDefaultBuffer(Microsoft::WRL::ComPtr<ID3D12Resource> buffer, const void* data, UINT64 size)
+	void DXResourceManager::WriteToDefaultBuffer(
+		Microsoft::WRL::ComPtr<ID3D12Resource> buffer,
+		const void* data, UINT64 size,
+		Microsoft::WRL::ComPtr<ID3D12Resource>& uploader)
 	{
-		ComPtr<ID3D12Resource> uploadBuffer;
-
 		ThrowIfFailed(m_Device->CreateCommittedResource(
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
 			D3D12_HEAP_FLAG_NONE,
 			&CD3DX12_RESOURCE_DESC::Buffer(size),
 			D3D12_RESOURCE_STATE_GENERIC_READ,
 			nullptr,
-			IID_PPV_ARGS(&uploadBuffer)
+			IID_PPV_ARGS(&uploader)
 		));
 
 		D3D12_SUBRESOURCE_DATA subResourceData = {};
@@ -87,8 +88,8 @@ namespace Blainn
 		subResourceData.RowPitch = size;
 		subResourceData.SlicePitch = size;
 
-		m_UploadCmdAlloc->Reset();
-		m_UploadCommandList->Reset(m_UploadCmdAlloc.Get(), nullptr);
+		ThrowIfFailed(m_UploadCmdAlloc->Reset());
+		ThrowIfFailed(m_UploadCommandList->Reset(m_UploadCmdAlloc.Get(), nullptr));
 
 		m_UploadCommandList->ResourceBarrier(1,
 			&CD3DX12_RESOURCE_BARRIER::Transition(
@@ -98,7 +99,7 @@ namespace Blainn
 			));
 
 		UpdateSubresources<1>(m_UploadCommandList.Get(),
-			buffer.Get(), uploadBuffer.Get(),
+			buffer.Get(), uploader.Get(),
 			0, 0, 1, &subResourceData);
 		
 		m_UploadCommandList->ResourceBarrier(1,
@@ -113,6 +114,7 @@ namespace Blainn
 		ID3D12CommandList* cmdLists[] = { m_UploadCommandList.Get() };
 
 		m_CommandQueue->ExecuteCommandLists(_countof(cmdLists), cmdLists);
+
 		FlushUploadCommands();
 	}
 

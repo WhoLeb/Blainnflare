@@ -1,5 +1,8 @@
 #pragma once
 
+#include "d3d12.h"
+#include "wrl.h"
+
 namespace Blainn
 {
 	class DXResourceManager
@@ -27,15 +30,21 @@ namespace Blainn
 		}
 
 		void WriteToUploadBuffer(void* mappedData, const void* data, UINT64 size, UINT64 offset);
-		void WriteToDefaultBuffer(Microsoft::WRL::ComPtr<ID3D12Resource> buffer, const void* data, UINT64 size);
+		void WriteToDefaultBuffer(
+			Microsoft::WRL::ComPtr<ID3D12Resource> buffer,
+			const void* data, UINT64 size,
+			Microsoft::WRL::ComPtr<ID3D12Resource>& uploader
+		);
 
 		void FlushUploadCommands();
+
 	private:
 		Microsoft::WRL::ComPtr<ID3D12Device> m_Device;
 		Microsoft::WRL::ComPtr<ID3D12CommandQueue> m_CommandQueue;
 		Microsoft::WRL::ComPtr<ID3D12CommandAllocator> m_UploadCmdAlloc;
 		Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> m_UploadCommandList;
 		Microsoft::WRL::ComPtr<ID3D12Fence> m_UploadFence;
+		Microsoft::WRL::ComPtr<ID3D12Resource> m_UploadBuffer;
 		UINT64 m_CurrentFence;
 
 	};

@@ -160,7 +160,7 @@ namespace Blainn
 			m_Data.EventCallback(event);
 			return 0;
 		}
-		// when the user releases the resize bars. Here everithing is reset based on
+		// when the user releases the resize bars. Here everything is reset based on
 		// the new dimensions
 		case WM_EXITSIZEMOVE:
 		{
@@ -230,9 +230,11 @@ namespace Blainn
 		}
 		case WM_MOUSEMOVE:
 		{
+			bool lmbPressed = (wParam & MK_LBUTTON), rmbPressed = (wParam & MK_RBUTTON);
+
 			int offsetX = (int)(short)LOWORD(lParam);
 			int offsetY = (int)(short)HIWORD(lParam);
-			MouseMovedEvent event((float)offsetX, (float)offsetY);
+			MouseMovedEvent event((float)offsetX, (float)offsetY, lmbPressed, rmbPressed);
 			m_Data.EventCallback(event);
 			return 0;
 		}

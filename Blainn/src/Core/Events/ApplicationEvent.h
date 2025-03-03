@@ -3,6 +3,7 @@
 #include "Event.h"
 
 #include <sstream>
+#include <windows.h>
 
 namespace Blainn
 {

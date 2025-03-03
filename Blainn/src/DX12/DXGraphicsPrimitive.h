@@ -30,21 +30,18 @@ namespace Blainn
 					{"UV",			0, DXGI_FORMAT_R32G32_FLOAT,	0, offsetof(Vertex, UV),		D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
 				};
 				return vertexDesc;
-
-				//D3D12_INPUT_LAYOUT_DESC ld = {};
-				//ld.NumElements = 4;
-				//ld.pInputElementDescs = vertexDesc;
-				//return ld;
 			}
 		};
 
 		DXGraphicsPrimitive(
-			std::shared_ptr<DXResourceManager> resourceManager,
 			const std::vector<Vertex>& vertices,
 			const std::vector<UINT32>* indices = nullptr
 		);
 
 		void Draw();
+
+		Microsoft::WRL::ComPtr<ID3D12Resource> VertexBufferUploader;
+		Microsoft::WRL::ComPtr<ID3D12Resource> IndexBufferUploader;
 
 	private:
 		std::shared_ptr<DXResourceManager> m_ResourceManager;

@@ -11,16 +11,23 @@ namespace Blainn
 	class MouseMovedEvent : public Event
 	{
 	public:
-		MouseMovedEvent(int x, int y)
-			: m_MouseX(x), m_MouseY(y) {}
+		MouseMovedEvent(int x, int y, bool lmbHeld, bool rmbHeld)
+			: m_MouseX(x), m_MouseY(y), m_LmbHeld(lmbHeld), m_RmbHeld(rmbHeld)
+		{}
 
 		inline int GetX() const { return m_MouseX; }
 		inline int GetY() const { return m_MouseY; }
 
+		inline bool IsLmbHeld() const { return m_LmbHeld; }
+		inline bool IsRmbHeld() const { return m_RmbHeld; }
+
 		std::string ToString() const override
 		{
 			std::stringstream ss;
-			ss << "MouseMovedEvent: " << m_MouseX << ", " << m_MouseY;
+			ss << "MouseMovedEvent: " << m_MouseX << ", " << m_MouseY <<
+				((m_LmbHeld || m_RmbHeld) ? "(" : "") << (m_LmbHeld ? "Left " : "") <<
+				((m_LmbHeld && m_RmbHeld) ? "and " : "") << (m_RmbHeld ? "Right " : "") <<
+				((m_LmbHeld || m_RmbHeld) ? "mouse button held)" : "");
 			return ss.str();
 		}
 
@@ -28,6 +35,7 @@ namespace Blainn
 		EVENT_CLASS_CATEGORY(EventCategoryMouse | EventCategoryInput)
 
 	protected:
+		bool m_LmbHeld, m_RmbHeld;
 		int m_MouseX, m_MouseY;
 	};
 

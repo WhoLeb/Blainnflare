@@ -9,7 +9,7 @@ namespace Pong
 	{
 	public:
 		PongApplication(HINSTANCE hInstance, const Blainn::ApplicationDesc& appDesc)
-			: Application(hInstance)
+			: Application(hInstance, appDesc)
 		{
 
 		}

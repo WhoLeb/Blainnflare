@@ -6,6 +6,7 @@
 #include "backends/imgui_impl_dx12.h"
 
 #include "Core/Application.h"
+#include "Core/GameTimer.h"
 
 namespace Blainn
 {
@@ -57,7 +58,7 @@ namespace Blainn
 	{
 	}
 
-	void ImGuiLayer::OnUpdate()
+	void ImGuiLayer::OnUpdate(const GameTimer& gt)
 	{
 	}
 

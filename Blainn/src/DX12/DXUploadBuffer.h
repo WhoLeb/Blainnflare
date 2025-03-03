@@ -1,6 +1,6 @@
 #pragma once
 
-#include "DXRenderingContext.h"
+#include "DXResourceManager.h"
 
 #include "Util/Util.h"
 
@@ -10,7 +10,7 @@ namespace Blainn
 	class DXUploadBuffer
 	{
 	public:
-		DXUploadBuffer(std::shared_ptr<DXRenderingContext> renderingContext, UINT elementCount, bool bIsConstantBuffer)
+		DXUploadBuffer(std::shared_ptr<DXResourceManager> resourceManager, UINT elementCount, bool bIsConstantBuffer)
 			: m_bIsConstantBuffer(bIsConstantBuffer)
 		{
 			m_ElementByteSize = sizeof(T);
@@ -18,15 +18,21 @@ namespace Blainn
 			if (bIsConstantBuffer)
 				m_ElementByteSize = d3dUtil::CalcConstantBufferByteSize(sizeof(T));
 
-			Microsoft::WRL::ComPtr<ID3D12Device> device = renderingContext->GetDevice()->Device();
-			ThrowIfFailed(device->CreateCommittedResource(
-				&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+			//Microsoft::WRL::ComPtr<ID3D12Device> device = renderingContext->GetDevice()->Device();
+			//ThrowIfFailed(device->CreateCommittedResource(
+			//	&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+			//	D3D12_HEAP_FLAG_NONE,
+			//	&CD3DX12_RESOURCE_DESC::Buffer(m_ElementByteSize * elementCount),
+			//	D3D12_RESOURCE_STATE_GENERIC_READ,
+			//	nullptr,
+			//	IID_PPV_ARGS(&m_UploadBuffer)
+			//));
+			m_UploadBuffer = resourceManager->CreateBuffer(
+				m_ElementByteSize * elementCount,
+				D3D12_HEAP_TYPE_UPLOAD,
 				D3D12_HEAP_FLAG_NONE,
-				&CD3DX12_RESOURCE_DESC::Buffer(m_ElementByteSize * elementCount),
-				D3D12_RESOURCE_STATE_GENERIC_READ,
-				nullptr,
-				IID_PPV_ARGS(&m_UploadBuffer)
-			));
+				D3D12_RESOURCE_STATE_GENERIC_READ
+				);
 
 			ThrowIfFailed(m_UploadBuffer->Map(0, nullptr, reinterpret_cast<void**>(&m_MappedData)))
 		}

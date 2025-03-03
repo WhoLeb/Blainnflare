@@ -2,8 +2,11 @@
 
 #include "Events/Event.h"
 
+
 namespace Blainn
 {
+	class GameTimer;
+
 	class Layer
 	{
 	public:
@@ -12,7 +15,7 @@ namespace Blainn
 
 		virtual void OnAttach() {}
 		virtual void OnDetach() {}
-		virtual void OnUpdate() {}
+		virtual void OnUpdate(const GameTimer& gt) {}
 		virtual void OnEvent(Event& event) {}
 
 		inline const std::string& GetName() const { return m_DebugName; }

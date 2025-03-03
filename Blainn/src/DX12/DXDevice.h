@@ -6,12 +6,13 @@
 
 namespace Blainn
 {
-	class DXDevice
+	class DXDevice : public Microsoft::WRL::ComPtr<ID3D12Device> 
 	{
 	public:
 		DXDevice();
 
 		inline Microsoft::WRL::ComPtr<ID3D12Device> Device () const { return m_Device; }
+		operator Microsoft::WRL::ComPtr<ID3D12Device>() { return m_Device; }
 
 		bool IsFeatureLevelSupported(D3D_FEATURE_LEVEL featureLevel) const;
 
@@ -28,4 +29,5 @@ namespace Blainn
 	private:
 		Microsoft::WRL::ComPtr<ID3D12Device> m_Device;
 	};
+
 }

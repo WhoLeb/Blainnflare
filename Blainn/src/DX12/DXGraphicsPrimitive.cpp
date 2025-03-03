@@ -6,24 +6,23 @@
 namespace Blainn
 {
 	DXGraphicsPrimitive::DXGraphicsPrimitive(
-		std::shared_ptr<DXResourceManager> resourceManager,
 		const std::vector<Vertex>& vertices,
 		const std::vector<UINT32>* indices)
-		: m_ResourceManager(resourceManager)
 	{
+		auto resourceManager = Application::Get().GetResourceManager();
 		m_VertexCount = vertices.size();
 		assert(m_VertexCount >= 1 && "There should at least be 1 vertex!");
 
 		UINT64 bufferSize = sizeof(Vertex) * m_VertexCount;
 		UINT64 vertexSize = sizeof(Vertex);
 
-		m_VertexBuffer = m_ResourceManager->CreateBuffer(
+		m_VertexBuffer = resourceManager->CreateBuffer(
 			bufferSize,
 			D3D12_HEAP_TYPE_DEFAULT,
 			D3D12_HEAP_FLAG_NONE,
 			D3D12_RESOURCE_STATE_COMMON
 		);
-		m_ResourceManager->WriteToDefaultBuffer(m_VertexBuffer, vertices.data(), bufferSize);
+		resourceManager->WriteToDefaultBuffer(m_VertexBuffer, vertices.data(), bufferSize, VertexBufferUploader);
 
 		if (indices)
 		{
@@ -33,13 +32,13 @@ namespace Blainn
 			if (!m_bHasIndexBuffer) return;
 
 			bufferSize = sizeof(UINT32) * m_IndexCount;
-			m_IndexBuffer = m_ResourceManager->CreateBuffer(
+			m_IndexBuffer = resourceManager->CreateBuffer(
 				bufferSize,
 				D3D12_HEAP_TYPE_DEFAULT,
 				D3D12_HEAP_FLAG_NONE,
 				D3D12_RESOURCE_STATE_COMMON
 			);
-			m_ResourceManager->WriteToDefaultBuffer(m_IndexBuffer, indices->data(), bufferSize);
+			resourceManager->WriteToDefaultBuffer(m_IndexBuffer, indices->data(), bufferSize, IndexBufferUploader);
 		}
 	}
 
