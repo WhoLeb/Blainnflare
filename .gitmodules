@@ -8,3 +8,6 @@
 [submodule "Dependencies/DXTK"]
 	path = Dependencies/DXTK
 	url = https://github.com/microsoft/DirectXTK12.git
+[submodule "Dependencies/CppDelegates"]
+	path = Dependencies/CppDelegates
+	url = https://github.com/simco50/CppDelegates.git
