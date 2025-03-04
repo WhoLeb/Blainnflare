@@ -10,7 +10,7 @@ namespace Blainn
 	public:
 		GameObject()
 		{}
-		virtual ~GameObject() {}
+		virtual ~GameObject() noexcept {}
 
 		virtual void OnInit() {}
 		virtual void OnBegin() {}

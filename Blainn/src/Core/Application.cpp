@@ -2,6 +2,7 @@
 
 #include "pch.h"
 
+#include "Input.h"
 #include "Util/ComboboxSelector.h"
 
 using Microsoft::WRL::ComPtr;
@@ -81,6 +82,9 @@ namespace Blainn
 
 		while (msg.message != WM_QUIT)
 		{
+			Input::TransitionPressedKeys();
+			Input::TransitionPressedButtons();
+
 			if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
 			{
 				TranslateMessage(&msg);
@@ -141,12 +145,6 @@ namespace Blainn
 		dispatcher.Dispatch<WindowResizeEvent>([this](WindowResizeEvent& e) { return OnWindowResize(e); });
 		dispatcher.Dispatch<WindowMovedEvent>([this](WindowMovedEvent& e) { return OnWindowMoved(e); });
 		dispatcher.Dispatch<WindowMinimizeEvent>([this](WindowMinimizeEvent& e) { return OnWindowMinimize(e); });
-
-		dispatcher.Dispatch<MouseButtonDownEvent>([this](MouseButtonDownEvent& e) { return OnMouseDown(e); });
-		dispatcher.Dispatch<MouseButtonReleasedEvent>([this](MouseButtonReleasedEvent& e) { return OnMouseUp(e); });
-		dispatcher.Dispatch<MouseMovedEvent>([this](MouseMovedEvent& e) { return OnMouseMove(e); });
-
-		dispatcher.Dispatch<KeyPressedEvent>([this](KeyPressedEvent& e) { return OnKeyPressed(e); });
 
 		for (auto it = m_LayerStack.end(); it != m_LayerStack.begin();)
 		{
@@ -245,41 +243,6 @@ namespace Blainn
 		return false;
 	}
 
-	bool Application::OnMouseDown(MouseButtonDownEvent& e)
-	{
-		m_LastMousePos.x = e.GetXOffset();
-		m_LastMousePos.y = e.GetYOffset();
-
-		SetCapture(m_Window->GetNativeWindow());
-		return false;
-	}
-
-	bool Application::OnMouseUp(MouseButtonReleasedEvent& e)
-	{
-		ReleaseCapture();
-		return false;
-	}
-
-	bool Application::OnMouseMove(MouseMovedEvent& e)
-	{
-
-		return false;
-	}
-
-	bool Application::OnKeyPressed(KeyPressedEvent& e)
-	{
-		if (e.GetKeyCode() == VK_ESCAPE)
-			Close();
-
-#if defined DEBUG || defined _DEBUG
-		std::string tmpstr = e.ToString();
-		std::wstring dbgMsg = std::wstring(tmpstr.begin(), tmpstr.end());
-		std::cout << tmpstr << "\n";
-		FlushFileBuffers(GetStdHandle(STD_OUTPUT_HANDLE));
-#endif
-
-		return false;
-	}
 #pragma endregion
 
 	void Application::PushLayer(Layer* layer)

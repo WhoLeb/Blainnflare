@@ -81,13 +81,6 @@ namespace Blainn
 		bool OnWindowMinimize(WindowMinimizeEvent& e);
 		bool OnWindowClose(WindowCloseEvent& e);
 
-		virtual bool OnMouseDown(MouseButtonDownEvent& e);
-		virtual bool OnMouseUp(MouseButtonReleasedEvent& e);
-		virtual bool OnMouseMove(MouseMovedEvent& e);
-
-		bool OnKeyPressed(KeyPressedEvent& e);
-
-
 	protected:
 		void CalculateFrameStats();
 

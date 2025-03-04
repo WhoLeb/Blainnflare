@@ -6,6 +6,8 @@
 #include "DX12/DXGraphicsPrimitive.h"
 #include "Scene/Scene.h"
 
+#include "Actors/PlayerRacket.h"
+
 #include <memory>
 #include <vector>
 
@@ -35,13 +37,13 @@ namespace Pong
 		DirectX::SimpleMath::Matrix m_View{};
 		DirectX::SimpleMath::Matrix m_Proj{};
 
-		float m_Theta = 1.5 * DirectX::XM_PI;
-		float m_Phi = DirectX::XM_PIDIV4;
-		float m_Radius = 5.f;
+		float m_Theta = 0;// 1.5 * DirectX::XM_PI;
+		float m_Phi = DirectX::XM_PIDIV2;//DirectX::XM_PIDIV4;
+		float m_Radius = 20.f;
 
 		POINT m_LastMousePos{0, 0};
 
-		std::shared_ptr<Blainn::Actor> m_BoxActor;
+		std::shared_ptr<PlayerRacket> m_BoxActor;
 	};
 }
 

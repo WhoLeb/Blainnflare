@@ -5,6 +5,7 @@
 #include "Events/ApplicationEvent.h"
 #include "Events/KeyEvent.h"
 #include "Events/MouseEvent.h"
+#include "Input.h"
 
 #ifndef HINST_THISCOMPONENT
 EXTERN_C IMAGE_DOS_HEADER __ImageBase;
@@ -95,6 +96,16 @@ namespace Blainn
 
 	void Window::Show()
 	{
+	}
+
+	std::pair<int, int> Window::GetCursorPosition()
+	{
+		POINT pos;
+		if (GetCursorPos(&pos))
+		{
+			ScreenToClient(m_Window, &pos);
+			return { pos.x, pos.y };
+		}
 	}
 
 	void Window::Shutdown()
@@ -188,6 +199,7 @@ namespace Blainn
 		}
 		case WM_LBUTTONDOWN:
 		{
+			Input::UpdateButtonState(Button::Left, KeyState::Pressed);
 			int xOffset = (short)LOWORD(lParam), yOffset = (short)HIWORD(lParam);
 			MouseButtonDownEvent event(Button::Left, xOffset, yOffset);
 			m_Data.EventCallback(event);
@@ -195,6 +207,7 @@ namespace Blainn
 		}
 		case WM_MBUTTONDOWN:
 		{
+			Input::UpdateButtonState(Button::Middle, KeyState::Pressed);
 			int xOffset = (short)LOWORD(lParam), yOffset = (short)HIWORD(lParam);
 			MouseButtonDownEvent event(Button::Middle, xOffset, yOffset);
 			m_Data.EventCallback(event);
@@ -202,6 +215,7 @@ namespace Blainn
 		}
 		case WM_RBUTTONDOWN:
 		{
+			Input::UpdateButtonState(Button::Right, KeyState::Pressed);
 			int xOffset = (short)LOWORD(lParam), yOffset = (short)HIWORD(lParam);
 			MouseButtonDownEvent event(Button::Right, xOffset, yOffset);
 			m_Data.EventCallback(event);
@@ -209,6 +223,7 @@ namespace Blainn
 		}
 		case WM_LBUTTONUP:
 		{
+			Input::UpdateButtonState(Button::Left, KeyState::Released);
 			int xOffset = (short)LOWORD(lParam), yOffset = (short)HIWORD(lParam);
 			MouseButtonReleasedEvent event(Button::Left, xOffset, yOffset);
 			m_Data.EventCallback(event);
@@ -216,6 +231,7 @@ namespace Blainn
 		}
 		case WM_MBUTTONUP:
 		{
+			Input::UpdateButtonState(Button::Middle, KeyState::Released);
 			int xOffset = (short)LOWORD(lParam), yOffset = (short)HIWORD(lParam);
 			MouseButtonReleasedEvent event(Button::Middle, xOffset, yOffset);
 			m_Data.EventCallback(event);
@@ -223,6 +239,7 @@ namespace Blainn
 		}
 		case WM_RBUTTONUP:
 		{
+			Input::UpdateButtonState(Button::Right, KeyState::Released);
 			int xOffset = (short)LOWORD(lParam), yOffset = (short)HIWORD(lParam);
 			MouseButtonReleasedEvent event(Button::Right, xOffset, yOffset);
 			m_Data.EventCallback(event);
@@ -230,51 +247,51 @@ namespace Blainn
 		}
 		case WM_MOUSEMOVE:
 		{
-			bool lmbPressed = (wParam & MK_LBUTTON), rmbPressed = (wParam & MK_RBUTTON);
-
 			int offsetX = (int)(short)LOWORD(lParam);
 			int offsetY = (int)(short)HIWORD(lParam);
-			MouseMovedEvent event((float)offsetX, (float)offsetY, lmbPressed, rmbPressed);
+			MouseMovedEvent event((float)offsetX, (float)offsetY);
 			m_Data.EventCallback(event);
 			return 0;
 		}
 		case WM_KEYUP:
 		{
+			Input::UpdateKeyState(static_cast<KeyCode>(wParam), KeyState::Released);
 			KeyReleasedEvent event((int)wParam);
 			m_Data.EventCallback(event);
 			return 0;
 		}
 		case WM_KEYDOWN:
 		{
+			Input::UpdateKeyState(static_cast<KeyCode>(wParam), KeyState::Pressed);
 			// 30th bit is set to 1 if the button was already pressed when the
 			// message is sent. So it is set to 1 if the button is held.
 			KeyPressedEvent event((int)wParam, (lParam & BIT(30)) != 0);
 			m_Data.EventCallback(event);
 			return 0;
 		}
-		case WM_COMMAND:
-		{
-			if (HIWORD(wParam) == CBN_SELCHANGE)
-			{
-				int ItemIndex = SendMessage(
-					(HWND)lParam,
-					(UINT)CB_GETCURSEL,
-					(WPARAM)0,
-					(LPARAM)0
-				);
-				TCHAR ListItem[256];
-				SendMessage(
-					(HWND)lParam,
-					(UINT)CB_GETLBTEXT,
-					(WPARAM)ItemIndex,
-					(LPARAM)ListItem
-				);
+		//case WM_COMMAND:
+		//{
+		//	if (HIWORD(wParam) == CBN_SELCHANGE)
+		//	{
+		//		int ItemIndex = SendMessage(
+		//			(HWND)lParam,
+		//			(UINT)CB_GETCURSEL,
+		//			(WPARAM)0,
+		//			(LPARAM)0
+		//		);
+		//		TCHAR ListItem[256];
+		//		SendMessage(
+		//			(HWND)lParam,
+		//			(UINT)CB_GETLBTEXT,
+		//			(WPARAM)ItemIndex,
+		//			(LPARAM)ListItem
+		//		);
 
-				std::wstring wStr = ListItem;
-				ComboboxOptionSelectedEvent(ItemIndex, wStr);
-				return 0;
-			}
-		}
+		//		std::wstring wStr = ListItem;
+		//		ComboboxOptionSelectedEvent(ItemIndex, wStr);
+		//		return 0;
+		//	}
+		//}
 		}
 
 		return DefWindowProc(hwnd, msg, wParam, lParam);

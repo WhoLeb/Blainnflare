@@ -116,7 +116,7 @@
       <LanguageStandard>stdcpp20</LanguageStandard>
       <PrecompiledHeader>Create</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(SolutionDir)vendor\DXTK\Inc;$(SolutionDir)Blainn\vendor\imgui;$(SolutionDir)Blainn\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Dependencies\DXTK\Inc;$(SolutionDir)Blainn\vendor\imgui;$(SolutionDir)Blainn\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ForcedIncludeFiles>pch.h</ForcedIncludeFiles>
       <MultiProcessorCompilation>false</MultiProcessorCompilation>
     </ClCompile>
@@ -128,7 +128,7 @@
       <AdditionalDependencies>DirectXTK12.lib</AdditionalDependencies>
     </Lib>
     <Lib>
-      <AdditionalLibraryDirectories>$(SolutionDir)vendor\DXTK\Bin\Desktop_2022_Win10\$(Platform)\$(Configuration)\</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)Dependencies\DXTK\Bin\Desktop_2022_Win10\$(Platform)\$(Configuration)\</AdditionalLibraryDirectories>
     </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -142,7 +142,7 @@
       <PrecompiledHeader>Create</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)vendor\DXTK\Inc;$(SolutionDir)Blainn\vendor\imgui;$(SolutionDir)Blainn\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Dependencies\DXTK\Inc;$(SolutionDir)Blainn\vendor\imgui;$(SolutionDir)Blainn\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>false</MultiProcessorCompilation>
     </ClCompile>
     <Link>
@@ -155,11 +155,13 @@
       <AdditionalDependencies>DirectXTK12.lib</AdditionalDependencies>
     </Lib>
     <Lib>
-      <AdditionalLibraryDirectories>$(SolutionDir)vendor\DXTK\Bin\Desktop_2022_Win10\$(Platform)\$(Configuration)\</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)Dependencies\DXTK\Bin\Desktop_2022_Win10\$(Platform)\$(Configuration)\</AdditionalLibraryDirectories>
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="src\Core\Buffer.h" />
+    <ClInclude Include="src\Core\Delegates.h" />
+    <ClInclude Include="src\Core\Input.h" />
     <ClInclude Include="src\DX12\DXFrameResource.h" />
     <ClInclude Include="src\DX12\DXGraphicsPrimitive.h" />
     <ClInclude Include="src\Core\Layer.h" />
@@ -193,6 +195,8 @@
     <ClInclude Include="src\Core\Events\Event.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\Core\Delegates.cpp" />
+    <ClCompile Include="src\Core\Input.cpp" />
     <ClCompile Include="src\Core\Layer.cpp" />
     <ClCompile Include="src\Core\LayerStack.cpp" />
     <ClCompile Include="src\Core\UUID.cpp" />

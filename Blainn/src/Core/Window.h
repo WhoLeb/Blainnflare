@@ -2,6 +2,8 @@
 
 #include "Events/Event.h"
 
+#include <utility>
+
 namespace Blainn
 {
 	struct WindowDesc
@@ -37,6 +39,8 @@ namespace Blainn
 
 		virtual inline std::pair<UINT32, UINT32> GetSize() const { return { m_Data.Width, m_Data.Height }; }
 		//virtual inline std::pair<float, float> GetWindowPos() const;
+
+		std::pair<int, int> GetCursorPosition();
 
 		virtual void SetEventCallback(const EventCallbackFn& callback) { m_Data.EventCallback = callback; };
 		virtual const std::string& GetTitle() const { return m_Data.Title; }

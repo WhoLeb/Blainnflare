@@ -8,6 +8,9 @@ namespace Blainn
 {
 	void Scene::UpdateScene(const GameTimer& gt)
 	{
+		for (auto& actor : m_AllActors)
+			actor->OnUpdate(gt);
+
 		Application::Get().GetRenderingContext()->UpdateMainPassConstantBuffers(
 			gt, m_View, m_Proj, m_EyePos
 		);

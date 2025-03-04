@@ -10,6 +10,7 @@
 #include "Scene/Actor.h"
 #include "Util/MathHelper.h"
 
+#include "Actors/Ball.h"
 
 #include <memory>
 #include <vector>
@@ -33,10 +34,27 @@ namespace Pong
 		Super::OnAttach();
 
 		auto box = CreateCube(2.f);
-		m_BoxActor = std::make_shared<Blainn::Actor>();
-		m_BoxActor->SetModel(box);
-
-		m_Scene->AddOpaqueActor(m_BoxActor);
+		auto ballMesh = CreateCube(0.5f);
+		{
+			std::shared_ptr<PlayerRacket> leftRacket = std::make_shared<PlayerRacket>(Blainn::KeyCode::W, Blainn::KeyCode::S);
+			leftRacket->SetModel(box);
+			leftRacket->SetWorldPosition({ 0.f, 0.f, 10.f });
+			leftRacket->SetScale({ .1f, 1.3f, 0.1f });
+			m_Scene->AddOpaqueActor(leftRacket);
+		}
+		{
+			auto rightRacket = std::make_shared<PlayerRacket>(Blainn::KeyCode::UpArrow, Blainn::KeyCode::DownArrow);
+			rightRacket->SetModel(box);
+			rightRacket->SetWorldPosition({ 0.f, 0.f, -10.f });
+			rightRacket->SetScale({ .1f, 1.3f, 0.1f });
+			m_Scene->AddOpaqueActor(rightRacket);
+		}
+		{
+			auto ball = std::make_shared<Ball>();
+			ball->SetModel(ballMesh);
+			ball->SetWorldPosition({ 0.f, 0.f, 0.f });
+			m_Scene->AddOpaqueActor(ball);
+		}
 	}
 
 	void PongLayer::OnDetach()
@@ -63,8 +81,8 @@ namespace Pong
 
 		m_Scene->UpdateCamera(m_EyePos, m_View, m_Proj);
 
-		DirectX::SimpleMath::Vector3 prevPos = m_BoxActor->GetTransform().position;
-		m_BoxActor->SetWorldPosition(prevPos + DirectX::SimpleMath::Vector3(0.1, 0.f, 0.f) * gt.DeltaTime());
+		//DirectX::SimpleMath::Vector3 prevPos = m_BoxActor->GetTransform().position;
+		//m_BoxActor->SetWorldPosition(prevPos + DirectX::SimpleMath::Vector3(0.1, 0.f, 0.f) * gt.DeltaTime());
 	}
 
 	void PongLayer::OnEvent(Blainn::Event& e)
@@ -78,19 +96,19 @@ namespace Pong
 
 	bool PongLayer::OnMouseMove(Blainn::MouseMovedEvent& e)
 	{
-		int x = e.GetX();
-		int y = e.GetY();
+		//int x = e.GetX();
+		//int y = e.GetY();
 
-		float dx = XMConvertToRadians(0.25 * static_cast<float>(x - m_LastMousePos.x));
-		float dy = XMConvertToRadians(0.25 * static_cast<float>(y - m_LastMousePos.y));
+		//float dx = XMConvertToRadians(0.25 * static_cast<float>(x - m_LastMousePos.x));
+		//float dy = XMConvertToRadians(0.25 * static_cast<float>(y - m_LastMousePos.y));
 
-		m_Theta += dx;
-		m_Phi += dy;
+		//m_Theta += dx;
+		//m_Phi += dy;
 
-		m_Phi = Blainn::MathHelper::Clamp(m_Phi, 0.1f, Blainn::MathHelper::Pi - 0.1f);
+		//m_Phi = Blainn::MathHelper::Clamp(m_Phi, 0.1f, Blainn::MathHelper::Pi - 0.1f);
 
-		m_LastMousePos.x = x;
-		m_LastMousePos.y = y;
+		//m_LastMousePos.x = x;
+		//m_LastMousePos.y = y;
 
 		return false;
 	}
