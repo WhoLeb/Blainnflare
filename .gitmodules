@@ -7,7 +7,4 @@
 	url = git://github.com/gabime/spdlog.git
 [submodule "Dependencies/DXTK"]
 	path = Dependencies/DXTK
-	url = git://github.com/microsoft/DirectXTK12.git
-[submodule "Dependencies/CppDelegates"]
-	path = Dependencies/CppDelegates
-	url = git://github.com/simco50/CppDelegates.git
+	url = https://github.com/microsoft/DirectXTK12.git
