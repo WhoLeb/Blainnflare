@@ -1,10 +1,13 @@
 [submodule "vendor/imgui"]
 	path = vendor/imgui
-	url = https://github.com/ocornut/imgui.git
+	url = git://github.com/ocornut/imgui.git
 	branch = docking
 [submodule "Blainn/vendor/spdlog"]
 	path = Blainn/vendor/spdlog
-	url = https://github.com/gabime/spdlog.git
-[submodule "vendor/DXTK"]
-	path = vendor/DXTK
-	url = https://github.com/microsoft/DirectXTK12.git
+	url = git://github.com/gabime/spdlog.git
+[submodule "Dependencies/DXTK"]
+	path = Dependencies/DXTK
+	url = git://github.com/microsoft/DirectXTK12.git
+[submodule "Dependencies/CppDelegates"]
+	path = Dependencies/CppDelegates
+	url = git://github.com/simco50/CppDelegates.git
