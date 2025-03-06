@@ -14,6 +14,9 @@
 
 namespace Pong
 {
+	struct HitInfo;
+	class Ball;
+
 	class PongLayer : public Blainn::Layer
 	{
 		using Super = Blainn::Layer;
@@ -28,6 +31,9 @@ namespace Pong
 		bool OnMouseMove(Blainn::MouseMovedEvent& e);
 		bool OnWindowResize(Blainn::WindowResizeEvent& e);
 	private:
+		void OnWallHit(Pong::HitInfo hit);
+		void PrintScore();
+
 		std::vector<std::shared_ptr<Blainn::DXGraphicsPrimitive>> m_Primitives{};
 
 		std::shared_ptr<Blainn::Scene> m_Scene;
@@ -43,7 +49,16 @@ namespace Pong
 
 		POINT m_LastMousePos{0, 0};
 
-		std::shared_ptr<PlayerRacket> m_BoxActor;
+		std::shared_ptr<PlayerRacket> m_LeftRacket;
+		std::shared_ptr<PlayerRacket> m_RightRacket;
+		std::shared_ptr<Pong::Ball> m_Ball;
+
+		struct Score
+		{
+			int LeftScore = 0;
+			int RightScore = 0;
+		} m_PlayerScore;
 	};
+
 }
 

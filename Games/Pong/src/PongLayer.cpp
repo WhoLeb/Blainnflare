@@ -11,6 +11,9 @@
 #include "Util/MathHelper.h"
 
 #include "Actors/Ball.h"
+#include "Actors/PlayerRacket.h"
+
+#include <iostream>
 
 #include <memory>
 #include <vector>
@@ -19,7 +22,7 @@ using namespace DirectX;
 
 namespace Pong
 {
-	static std::shared_ptr<Blainn::DXGraphicsPrimitive> CreateCube(float side = 2.f);
+	static std::shared_ptr<Blainn::DXGraphicsPrimitive> CreateCube(float side = 2.f, const DirectX::SimpleMath::Color& color = {1.f, 1.f, 1.f});
 
 	PongLayer::PongLayer()
 		: Blainn::Layer("PongLayer")
@@ -33,27 +36,57 @@ namespace Pong
 	{
 		Super::OnAttach();
 
-		auto box = CreateCube(2.f);
-		auto ballMesh = CreateCube(0.5f);
+		auto box = CreateCube(2.f, {1.f, 1.f, 1.f});
+#pragma region walls
 		{
-			std::shared_ptr<PlayerRacket> leftRacket = std::make_shared<PlayerRacket>(Blainn::KeyCode::W, Blainn::KeyCode::S);
-			leftRacket->SetModel(box);
-			leftRacket->SetWorldPosition({ 0.f, 0.f, 10.f });
-			leftRacket->SetScale({ .1f, 1.3f, 0.1f });
-			m_Scene->AddOpaqueActor(leftRacket);
+			auto wall = std::make_shared<Blainn::Actor>();
+			wall->SetModel(box);
+			wall->SetWorldPosition({ 0.f, 0.f, 10.2f });
+			wall->SetScale({ .1f, 7.f, .1f });
+			m_Scene->AddOpaqueActor(wall);
 		}
 		{
-			auto rightRacket = std::make_shared<PlayerRacket>(Blainn::KeyCode::UpArrow, Blainn::KeyCode::DownArrow);
-			rightRacket->SetModel(box);
-			rightRacket->SetWorldPosition({ 0.f, 0.f, -10.f });
-			rightRacket->SetScale({ .1f, 1.3f, 0.1f });
-			m_Scene->AddOpaqueActor(rightRacket);
+			auto wall = std::make_shared<Blainn::Actor>();
+			wall->SetModel(box);
+			wall->SetWorldPosition({ 0.f, 0.f, -10.2f });
+			wall->SetScale({ .1f, 7.f, .1f });
+			m_Scene->AddOpaqueActor(wall);
 		}
 		{
-			auto ball = std::make_shared<Ball>();
-			ball->SetModel(ballMesh);
-			ball->SetWorldPosition({ 0.f, 0.f, 0.f });
-			m_Scene->AddOpaqueActor(ball);
+			auto wall = std::make_shared<Blainn::Actor>();
+			wall->SetModel(box);
+			wall->SetWorldPosition({ 0.f, 7.2f, 0.f });
+			wall->SetScale({ 10.f, .2f, 0.1f });
+			m_Scene->AddOpaqueActor(wall);
+		}
+		{
+			auto wall = std::make_shared<Blainn::Actor>();
+			wall->SetModel(box);
+			wall->SetWorldPosition({ 0.f, -7.2f, .0f });
+			wall->SetScale({ 10.f, 0.2f, 0.1f });
+			m_Scene->AddOpaqueActor(wall);
+		}
+#pragma endregion
+		{
+			m_LeftRacket = std::make_shared<PlayerRacket>(Blainn::KeyCode::W, Blainn::KeyCode::S);
+			m_LeftRacket->SetModel(box);
+			m_LeftRacket->SetWorldPosition({ 0.f, 0.f, 10.f });
+			m_LeftRacket->SetScale({ .1f, 1.3f, 0.1f });
+			m_Scene->AddOpaqueActor(m_LeftRacket);
+		}
+		{
+			m_RightRacket = std::make_shared<PlayerRacket>(Blainn::KeyCode::UpArrow, Blainn::KeyCode::DownArrow);
+			m_RightRacket->SetModel(box);
+			m_RightRacket->SetWorldPosition({ 0.f, 0.f, -10.f });
+			m_RightRacket->SetScale({ .1f, 1.3f, 0.1f });
+			m_Scene->AddOpaqueActor(m_RightRacket);
+		}
+		{
+			auto ballMesh = CreateCube(0.4f);
+			m_Ball = std::make_shared<Ball>([this](Pong::HitInfo hit) { this->OnWallHit(hit); });
+			m_Ball->SetModel(ballMesh);
+			m_Ball->SetWorldPosition({ 0.f, 0.f, 0.f });
+			m_Scene->AddOpaqueActor(m_Ball);
 		}
 	}
 
@@ -124,18 +157,58 @@ namespace Pong
 		return false;
 	}
 
-	std::shared_ptr<Blainn::DXGraphicsPrimitive> CreateCube(float side)
+	void PongLayer::OnWallHit(Pong::HitInfo hit)
+	{
+		const auto racketYScale = m_LeftRacket->GetTransform().scale.y;
+		switch (hit.wall)
+		{
+		case WallType::LeftWall:
+			if ((hit.hitPos.y > m_LeftRacket->GetTransform().position.y + racketYScale)
+				|| (hit.hitPos.y < m_LeftRacket->GetTransform().position.y - racketYScale))
+			{
+				m_Ball->ResetSpeed();
+				m_PlayerScore.RightScore++;
+				PrintScore();
+			}
+			break;
+		case WallType::RightWall:
+			if ((hit.hitPos.y > m_RightRacket->GetTransform().position.y + racketYScale)
+				|| (hit.hitPos.y < m_RightRacket->GetTransform().position.y - racketYScale))
+			{
+				m_Ball->ResetSpeed();
+				m_PlayerScore.LeftScore++;
+				PrintScore();
+			}
+			break;
+		}
+	}
+
+	void PongLayer::PrintScore()
+	{
+		std::cout << "Left: " << m_PlayerScore.LeftScore << ", Right: " <<
+			m_PlayerScore.RightScore << "\n";
+	}
+
+	std::shared_ptr<Blainn::DXGraphicsPrimitive> CreateCube(float side, const SimpleMath::Color& color)
 	{
 		std::vector<Blainn::DXGraphicsPrimitive::Vertex> vertices =
 		{
-		{ SimpleMath::Vector3(-side / 2, -side / 2, -side / 2), SimpleMath::Vector3(0, 0, 0), SimpleMath::Color(1.f, 1.f, 1.f),	SimpleMath::Vector2(0, 0)},
-		{ SimpleMath::Vector3(-side / 2, +side / 2, -side / 2), SimpleMath::Vector3(0, 0, 0), SimpleMath::Color(0.f, 0.f, 0.f),	SimpleMath::Vector2(0, 0)},
-		{ SimpleMath::Vector3(+side / 2, +side / 2, -side / 2), SimpleMath::Vector3(0, 0, 0), SimpleMath::Color(1.f, 0.f, 0.f),	SimpleMath::Vector2(0, 0)},
-		{ SimpleMath::Vector3(+side / 2, -side / 2, -side / 2), SimpleMath::Vector3(0, 0, 0), SimpleMath::Color(0.f, 1.f, 0.f),	SimpleMath::Vector2(0, 0)},
-		{ SimpleMath::Vector3(-side / 2, -side / 2, +side / 2), SimpleMath::Vector3(0, 0, 0), SimpleMath::Color(0.f, 0.f, 1.f),	SimpleMath::Vector2(0, 0)},
-		{ SimpleMath::Vector3(-side / 2, +side / 2, +side / 2), SimpleMath::Vector3(0, 0, 0), SimpleMath::Color(1.f, 1.f, 0.f),	SimpleMath::Vector2(0, 0)},
-		{ SimpleMath::Vector3(+side / 2, +side / 2, +side / 2), SimpleMath::Vector3(0, 0, 0), SimpleMath::Color(0.f, 1.f, 1.f),	SimpleMath::Vector2(0, 0)},
-		{ SimpleMath::Vector3(+side / 2, -side / 2, +side / 2), SimpleMath::Vector3(0, 0, 0), SimpleMath::Color(1.f, 0.f, 1.f),	SimpleMath::Vector2(0, 0)}
+		//{ SimpleMath::Vector3(-side / 2, -side / 2, -side / 2), SimpleMath::Vector3(0, 0, 0), SimpleMath::Color(1.f, 1.f, 1.f),	SimpleMath::Vector2(0, 0)},
+		//{ SimpleMath::Vector3(-side / 2, +side / 2, -side / 2), SimpleMath::Vector3(0, 0, 0), SimpleMath::Color(0.f, 0.f, 0.f),	SimpleMath::Vector2(0, 0)},
+		//{ SimpleMath::Vector3(+side / 2, +side / 2, -side / 2), SimpleMath::Vector3(0, 0, 0), SimpleMath::Color(1.f, 0.f, 0.f),	SimpleMath::Vector2(0, 0)},
+		//{ SimpleMath::Vector3(+side / 2, -side / 2, -side / 2), SimpleMath::Vector3(0, 0, 0), SimpleMath::Color(0.f, 1.f, 0.f),	SimpleMath::Vector2(0, 0)},
+		//{ SimpleMath::Vector3(-side / 2, -side / 2, +side / 2), SimpleMath::Vector3(0, 0, 0), SimpleMath::Color(0.f, 0.f, 1.f),	SimpleMath::Vector2(0, 0)},
+		//{ SimpleMath::Vector3(-side / 2, +side / 2, +side / 2), SimpleMath::Vector3(0, 0, 0), SimpleMath::Color(1.f, 1.f, 0.f),	SimpleMath::Vector2(0, 0)},
+		//{ SimpleMath::Vector3(+side / 2, +side / 2, +side / 2), SimpleMath::Vector3(0, 0, 0), SimpleMath::Color(0.f, 1.f, 1.f),	SimpleMath::Vector2(0, 0)},
+		//{ SimpleMath::Vector3(+side / 2, -side / 2, +side / 2), SimpleMath::Vector3(0, 0, 0), SimpleMath::Color(1.f, 0.f, 1.f),	SimpleMath::Vector2(0, 0)}
+		{ SimpleMath::Vector3(-side / 2, -side / 2, -side / 2), SimpleMath::Vector3(0, 0, 0), color,	SimpleMath::Vector2(0, 0)},
+		{ SimpleMath::Vector3(-side / 2, +side / 2, -side / 2), SimpleMath::Vector3(0, 0, 0), color,	SimpleMath::Vector2(0, 0)},
+		{ SimpleMath::Vector3(+side / 2, +side / 2, -side / 2), SimpleMath::Vector3(0, 0, 0), color,	SimpleMath::Vector2(0, 0)},
+		{ SimpleMath::Vector3(+side / 2, -side / 2, -side / 2), SimpleMath::Vector3(0, 0, 0), color,	SimpleMath::Vector2(0, 0)},
+		{ SimpleMath::Vector3(-side / 2, -side / 2, +side / 2), SimpleMath::Vector3(0, 0, 0), color,	SimpleMath::Vector2(0, 0)},
+		{ SimpleMath::Vector3(-side / 2, +side / 2, +side / 2), SimpleMath::Vector3(0, 0, 0), color,	SimpleMath::Vector2(0, 0)},
+		{ SimpleMath::Vector3(+side / 2, +side / 2, +side / 2), SimpleMath::Vector3(0, 0, 0), color,	SimpleMath::Vector2(0, 0)},
+		{ SimpleMath::Vector3(+side / 2, -side / 2, +side / 2), SimpleMath::Vector3(0, 0, 0), color,	SimpleMath::Vector2(0, 0)}
 		};
 
 		std::vector<UINT32> indices =

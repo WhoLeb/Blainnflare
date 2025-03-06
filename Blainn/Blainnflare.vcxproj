@@ -159,6 +159,9 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="src\Components\Actor Components\CollisionComponent.h" />
+    <ClInclude Include="src\Components\Actor Components\MeshComponent.h" />
+    <ClInclude Include="src\Components\Component.h" />
     <ClInclude Include="src\Core\Buffer.h" />
     <ClInclude Include="src\Core\Delegates.h" />
     <ClInclude Include="src\Core\Input.h" />
