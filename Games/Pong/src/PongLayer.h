@@ -3,7 +3,7 @@
 #include "Core/Events/MouseEvent.h"
 #include "Core/Events/ApplicationEvent.h"
 #include "Core/Layer.h"
-#include "DX12/DXGraphicsPrimitive.h"
+#include "DX12/DXStaticMesh.h"
 #include "Scene/Scene.h"
 
 #include "Actors/PlayerRacket.h"
@@ -34,7 +34,7 @@ namespace Pong
 		void OnWallHit(Pong::HitInfo hit);
 		void PrintScore();
 
-		std::vector<std::shared_ptr<Blainn::DXGraphicsPrimitive>> m_Primitives{};
+		std::vector<std::shared_ptr<Blainn::DXStaticMesh>> m_Primitives{};
 
 		std::shared_ptr<Blainn::Scene> m_Scene;
 

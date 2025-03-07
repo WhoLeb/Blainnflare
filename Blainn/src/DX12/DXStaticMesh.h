@@ -10,7 +10,7 @@
 namespace Blainn
 {
 
-	class DXGraphicsPrimitive
+	class DXStaticMesh
 	{
 	public:
 		struct Vertex
@@ -33,7 +33,7 @@ namespace Blainn
 			}
 		};
 
-		DXGraphicsPrimitive(
+		DXStaticMesh(
 			const std::vector<Vertex>& vertices,
 			const std::vector<UINT32>* indices = nullptr
 		);

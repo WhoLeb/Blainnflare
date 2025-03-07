@@ -67,9 +67,6 @@ namespace Blainn
 		m_bPaused = false;
 		OnResize();
 
-		DirectX::SimpleMath::Matrix proj = DirectX::SimpleMath::Matrix::CreatePerspectiveFieldOfView(0.25f * Blainn::MathHelper::Pi, AspectRatio(), 0.0001f, 100000.f);
-		m_Scene->UpdateCamera(DirectX::SimpleMath::Vector3(0.f), DirectX::SimpleMath::Matrix::Identity, proj);
-
 		return true;
 	}
 
@@ -82,8 +79,6 @@ namespace Blainn
 
 		while (msg.message != WM_QUIT)
 		{
-			Input::TransitionPressedKeys();
-			Input::TransitionPressedButtons();
 
 			if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
 			{
@@ -115,7 +110,11 @@ namespace Blainn
 	void Application::OnResize()
 	{
 		if(m_ClientWidth > 0 && m_ClientHeight > 0)
+		{
 			m_RenderingContext->Resize(m_ClientWidth, m_ClientWidth);
+			if(m_Scene->GetMainCamera())
+				m_Scene->GetMainCamera()->GetCamera().SetViewportDimentions(m_ClientWidth, m_ClientHeight);
+		}
 
 	}
 
@@ -126,13 +125,18 @@ namespace Blainn
 
 		m_RenderingContext->OnUpdate();
 		m_Scene->UpdateScene(timer);
+		if (m_Scene->GetMainCamera())
+			Application::Get().GetRenderingContext()->UpdateMainPassConstantBuffers(
+				timer, m_Scene->GetMainCamera()->GetCamera()
+			);
+		Application::Get().GetRenderingContext()->UpdateObjectsConstantBuffers(*m_Scene);
 	}
 
 	void Application::Draw(const GameTimer& timer)
 	{
-		auto commandList = m_RenderingContext->BeginFrame();
+		m_RenderingContext->BeginFrame();
 
-		m_RenderingContext->DrawRenderActors(commandList.Get(), m_Scene->GetAllActors());
+		m_RenderingContext->DrawSceneMeshes(*m_Scene);
 
 		m_RenderingContext->EndFrame();
 	}

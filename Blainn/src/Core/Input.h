@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Delegates.h"
 #include "KeyCodes.h"
 
 #include <map>
@@ -25,7 +24,7 @@ namespace Blainn
 	class Input
 	{
 	public:
-		static void Update() {}
+		static void Update();
 
 		static bool IsKeyPressed(KeyCode keyCode);
 		static bool IsKeyHeld(KeyCode keyCode);
@@ -40,6 +39,7 @@ namespace Blainn
 		static int GetMouseX();
 		static int GetMouseY();
 		static std::pair<int, int> GetMousePosition();
+		static std::pair<int, int> GetMouseDelta();
 
 		static void SetCursorMode(CursorMode mode);
 		static CursorMode GetCursorMode();
@@ -51,14 +51,19 @@ namespace Blainn
 		static void UpdateButtonState(MouseButton button, KeyState newState);
 		static void ClearReleasedKeys();
 
+	private:
+		static void UpdateMouseDelta();
 
 	private:
 		inline static std::map<KeyCode, KeyData> s_KeyData;
 		inline static std::map<MouseButton, ButtonData> s_MouseData;
+
+		inline static int s_MouseDeltaX = 0;
+		inline static int s_MouseDeltaY = 0;
+		inline static int s_LastMouseX = 0;
+		inline static int s_LastMouseY = 0;
+		inline static bool s_CursorLocked = false;
+
+		inline static CursorMode s_CursorMode;
 	};
 }
-//
-//DECLARE_MULTICAST_DELEGATE(KeyPressedDelegate, Blainn::KeyData&);
-//KeyPressedDelegate g_KeyPressedDelegate;
-//DECLARE_MULTICAST_DELEGATE(KeyReleasedDelegate, Blainn::KeyData&);
-//KeyReleasedDelegate g_KeyReleasedDelegate;

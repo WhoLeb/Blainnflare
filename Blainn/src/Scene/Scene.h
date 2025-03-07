@@ -1,49 +1,64 @@
 #pragma once
 
 #include "Actor.h"
+#include "Components/ActorComponents/CharacterComponents/CameraComponent.h"
 
 #include <vector>
-
+#include <stack>
 
 namespace Blainn
 {
 	class GameTimer;
+	class StaticMeshComponent;
 
 	class Scene
 	{
 	public:
-		Scene() {}
+		Scene();
 		Scene(const Scene& other) = delete;
 		Scene& operator=(const Scene& other) = delete;
 
 		void UpdateScene(const GameTimer& gt);
 		void RenderScene();
 
-		void UpdateCamera(
-			const DirectX::SimpleMath::Vector3& eyePos,
-			const DirectX::SimpleMath::Matrix& view,
-			const DirectX::SimpleMath::Matrix& proj
-		);
+		template<typename T, typename... Args>
+		std::shared_ptr<GameObject> AddGameObject(Args&&... args)
+		{
+			static_assert(std::is_base_of<GameObject, T>, "T must be a GameObject");
 
-		void AddOpaqueActor(std::shared_ptr<Actor> actor);
-		void AddTransparentActor(std::shared_ptr<Actor> actor);
+			auto obj = std::make_shared<T>(std::forward<Args>(args));
+			m_PendingAdditions.push_back(obj);
+			AssignCBIdx(obj->GetUUID());
+			return obj;
+		}
+		void RemoveGameObject(std::shared_ptr<GameObject> gameObject);
 
-		std::vector<std::shared_ptr<Actor>> GetAllActors() const { return m_AllActors; }
-		std::vector<std::shared_ptr<Actor>> GetOpaqueActors() const { return m_OpaqueActors; }
-		std::vector<std::shared_ptr<Actor>> GetTransparentActors() const { return m_TransparentActors; }
+		const std::vector<StaticMeshComponent*>& GetRenderObjects() const { return m_AllRenderObjects; }
 
-		DirectX::SimpleMath::Vector3 GetEyePos() const { return m_EyePos; }
-		DirectX::SimpleMath::Matrix GetView() const { return m_View; }
-		DirectX::SimpleMath::Matrix GetProj() const { return m_Proj; }
-	protected:
-		std::vector<std::shared_ptr<Actor>> m_AllActors;
+		UINT32 GetCBIdx(UUID uuid) const;
 
-		std::vector<std::shared_ptr<Actor>> m_OpaqueActors;
-		std::vector<std::shared_ptr<Actor>> m_TransparentActors;
+		void SetMainCamera(CameraComponent* camera) { m_MainCamera = camera; }
+		CameraComponent* GetMainCamera() const { return m_MainCamera; }
+	private:
+		void ProcessPendingAdditions();
+		void ProcessPendingRemovals();
 
-		// TODO: replace with a scene camera
-		DirectX::SimpleMath::Vector3 m_EyePos{};
-		DirectX::SimpleMath::Matrix m_View{};
-		DirectX::SimpleMath::Matrix m_Proj{};
+		UINT32 AssignCBIdx(UUID uuid);
+		void ReleaseCBIdx(UUID uuid);
+
+	private:
+		std::vector<std::shared_ptr<GameObject>> m_AllObjects;
+		std::vector<StaticMeshComponent*> m_AllRenderObjects;
+		std::vector<StaticMeshComponent*> m_OpaqueObjects;
+		std::vector<StaticMeshComponent*> m_TransparentObjects;
+
+		std::vector<std::shared_ptr<GameObject>> m_PendingAdditions;
+		std::vector<std::shared_ptr<GameObject>> m_PendingRemovals;
+
+		// Constant buffer indices and a free list
+		std::unordered_map<UUID, UINT32> m_UUIDToCBIndex;
+		std::stack<UINT32> m_FreeBufferIndices;
+
+		CameraComponent* m_MainCamera = nullptr;
 	};
 }

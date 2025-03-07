@@ -23,6 +23,6 @@ namespace Pong
 	protected:
 		Blainn::KeyCode m_UpKey, m_DownKey;
 		const float m_RacketSpeed = 4;
-		//std::shared_ptr<Blainn::DXGraphicsPrimitive> m_GraphicsPrimitive;
+		//std::shared_ptr<Blainn::DXStaticMesh> m_GraphicsPrimitive;
 	};
 }

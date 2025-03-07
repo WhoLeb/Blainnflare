@@ -2,25 +2,26 @@
 
 namespace Blainn
 {
+	class GameObject;
+	class GameTimer;
+
 	class Component
 	{
+		friend class GameObject;
+	protected:
+		Component() { OnInit(); }
 	public:
-		Component() {}
-		virtual ~Component() { }
+		virtual ~Component() { OnDestroy(); }
+		
+		virtual void OnInit() {}
+		virtual void OnBegin() {}
+		virtual void OnUpdate(const GameTimer& gt) {}
+		virtual void OnDestroy() {}
 
-		virtual Component* GetParent() const { return m_Parent.get(); }
-
-		virtual void Destroy() {
-			for (auto& child : m_Children)
-				child->Destroy();
-		}
+		GameObject* GetOwner() const { return m_OwningObject; }
 
 	protected:
-		std::unique_ptr<Component> m_Parent;
-
-		std::vector<std::shared_ptr<Component>> m_Children;
+		GameObject* m_OwningObject;
 	};
 
-	template <typename T, typename... Args>
-	std::shared_ptr<T> CreateComponent(Args... );
 }

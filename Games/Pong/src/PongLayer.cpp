@@ -5,7 +5,7 @@
 #include "Core/Events/KeyEvent.h"
 #include "Core/Events/MouseEvent.h"
 #include "Core/GameTimer.h"
-#include "DX12/DXGraphicsPrimitive.h"
+#include "DX12/DXStaticMesh.h"
 #include "SimpleMath.h"
 #include "Scene/Actor.h"
 #include "Util/MathHelper.h"
@@ -22,7 +22,7 @@ using namespace DirectX;
 
 namespace Pong
 {
-	static std::shared_ptr<Blainn::DXGraphicsPrimitive> CreateCube(float side = 2.f, const DirectX::SimpleMath::Color& color = {1.f, 1.f, 1.f});
+	static std::shared_ptr<Blainn::DXStaticMesh> CreateCube(float side = 2.f, const DirectX::SimpleMath::Color& color = {1.f, 1.f, 1.f});
 
 	PongLayer::PongLayer()
 		: Blainn::Layer("PongLayer")
@@ -189,9 +189,9 @@ namespace Pong
 			m_PlayerScore.RightScore << "\n";
 	}
 
-	std::shared_ptr<Blainn::DXGraphicsPrimitive> CreateCube(float side, const SimpleMath::Color& color)
+	std::shared_ptr<Blainn::DXStaticMesh> CreateCube(float side, const SimpleMath::Color& color)
 	{
-		std::vector<Blainn::DXGraphicsPrimitive::Vertex> vertices =
+		std::vector<Blainn::DXStaticMesh::Vertex> vertices =
 		{
 		//{ SimpleMath::Vector3(-side / 2, -side / 2, -side / 2), SimpleMath::Vector3(0, 0, 0), SimpleMath::Color(1.f, 1.f, 1.f),	SimpleMath::Vector2(0, 0)},
 		//{ SimpleMath::Vector3(-side / 2, +side / 2, -side / 2), SimpleMath::Vector3(0, 0, 0), SimpleMath::Color(0.f, 0.f, 0.f),	SimpleMath::Vector2(0, 0)},
@@ -233,6 +233,6 @@ namespace Pong
 			4, 3, 7
 		};
 
-		return std::make_shared<Blainn::DXGraphicsPrimitive>(vertices, &indices);
+		return std::make_shared<Blainn::DXStaticMesh>(vertices, &indices);
 	}
 }

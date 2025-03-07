@@ -159,22 +159,29 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="src\Components\Actor Components\CollisionComponent.h" />
-    <ClInclude Include="src\Components\Actor Components\MeshComponent.h" />
+    <ClInclude Include="src\Components\ActorComponents\CharacterComponents\InputComponent.h" />
+    <ClInclude Include="src\Components\ActorComponents\CharacterComponents\PlayerInputComponent.h" />
+    <ClInclude Include="src\Components\ActorComponents\CollisionComponent.h" />
+    <ClInclude Include="src\Components\ActorComponents\StaticMeshComponent.h" />
+    <ClInclude Include="src\Components\ActorComponents\CharacterComponents\CameraComponent.h" />
+    <ClInclude Include="src\Components\ActorComponents\TransformComponent.h" />
     <ClInclude Include="src\Components\Component.h" />
     <ClInclude Include="src\Core\Buffer.h" />
+    <ClInclude Include="src\Core\Camera.h" />
     <ClInclude Include="src\Core\Delegates.h" />
     <ClInclude Include="src\Core\Input.h" />
     <ClInclude Include="src\DX12\DXFrameResource.h" />
-    <ClInclude Include="src\DX12\DXGraphicsPrimitive.h" />
+    <ClInclude Include="src\DX12\DXStaticMesh.h" />
     <ClInclude Include="src\Core\Layer.h" />
     <ClInclude Include="src\Core\LayerStack.h" />
     <ClInclude Include="src\Core\UUID.h" />
     <ClInclude Include="src\DX12\DXBuffer.h" />
+    <ClInclude Include="src\DX12\DXModel.h" />
     <ClInclude Include="src\DX12\DXPipeline.h" />
     <ClInclude Include="src\DX12\DXRenderingContext.h" />
     <ClInclude Include="src\DX12\DXResourceManager.h" />
     <ClInclude Include="src\DX12\DXShader.h" />
+    <ClInclude Include="src\DX12\DXTexture.h" />
     <ClInclude Include="src\DX12\DXUploadBuffer.h" />
     <ClInclude Include="src\EntryPoint.h" />
     <ClInclude Include="src\ImGui\ImGuiLayer.h" />
@@ -198,14 +205,17 @@
     <ClInclude Include="src\Core\Events\Event.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\Components\ActorComponents\TransformComponent.cpp" />
+    <ClCompile Include="src\Core\Camera.cpp" />
     <ClCompile Include="src\Core\Delegates.cpp" />
+    <ClCompile Include="src\Core\GameObject.cpp" />
     <ClCompile Include="src\Core\Input.cpp" />
     <ClCompile Include="src\Core\Layer.cpp" />
     <ClCompile Include="src\Core\LayerStack.cpp" />
     <ClCompile Include="src\Core\UUID.cpp" />
     <ClCompile Include="src\DX12\DXBuffer.cpp" />
     <ClCompile Include="src\DX12\DXFrameResource.cpp" />
-    <ClCompile Include="src\DX12\DXGraphicsPrimitive.cpp" />
+    <ClCompile Include="src\DX12\DXStaticMesh.cpp" />
     <ClCompile Include="src\DX12\DXRenderingContext.cpp" />
     <ClCompile Include="src\DX12\DXResourceManager.cpp" />
     <ClCompile Include="src\DX12\DXShader.cpp" />

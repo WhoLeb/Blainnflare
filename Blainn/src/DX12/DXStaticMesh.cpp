@@ -1,11 +1,11 @@
 #include "pch.h"
-#include "DXGraphicsPrimitive.h"
+#include "DXStaticMesh.h"
 
 #include "Core/Application.h"
 
 namespace Blainn
 {
-	DXGraphicsPrimitive::DXGraphicsPrimitive(
+	DXStaticMesh::DXStaticMesh(
 		const std::vector<Vertex>& vertices,
 		const std::vector<UINT32>* indices)
 	{
@@ -42,7 +42,7 @@ namespace Blainn
 		}
 	}
 
-	void DXGraphicsPrimitive::Draw()
+	void DXStaticMesh::Draw()
 	{
 		Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> cmdList = Application::Get().GetRenderingContext()->GetCommandList();
 

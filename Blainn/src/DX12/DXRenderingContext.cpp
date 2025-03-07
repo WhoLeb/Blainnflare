@@ -1,12 +1,17 @@
 #include "pch.h"
 #include "DXRenderingContext.h"
 
+#include "Components/ActorComponents/StaticMeshComponent.h"
+#include "Components/ActorComponents/TransformComponent.h"
+#include "Core/GameObject.h"
 #include "Core/GameTimer.h"
 #include "Core/Window.h"
 #include "DXFrameResource.h"
-#include "DXGraphicsPrimitive.h"
+#include "DXStaticMesh.h"
 #include "DXShader.h"
-#include "Scene/Actor.h"
+#include "DXModel.h"
+#include "Scene/Scene.h"
+
 
 using Microsoft::WRL::ComPtr;
 using namespace DirectX;
@@ -104,7 +109,7 @@ namespace Blainn
 		FlushCommandQueue();
 	}
 
-	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> DXRenderingContext::BeginFrame()
+	void DXRenderingContext::BeginFrame()
 	{
 		auto cmdListAlloc = m_CurrentFrameResource->GetCommandAlloc();
 		ThrowIfFailed(cmdListAlloc->Reset());
@@ -134,7 +139,6 @@ namespace Blainn
 		auto passCbvHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(m_CBVHeap->GetGPUDescriptorHandleForHeapStart());
 		passCbvHandle.Offset(passCbvIndex, m_CbvSrvUavDescriptorSize);
 		m_CommandList->SetGraphicsRootDescriptorTable(1, passCbvHandle);
-		return m_CommandList;
 	}
 
 	void DXRenderingContext::EndFrame()
@@ -159,22 +163,28 @@ namespace Blainn
 		m_CommandQueue->Signal(m_Fence.Get(), m_CurrentFence);
 	}
 
-	void DXRenderingContext::DrawRenderActors(ID3D12GraphicsCommandList* cmdList, const std::vector<std::shared_ptr<Actor>>& actors)
+	void DXRenderingContext::DrawSceneMeshes(const Scene& scene)
 	{
 		UINT objCBByteSize = d3dUtil::CalcConstantBufferByteSize(sizeof(ObjectConstants));
 
 		auto objectCB = m_CurrentFrameResource->GetObjectBufferResource();
 
-		for (UINT64 i = 0; i < actors.size(); ++i)
+		const auto& meshes = scene.GetRenderObjects();
+
+		for (UINT64 i = 0; i < meshes.size(); ++i)
 		{
-			auto& actor = actors[i];
-			UINT cbvIndex = m_CurrentFrameResourceIndex * g_NumObjects + actor->m_ObjectConstantBufferIndex;
+			auto* model = meshes[i];
+			auto* owner = model->GetOwner();
+			if (!owner) continue;
+
+			auto bufferIndex = scene.GetCBIdx(owner->GetUUID());
+			UINT cbvIndex = m_CurrentFrameResourceIndex * g_NumObjects + bufferIndex;
 			auto cbvHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(m_CBVHeap->GetGPUDescriptorHandleForHeapStart());
 			cbvHandle.Offset(cbvIndex, m_CbvSrvUavDescriptorSize);
 
-			cmdList->SetGraphicsRootDescriptorTable(0, cbvHandle);
+			m_CommandList->SetGraphicsRootDescriptorTable(0, cbvHandle);
 
-			actor->m_GraphicsPrimitive->Draw();
+			model->OnRender();
 		}
 	}
 
@@ -192,28 +202,43 @@ namespace Blainn
 		}
 	}
 
-	void DXRenderingContext::UpdateObjectsConstantBuffers(const std::vector<std::shared_ptr<Actor>>& objects)
+	void DXRenderingContext::UpdateObjectsConstantBuffers(const Scene& scene)
 	{
 		auto currentObjectCB = m_CurrentFrameResource->GetObjectConstantBuffer();
-		for (auto& obj : objects)
+		const auto& renderObjects = scene.GetRenderObjects();
+		for (auto& mesh : renderObjects)
 		{
-			if (obj->m_NumFramesDirty > 0)
+			auto* owner = mesh->GetOwner();
+			if (!owner) continue;
+
+			auto transform = owner->GetComponent<TransformComponent>();
+			if (!transform) continue;
+
+			UUID uuid = owner->GetUUID();
+			UINT32 bufferIdx = scene.GetCBIdx(uuid);
+			if (bufferIdx == UINT32_MAX)
+			{
+				OutputDebugString(L"Object uuid was not correlated with buffer index correctly");
+				continue;
+			}
+
+			if (transform->GetFramesDirty() > 0)
 			{
 				ObjectConstants objConstants;
-				objConstants.World = obj->m_WorldMatrix.Transpose();
+				objConstants.World = transform->GetWorldMatrix().Transpose();
 
-				currentObjectCB->CopyData(obj->m_ObjectConstantBufferIndex, objConstants);
+				currentObjectCB->CopyData(bufferIdx, objConstants);
 
-				obj->m_NumFramesDirty--;
+				transform->DecreaseFramesDirty();
 			}
 		}
 	}
 
-	void DXRenderingContext::UpdateMainPassConstantBuffers(const GameTimer& gt, const DirectX::SimpleMath::Matrix& viewM, const DirectX::SimpleMath::Matrix& projM, const DirectX::SimpleMath::Vector3& eyePos)
+	void DXRenderingContext::UpdateMainPassConstantBuffers(const GameTimer& gt, const Camera& camera)
 	{
 		using namespace DirectX;
-		DirectX::SimpleMath::Matrix view = viewM;
-		DirectX::SimpleMath::Matrix proj = projM;
+		DirectX::SimpleMath::Matrix view = camera.GetViewMatrix();
+		DirectX::SimpleMath::Matrix proj = camera.GetProjectionMatrix();
 
 		DirectX::SimpleMath::Matrix viewProj = view * proj;
 		DirectX::SimpleMath::Matrix invView = view.Invert();
@@ -225,18 +250,12 @@ namespace Blainn
 		m_MainPassCB.Proj = proj.Transpose();
 		m_MainPassCB.InvProj = invProj.Transpose();
 		m_MainPassCB.ViewProj = viewProj.Transpose();
-		//m_MainPassCB.ViewProj = {
-			//1.63085, 0.52443, 0.37662, 0.37625,
-			//0.0, 2.09077, -0.5005, -0.5,
-			//-0.78665, 1.08724, 0.7808, 0.78002,
-			//8.63390e-07, -1.15119e-06, 14.01401, 15
-		//};
 		m_MainPassCB.InvViewProj = invViewProj.Transpose();
-		m_MainPassCB.EyePosW = eyePos;
-		m_MainPassCB.RenderTargetSize = { 100, 100 };
+		m_MainPassCB.EyePosW = camera.GetPosition();
+		m_MainPassCB.RenderTargetSize = { float(camera.GetViewportWidth()), float(camera.GetViewportHeight()) };
 		m_MainPassCB.InvRenderTargetSize = SimpleMath::Vector2(1.f / m_MainPassCB.RenderTargetSize.x, 1.f / m_MainPassCB.RenderTargetSize.y);
-		m_MainPassCB.NearZ = 0.01f;
-		m_MainPassCB.FarZ = 100000.f;
+		m_MainPassCB.NearZ = camera.GetNearPlane();
+		m_MainPassCB.FarZ = camera.GetFarPlane();
 		m_MainPassCB.TotalTime = gt.TotalTime();
 		m_MainPassCB.DeltaTime = gt.DeltaTime();
 
@@ -486,7 +505,7 @@ namespace Blainn
 
 		D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc;
 		ZeroMemory(&psoDesc, sizeof(D3D12_GRAPHICS_PIPELINE_STATE_DESC));
-		auto inputLayout = DXGraphicsPrimitive::Vertex::GetElementLayout();
+		auto inputLayout = DXStaticMesh::Vertex::GetElementLayout();
 		psoDesc.InputLayout = { inputLayout.data(), (UINT)inputLayout.size() };
 		psoDesc.pRootSignature = m_RootSignature.Get();
 		psoDesc.VS =

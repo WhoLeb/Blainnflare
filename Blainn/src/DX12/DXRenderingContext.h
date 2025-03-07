@@ -4,7 +4,6 @@
 #include "DXDevice.h"
 #include "DXFrameResource.h"
 #include "DXShader.h"
-#include "Scene/Actor.h"
 
 #include <dxgi1_4.h>
 #include <d3d12.h>
@@ -18,6 +17,10 @@ extern const UINT32 g_NumObjects;
 namespace Blainn
 {
 	class Window;
+	class StaticMeshComponent;
+	class DXModel;
+	class Scene;
+	class Camera;
 
 	class DXRenderingContext 
 	{
@@ -28,19 +31,16 @@ namespace Blainn
 		void Init(std::shared_ptr<Window> wnd);
 		void CreateResources();
 
-		Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> BeginFrame();
+		void BeginFrame();
 		void EndFrame();
 
-		void DrawRenderActors(ID3D12GraphicsCommandList* cmdList, const std::vector<std::shared_ptr<Actor>>& actors);
+		void DrawSceneMeshes(const Scene& scene);
 
 		void OnUpdate();
-		void UpdateObjectsConstantBuffers(const std::vector<std::shared_ptr<Actor>>& objects);
+		void UpdateObjectsConstantBuffers(const Scene& scene);
 		// TODO: a temporary solution, should probably pass a camera instead
 		void UpdateMainPassConstantBuffers(
-			const GameTimer& gt,
-			const DirectX::SimpleMath::Matrix& viewM,
-			const DirectX::SimpleMath::Matrix& projM,
-			const DirectX::SimpleMath::Vector3& eyePos
+			const GameTimer& gt, const Camera& camera
 		);
 
 		void Resize(int newWidth, int newHeight);
