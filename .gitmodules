@@ -11,3 +11,6 @@
 [submodule "Dependencies/CppDelegates"]
 	path = Dependencies/CppDelegates
 	url = https://github.com/simco50/CppDelegates.git
+[submodule "Dependencies/assimp"]
+	path = Dependencies/assimp
+	url = https://github.com/assimp/assimp.git
