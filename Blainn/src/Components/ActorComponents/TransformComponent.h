@@ -4,6 +4,8 @@
 
 #include "SimpleMath.h"
 
+extern const int g_NumFrameResources;
+
 namespace Blainn
 {
 
@@ -17,6 +19,8 @@ namespace Blainn
 	class TransformComponent : public Component
 	{
 	public:
+		TransformComponent() {}
+
 		void SetPosition(const DirectX::SimpleMath::Vector3& newPos);
 		void SetRotation(const DirectX::SimpleMath::Vector3& newPos);
 		void SetScale(const DirectX::SimpleMath::Vector3& newPos);
@@ -34,6 +38,6 @@ namespace Blainn
 		Transform m_Transform;
 		DirectX::SimpleMath::Matrix m_WorldMatrix = DirectX::SimpleMath::Matrix::Identity;
 
-		int m_NumFramesDirty;
+		int m_NumFramesDirty = g_NumFrameResources;
 	};
 }

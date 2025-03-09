@@ -26,7 +26,7 @@ namespace Blainn
 				{
 					{"POSITION",	0, DXGI_FORMAT_R32G32B32_FLOAT,	0, offsetof(Vertex, Position),	D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
 					{"NORMAL",		0, DXGI_FORMAT_R32G32B32_FLOAT,	0, offsetof(Vertex, Normal),	D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
-					{"COLOR",		0, DXGI_FORMAT_R32G32B32_FLOAT,	0, offsetof(Vertex, Color),		D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
+					{"COLOR",		0, DXGI_FORMAT_R32G32B32A32_FLOAT,	0, offsetof(Vertex, Color),	D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
 					{"UV",			0, DXGI_FORMAT_R32G32_FLOAT,	0, offsetof(Vertex, UV),		D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
 				};
 				return vertexDesc;
@@ -39,13 +39,7 @@ namespace Blainn
 		);
 
 		void Draw();
-
-		Microsoft::WRL::ComPtr<ID3D12Resource> VertexBufferUploader;
-		Microsoft::WRL::ComPtr<ID3D12Resource> IndexBufferUploader;
-
 	private:
-		std::shared_ptr<DXResourceManager> m_ResourceManager;
-
 		Microsoft::WRL::ComPtr<ID3D12Resource> m_VertexBuffer;
 		UINT32 m_VertexCount;
 

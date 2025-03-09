@@ -19,23 +19,19 @@ namespace Blainn
 			IID_PPV_ARGS(&m_UploadFence)
 		));
 
-		//D3D12_COMMAND_QUEUE_DESC queueDesc = {};
-		//queueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
-		//queueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
-		//ThrowIfFailed(m_Device->CreateCommandQueue(
-		//	&queueDesc,
-		//	IID_PPV_ARGS(&m_CommandQueue)
-		//));
-
-		ThrowIfFailed(m_Device->CreateCommandAllocator(
-			D3D12_COMMAND_LIST_TYPE_DIRECT,
-			IID_PPV_ARGS(&m_UploadCmdAlloc)
-		));
+		m_UploadAllocators.resize(g_NumFrameResources);
+		for (int i = 0; i < g_NumFrameResources; i++)
+		{
+			ThrowIfFailed(m_Device->CreateCommandAllocator(
+				D3D12_COMMAND_LIST_TYPE_DIRECT,
+				IID_PPV_ARGS(&m_UploadAllocators[i].CmdAlloc)
+			));
+		}
 
 		ThrowIfFailed(m_Device->CreateCommandList(
 			0,
 			D3D12_COMMAND_LIST_TYPE_DIRECT,
-			m_UploadCmdAlloc.Get(),
+			m_UploadAllocators[0].CmdAlloc.Get(),
 			nullptr,
 			IID_PPV_ARGS(&m_UploadCommandList)
 		));
@@ -47,7 +43,7 @@ namespace Blainn
 		D3D12_HEAP_TYPE heapType,
 		D3D12_HEAP_FLAGS heapFlags,
 		D3D12_RESOURCE_STATES initialResourceState
-		)
+	)
 	{
 		ComPtr<ID3D12Resource> defaultBuffer;
 
@@ -63,6 +59,34 @@ namespace Blainn
 		return defaultBuffer;
 	}
 
+	void DXResourceManager::StartUploadCommands()
+	{
+		auto& allocator = m_UploadAllocators[m_AllocatorIndex];
+		
+		UINT64 completed = m_UploadFence->GetCompletedValue();
+		if (allocator.FenceValue != 0 && completed < allocator.FenceValue)
+			WaitForFence(allocator.FenceValue);
+
+		ThrowIfFailed(allocator.CmdAlloc->Reset());
+		ThrowIfFailed(m_UploadCommandList->Reset(allocator.CmdAlloc.Get(), nullptr));
+	}
+
+	void DXResourceManager::EndUploadCommands()
+	{
+		m_UploadCommandList->Close();
+		ID3D12CommandList* cmdLists[] = { m_UploadCommandList.Get() };
+		m_CommandQueue->ExecuteCommandLists(_countof(cmdLists), cmdLists);
+
+		m_CurrentFence++;
+		ThrowIfFailed(m_CommandQueue->Signal(m_UploadFence.Get(), m_CurrentFence));
+
+		m_UploadAllocators[m_AllocatorIndex].FenceValue = m_CurrentFence;
+		m_AllocatorIndex = (m_AllocatorIndex + 1) % g_NumFrameResources;
+
+		m_UploadBufferBatches.push({ m_CurrentFence, std::move(m_PendingUploads) });
+		m_PendingUploads.clear();
+	}
+
 	void DXResourceManager::WriteToUploadBuffer(void* mappedData, const void* data, UINT64 size, UINT64 offset)
 	{
 		BYTE* byteMappedData = static_cast<BYTE*>(mappedData);
@@ -71,25 +95,23 @@ namespace Blainn
 
 	void DXResourceManager::WriteToDefaultBuffer(
 		Microsoft::WRL::ComPtr<ID3D12Resource> buffer,
-		const void* data, UINT64 size,
-		Microsoft::WRL::ComPtr<ID3D12Resource>& uploader)
+		const void* data, UINT64 size
+	)
 	{
+		Microsoft::WRL::ComPtr<ID3D12Resource> uploadBuffer;
 		ThrowIfFailed(m_Device->CreateCommittedResource(
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
 			D3D12_HEAP_FLAG_NONE,
 			&CD3DX12_RESOURCE_DESC::Buffer(size),
 			D3D12_RESOURCE_STATE_GENERIC_READ,
 			nullptr,
-			IID_PPV_ARGS(&uploader)
+			IID_PPV_ARGS(&uploadBuffer)
 		));
 
 		D3D12_SUBRESOURCE_DATA subResourceData = {};
 		subResourceData.pData = data;
 		subResourceData.RowPitch = size;
 		subResourceData.SlicePitch = size;
-
-		ThrowIfFailed(m_UploadCmdAlloc->Reset());
-		ThrowIfFailed(m_UploadCommandList->Reset(m_UploadCmdAlloc.Get(), nullptr));
 
 		m_UploadCommandList->ResourceBarrier(1,
 			&CD3DX12_RESOURCE_BARRIER::Transition(
@@ -99,9 +121,9 @@ namespace Blainn
 			));
 
 		UpdateSubresources<1>(m_UploadCommandList.Get(),
-			buffer.Get(), uploader.Get(),
+			buffer.Get(), uploadBuffer.Get(),
 			0, 0, 1, &subResourceData);
-		
+
 		m_UploadCommandList->ResourceBarrier(1,
 			&CD3DX12_RESOURCE_BARRIER::Transition(
 				buffer.Get(),
@@ -109,13 +131,14 @@ namespace Blainn
 				D3D12_RESOURCE_STATE_GENERIC_READ
 			));
 
-		m_UploadCommandList->Close();
+		m_PendingUploads.push_back(uploadBuffer);
+	}
 
-		ID3D12CommandList* cmdLists[] = { m_UploadCommandList.Get() };
-
-		m_CommandQueue->ExecuteCommandLists(_countof(cmdLists), cmdLists);
-
-		FlushUploadCommands();
+	void DXResourceManager::TryReleaseResources()
+	{
+		UINT64 completedFence = m_UploadFence->GetCompletedValue();
+		while (!m_UploadBufferBatches.empty() && m_UploadBufferBatches.front().first <= completedFence)
+			m_UploadBufferBatches.pop();
 	}
 
 	void DXResourceManager::FlushUploadCommands()
@@ -128,6 +151,19 @@ namespace Blainn
 			HANDLE eventHandle = CreateEventEx(nullptr, nullptr, false, EVENT_ALL_ACCESS);
 
 			ThrowIfFailed(m_UploadFence->SetEventOnCompletion(m_CurrentFence, eventHandle));
+
+			WaitForSingleObject(eventHandle, INFINITE);
+			CloseHandle(eventHandle);
+		}
+	}
+
+	void DXResourceManager::WaitForFence(UINT64 fenceValue)
+	{
+		if (m_UploadFence->GetCompletedValue() < fenceValue)
+		{
+			HANDLE eventHandle = CreateEventEx(nullptr, nullptr, false, EVENT_ALL_ACCESS);
+
+			ThrowIfFailed(m_UploadFence->SetEventOnCompletion(fenceValue, eventHandle));
 
 			WaitForSingleObject(eventHandle, INFINITE);
 			CloseHandle(eventHandle);

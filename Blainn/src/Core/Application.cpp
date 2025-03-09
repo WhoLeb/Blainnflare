@@ -2,13 +2,14 @@
 
 #include "pch.h"
 
+#include "Components/ActorComponents/CharacterComponents/CameraComponent.h"
 #include "Input.h"
 #include "Util/ComboboxSelector.h"
 
+#include <iostream>
+
 using Microsoft::WRL::ComPtr;
 using namespace DirectX;
-
-#include <iostream>
 
 extern const int g_NumFrameResources;
 

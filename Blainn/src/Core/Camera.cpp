@@ -16,7 +16,7 @@ namespace Blainn
 
 	Camera::Camera(float fov, int width, int height, float nearPlane, float farPlane)
 		: m_FOV(fov)
-		, m_AspectRatio(width/height)
+		, m_AspectRatio(float(width)/float(height))
 		, m_NearPlane(0.1f)
 		, m_FarPlane(1000.f)
 		, m_ViewportWidth(width)
@@ -45,9 +45,9 @@ namespace Blainn
 		UpdateViewMatrix();
 	}
 
-	void Camera::SetViewportDimentions(float width, float height)
+	void Camera::SetViewportDimentions(int width, int height)
 	{
-		m_AspectRatio = width / height;
+		m_AspectRatio = float(width) / float(height);
 		m_ViewportWidth = width;
 		m_ViewportHeight = height;
 

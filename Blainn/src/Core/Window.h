@@ -9,8 +9,8 @@ namespace Blainn
 	struct WindowDesc
 	{
 		std::string Title = "Blainnflare";
-		UINT32 Width = 1600;
-		UINT32 Height = 800;
+		LONG Width = 1600;
+		LONG Height = 800;
 		bool Decorated = true;
 		bool Fullscreen = false;
 		bool VSync = true;
@@ -34,10 +34,10 @@ namespace Blainn
 		virtual void Show();
 		//virtual void ProcessEvents();
 
-		inline UINT32 GetWidth() const { return m_Data.Width; }
-		inline UINT32 GetHeight() const { return m_Data.Height; }
+		inline LONG GetWidth() const { return m_Data.Width; }
+		inline LONG GetHeight() const { return m_Data.Height; }
 
-		virtual inline std::pair<UINT32, UINT32> GetSize() const { return { m_Data.Width, m_Data.Height }; }
+		virtual inline std::pair<LONG, LONG> GetSize() const { return { m_Data.Width, m_Data.Height }; }
 		//virtual inline std::pair<float, float> GetWindowPos() const;
 
 		std::pair<int, int> GetCursorPosition();
@@ -64,7 +64,7 @@ namespace Blainn
 		struct WindowData
 		{
 			std::string Title;
-			UINT32 Width, Height;
+			LONG Width, Height;
 
 			EventCallbackFn EventCallback;
 		};

@@ -3,6 +3,7 @@
 
 #include "Components/ActorComponents/StaticMeshComponent.h"
 #include "Components/ActorComponents/TransformComponent.h"
+#include "Core/Camera.h"
 #include "Core/GameObject.h"
 #include "Core/GameTimer.h"
 #include "Core/Window.h"
@@ -287,7 +288,7 @@ namespace Blainn
 		m_CurrBackBuffer = 0;
 
 		CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHeapHandle(m_RTVHeap->GetCPUDescriptorHandleForHeapStart());
-		for (size_t i = 0; i < s_SwapChainBufferCount; ++i)
+		for (UINT i = 0; i < s_SwapChainBufferCount; ++i)
 		{
 			ThrowIfFailed(m_SwapChain->GetBuffer(i, IID_PPV_ARGS(&m_SwapChainBuffer[i])));
 			m_Device->Device()->CreateRenderTargetView(m_SwapChainBuffer[i].Get(), nullptr, rtvHeapHandle);
@@ -520,7 +521,7 @@ namespace Blainn
 		};
 		psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
 		psoDesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
-		psoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_FRONT;
+		psoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
 		psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
 		psoDesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
 		psoDesc.SampleMask = UINT_MAX;

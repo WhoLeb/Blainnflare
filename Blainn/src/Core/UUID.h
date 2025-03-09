@@ -1,5 +1,8 @@
 #pragma once
 
+#include "basetsd.h"
+#include <memory>
+
 namespace Blainn
 {
 	class UUID

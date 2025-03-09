@@ -26,7 +26,7 @@ namespace Blainn
 
 		void SetPositionAndRotation(const DirectX::SimpleMath::Vector3& pos, const DirectX::SimpleMath::Vector3& rot);
 
-		void SetViewportDimentions(float width, float height);
+		void SetViewportDimentions(int width, int height);
 
 		DirectX::SimpleMath::Matrix GetViewMatrix() const { return m_ViewMatrix; }
 		DirectX::SimpleMath::Matrix GetProjectionMatrix() const { return m_ProjectionMatrix; }

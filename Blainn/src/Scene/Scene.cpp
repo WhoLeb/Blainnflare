@@ -4,6 +4,7 @@
 #include "Components/ActorComponents/CharacterComponents/CameraComponent.h"
 #include "Components/ActorComponents/StaticMeshComponent.h"
 #include "Core/Application.h"
+#include "Core/GameObject.h"
 #include "Core/GameTimer.h"
 
 extern const UINT32 g_NumObjects;
@@ -12,7 +13,7 @@ namespace Blainn
 {
 	Scene::Scene()
 	{
-		for (UINT32 i = g_NumObjects - 1; i >= 0; i--)
+		for (UINT32 i = g_NumObjects - 1; i != 0; i--)
 		{
 			m_FreeBufferIndices.push(i);
 		}
@@ -30,9 +31,14 @@ namespace Blainn
 	{
 	}
 
+	void Scene::QueueGameObject(std::shared_ptr<GameObject> gameObject)
+	{
+		m_PendingAdditions.push_back(gameObject);
+	}
+
 	void Scene::RemoveGameObject(std::shared_ptr<GameObject> gameObject)
 	{
-		m_PendingRemovals.emplace_back(gameObject);
+		m_PendingRemovals.push_back(gameObject);
 	}
 
 	UINT32 Scene::GetCBIdx(UUID uuid) const
@@ -43,43 +49,76 @@ namespace Blainn
 
 	void Scene::ProcessPendingAdditions()
 	{
-		for (auto& obj : m_PendingAdditions)
+		while (!m_PendingAdditions.empty())
 		{
-			m_AllObjects.emplace_back(obj);
+			auto obj = m_PendingAdditions.back();
+			m_PendingAdditions.pop_back();
 
-			auto* meshComponent = obj->GetComponent<StaticMeshComponent>();
-			if (meshComponent)
-			{
-				m_AllRenderObjects.push_back(meshComponent);
+			RegisterObject(obj);
 
-				// For transparent objects. Not done yet so TODO
-				//if (meshComponent->IsTransparent())
-				//	m_TransparentObjects.push_back(meshComponent);
-
-				m_OpaqueObjects.push_back(meshComponent);
-			}
+			for (auto& child : obj->GetChildren())
+				m_PendingAdditions.push_back(child);
 		}
-		m_PendingAdditions.clear();
 	}
 
 	void Scene::ProcessPendingRemovals()
 	{
-		for (auto& obj : m_PendingRemovals)
+		while (!m_PendingRemovals.empty())
 		{
-			auto it = std::find(m_AllObjects.begin(), m_AllObjects.end(), obj);
-			if (it != m_AllObjects.end())
-				m_AllObjects.erase(it);
+			auto obj = m_PendingRemovals.back();
+			m_PendingRemovals.pop_back();
 
-			auto* meshComponent = obj->GetComponent<StaticMeshComponent>();
-			if (meshComponent)
-			{
-				m_AllRenderObjects.erase(std::remove(m_AllRenderObjects.begin(), m_AllRenderObjects.end(), meshComponent), m_AllRenderObjects.end());
-				m_OpaqueObjects.erase(std::remove(m_OpaqueObjects.begin(), m_OpaqueObjects.end(), meshComponent), m_OpaqueObjects.end());
-				m_TransparentObjects.erase(std::remove(m_TransparentObjects.begin(), m_TransparentObjects.end(), meshComponent), m_TransparentObjects.end());
-			}
+			RemoveFromScene(obj);
+
+			for (auto& child : obj->GetChildren())
+				m_PendingRemovals.push_back(child);
 		}
-		m_PendingRemovals.clear();
 	}
+
+	void Scene::RegisterObject(std::shared_ptr<GameObject> obj)
+	{
+		m_AllObjects.push_back(obj);
+
+		auto meshComponents = obj->GetComponents<StaticMeshComponent>();
+		for (auto meshComponent : meshComponents)
+		{
+			m_AllRenderObjects.push_back(meshComponent);
+
+			// For transparent objects. Not done yet so TODO
+			//if (meshComponent->IsTransparent())
+			//	m_TransparentObjects.push_back(meshComponent);
+			//else
+			m_OpaqueObjects.push_back(meshComponent);
+
+			AssignCBIdx(obj->GetUUID());
+		}
+
+		obj->OnBegin();
+	}
+
+	void Scene::RemoveFromScene(std::shared_ptr<GameObject> obj)
+	{
+		auto it = std::find(m_AllObjects.begin(), m_AllObjects.end(), obj);
+		if (it != m_AllObjects.end())
+			m_AllObjects.erase(it);
+
+		auto meshComponents = obj->GetComponents<StaticMeshComponent>();
+
+		for (auto& meshComponent : meshComponents)
+		{
+			m_AllRenderObjects.erase(std::remove(m_AllRenderObjects.begin(), m_AllRenderObjects.end(), meshComponent), m_AllRenderObjects.end());
+			m_OpaqueObjects.erase(std::remove(m_OpaqueObjects.begin(), m_OpaqueObjects.end(), meshComponent), m_OpaqueObjects.end());
+			m_TransparentObjects.erase(std::remove(m_TransparentObjects.begin(), m_TransparentObjects.end(), meshComponent), m_TransparentObjects.end());
+
+			ReleaseCBIdx(obj->GetUUID());
+		}
+
+		obj->OnDestroy();
+
+		if (auto parent = obj->GetParent())
+			parent->RemoveChild(obj);
+	}
+
 
 	UINT32 Scene::AssignCBIdx(UUID uuid)
 	{

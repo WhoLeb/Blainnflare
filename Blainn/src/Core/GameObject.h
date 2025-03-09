@@ -3,9 +3,11 @@
 #include "Core/GameTimer.h"
 #include "Core/UUID.h"
 #include "Components/Component.h"
+#include "Scene/Scene.h"
 
 namespace Blainn
 {
+
 	class GameObject : public std::enable_shared_from_this<GameObject>
 	{
 		friend class Scene;
@@ -13,8 +15,6 @@ namespace Blainn
 		GameObject() { OnInit(); }
 	public:
 		virtual ~GameObject() noexcept {}
-
-		UUID GetUUID() const { return m_UUID; }
 
 		virtual void OnInit() {}
 		virtual void OnBegin() {}
@@ -38,6 +38,8 @@ namespace Blainn
 
 			return foundComponents;
 		}
+
+
 		template<typename T>
 		T* GetComponent() const
 		{
@@ -47,6 +49,7 @@ namespace Blainn
 			return nullptr;
 		}
 
+
 		template<typename T, typename... Args>
 		T* AddComponent(Args&&... args)
 		{
@@ -54,22 +57,27 @@ namespace Blainn
 			auto component = std::make_unique<T>(std::forward<Args>(args)...);
 			component->m_OwningObject = this;
 			component->OnBegin();
-			m_Components.emplace_back(component);
-			return component;
+			T* rawPtr = component.get();
+			m_Components.emplace_back(std::move(component));
+			return rawPtr;
 		}
+
+
 		template<typename T>
 		void RemoveAllComponents()
 		{
 			auto it = std::remove_if(m_Components.begin(), m_Components.end(),
-					[](const std::unique_ptr<Component>& comp)
-					{
-						return dynamic_cast<T*>(comp->GetOwner()) != nullptr;
-					}),
-				m_Components.end();
-			for (auto i = it; i < m_Components.end(); i++)
-				i->OnDestroy;
+				[](const std::unique_ptr<Component>& comp)
+				{
+					return dynamic_cast<T*>(comp.get()) != nullptr;
+				});
+
+			for (auto i = it; i != m_Components.end(); i++)
+				(*i)->OnDestroy;
+
 			m_Components.erase(it, m_Components.end());
 		}
+
 
 		void RemoveComponent(Component* component)
 		{
@@ -81,35 +89,57 @@ namespace Blainn
 			
 			if (it != m_Components.end())
 			{
-				component->OnDestroy();
+				(*it)->OnDestroy();
 				m_Components.erase(it);
 			}
 		}
 
-		void AddChild(std::shared_ptr<GameObject> child)
+
+		template<typename T, typename... Args>
+		std::shared_ptr<T> AddChild(Args&&... args)
 		{
+			static_assert(std::is_base_of<GameObject, T>::value, "The child object must be a game object");
+
+			auto child = std::make_shared<T>(std::forward<Args>(args)...);
 			child->m_Parent = shared_from_this();
-			m_Children.emplace_back(std::move(child));
-			child->OnBegin();
+			m_Children.push_back(child);
+
+			if (m_ParentScene)
+			{
+				child->m_ParentScene = m_ParentScene;
+				m_ParentScene->QueueGameObject(child);
+			}
+			return child;
 		}
+
+
 		void RemoveChild(std::shared_ptr<GameObject> child)
 		{
 			auto it = std::find(m_Children.begin(), m_Children.end(), child);
 			if (it != m_Children.end())
 			{
-				child->OnDestroy();
 				child->m_Parent.reset();
 				m_Children.erase(it);
+				if (m_ParentScene)
+				{
+					child->m_ParentScene = nullptr;
+					m_ParentScene->RemoveGameObject(child);
+				}
 			}
 		}
+
+		const std::vector<std::shared_ptr<GameObject>>& GetChildren() const { return m_Children; }
+		UUID GetUUID() const { return m_UUID; }
+		std::shared_ptr<GameObject> GetParent() const { return m_Parent.lock(); }
 
 	protected:
 		UUID m_UUID{};
 
 		std::weak_ptr<GameObject> m_Parent;
 		std::vector<std::shared_ptr<GameObject>> m_Children;
-		
 		std::vector<std::unique_ptr<Component>> m_Components;
+
+		Scene* m_ParentScene = nullptr;
 	};
 }
 

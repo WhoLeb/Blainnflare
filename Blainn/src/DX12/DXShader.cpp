@@ -50,5 +50,6 @@ namespace Blainn
 
 		fin.read((char*)m_ByteCode->GetBufferPointer(), size);
 		fin.close();
+		return S_OK;
 	}
 }

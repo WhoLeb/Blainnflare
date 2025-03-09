@@ -10,7 +10,7 @@ namespace Blainn
 		const std::vector<UINT32>* indices)
 	{
 		auto resourceManager = Application::Get().GetResourceManager();
-		m_VertexCount = vertices.size();
+		m_VertexCount = UINT32(vertices.size());
 		assert(m_VertexCount >= 1 && "There should at least be 1 vertex!");
 
 		UINT64 bufferSize = sizeof(Vertex) * m_VertexCount;
@@ -22,11 +22,11 @@ namespace Blainn
 			D3D12_HEAP_FLAG_NONE,
 			D3D12_RESOURCE_STATE_COMMON
 		);
-		resourceManager->WriteToDefaultBuffer(m_VertexBuffer, vertices.data(), bufferSize, VertexBufferUploader);
+		resourceManager->WriteToDefaultBuffer(m_VertexBuffer, vertices.data(), bufferSize);
 
 		if (indices)
 		{
-			m_IndexCount = indices->size();
+			m_IndexCount = UINT32(indices->size());
 
 			m_bHasIndexBuffer = m_IndexCount > 0;
 			if (!m_bHasIndexBuffer) return;
@@ -38,8 +38,9 @@ namespace Blainn
 				D3D12_HEAP_FLAG_NONE,
 				D3D12_RESOURCE_STATE_COMMON
 			);
-			resourceManager->WriteToDefaultBuffer(m_IndexBuffer, indices->data(), bufferSize, IndexBufferUploader);
+			resourceManager->WriteToDefaultBuffer(m_IndexBuffer, indices->data(), bufferSize);
 		}
+
 	}
 
 	void DXStaticMesh::Draw()

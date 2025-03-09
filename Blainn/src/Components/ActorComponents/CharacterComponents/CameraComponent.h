@@ -10,25 +10,26 @@ namespace Blainn
 	class CameraComponent : public Component
 	{
 		using Super = Component;
-	protected:
-		CameraComponent(
+	public:
+		explicit CameraComponent(
 			float fov = 60.f,
 			float aspect = 16.f / 9.f,
 			float nearPlane = 0.1f,
 			float farPlane = 1000.f
 		) : Super(), m_Camera(fov, aspect, nearPlane, farPlane)
 		{}
-		CameraComponent(
+		explicit CameraComponent(
+			int width, int height,
 			float fov = 60.f,
-			int width = -1, int height = -1,
 			float nearPlane = 0.1f,
 			float farPlane = 1000.f
 		) : Super(), m_Camera(fov, width, height, nearPlane, farPlane)
 		{}
 
-	public:
 		void OnUpdate(const GameTimer& gt) override
 		{
+			Super::OnUpdate(gt);
+
 			auto* owner = GetOwner();
 			if (!owner) return;
 

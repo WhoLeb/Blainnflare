@@ -72,8 +72,8 @@ namespace Blainn
 				WS_OVERLAPPEDWINDOW,
 				CW_USEDEFAULT, CW_USEDEFAULT,
 				width, height,
-				NULL,
-				NULL,
+				nullptr,
+				nullptr,
 				HINST_THISCOMPONENT,
 				this
 			);
@@ -83,7 +83,7 @@ namespace Blainn
 				DWORD error = GetLastError();
 				wchar_t buffer[256];
 				swprintf(buffer, 256, L"CreateWindowEx failed! Error code: %lu", error);
-				MessageBox(0, buffer, L"Error", MB_ICONERROR);
+				MessageBox(nullptr, buffer, L"Error", MB_ICONERROR);
 				return false;
 			}
 			m_bIsInitialized = true;
@@ -106,6 +106,7 @@ namespace Blainn
 			ScreenToClient(m_Window, &pos);
 			return { pos.x, pos.y };
 		}
+		return { INT_MAX, INT_MAX };
 	}
 
 	void Window::Shutdown()
@@ -249,7 +250,7 @@ namespace Blainn
 		{
 			int offsetX = (int)(short)LOWORD(lParam);
 			int offsetY = (int)(short)HIWORD(lParam);
-			MouseMovedEvent event((float)offsetX, (float)offsetY);
+			MouseMovedEvent event(offsetX, offsetY);
 			m_Data.EventCallback(event);
 			return 0;
 		}
@@ -269,29 +270,6 @@ namespace Blainn
 			m_Data.EventCallback(event);
 			return 0;
 		}
-		//case WM_COMMAND:
-		//{
-		//	if (HIWORD(wParam) == CBN_SELCHANGE)
-		//	{
-		//		int ItemIndex = SendMessage(
-		//			(HWND)lParam,
-		//			(UINT)CB_GETCURSEL,
-		//			(WPARAM)0,
-		//			(LPARAM)0
-		//		);
-		//		TCHAR ListItem[256];
-		//		SendMessage(
-		//			(HWND)lParam,
-		//			(UINT)CB_GETLBTEXT,
-		//			(WPARAM)ItemIndex,
-		//			(LPARAM)ListItem
-		//		);
-
-		//		std::wstring wStr = ListItem;
-		//		ComboboxOptionSelectedEvent(ItemIndex, wStr);
-		//		return 0;
-		//	}
-		//}
 		}
 
 		return DefWindowProc(hwnd, msg, wParam, lParam);

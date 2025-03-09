@@ -10,12 +10,10 @@ namespace Blainn
 	class PlayerInputComponent : public InputComponent
 	{
 		using Super = InputComponent;
-	protected:
+	public:
 		PlayerInputComponent(float speed = 5.f, float sensitivity = 0.1f)
 			: Super(), m_Speed(speed), m_Sensitivity(sensitivity)
 		{}
-
-	public:
 
 		void HandleInput(const GameTimer& gt)
 		{
@@ -25,16 +23,16 @@ namespace Blainn
 			auto* transform = owner->GetComponent<TransformComponent>();
 			if (!transform) return;
 
-			if (Input::IsMouseButtonHeld(MouseButton::Right))
+			if (Input::IsMouseButtonPressed(MouseButton::Right))
 			{
 				Input::SetCursorMode(CursorMode::Locked);
 
 				DirectX::SimpleMath::Vector3 movement = { 0, 0, 0 };
 
-				if (Input::IsKeyHeld(KeyCode::W)) movement.z += 1.0f;
-				if (Input::IsKeyHeld(KeyCode::S)) movement.z -= 1.0f;
-				if (Input::IsKeyHeld(KeyCode::A)) movement.x -= 1.0f;
-				if (Input::IsKeyHeld(KeyCode::D)) movement.x += 1.0f;
+				if (Input::IsKeyPressed(KeyCode::W)) movement.z += 1.0f;
+				if (Input::IsKeyPressed(KeyCode::S)) movement.z -= 1.0f;
+				if (Input::IsKeyPressed(KeyCode::A)) movement.x -= 1.0f;
+				if (Input::IsKeyPressed(KeyCode::D)) movement.x += 1.0f;
 
 				movement.Normalize();
 
@@ -55,8 +53,6 @@ namespace Blainn
 					transform->GetWorldRotation().y + yaw,
 					transform->GetWorldRotation().z
 					});
-
-				// Lock cursor for first-person movement
 			}
 			else
 			{

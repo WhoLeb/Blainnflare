@@ -1,15 +1,19 @@
 #pragma once
 
-#include "Actor.h"
-#include "Components/ActorComponents/CharacterComponents/CameraComponent.h"
-
+#include <memory>
+#include <unordered_map>
 #include <vector>
 #include <stack>
+#include <windows.h>
+
+#include "Core/UUID.h"
 
 namespace Blainn
 {
 	class GameTimer;
 	class StaticMeshComponent;
+	class GameObject;
+	class CameraComponent;
 
 	class Scene
 	{
@@ -22,15 +26,15 @@ namespace Blainn
 		void RenderScene();
 
 		template<typename T, typename... Args>
-		std::shared_ptr<GameObject> AddGameObject(Args&&... args)
+		std::shared_ptr<T> QueueGameObject(Args&&... args)
 		{
-			static_assert(std::is_base_of<GameObject, T>, "T must be a GameObject");
+			static_assert(std::is_base_of<GameObject, T>::value, "T must be a GameObject");
 
-			auto obj = std::make_shared<T>(std::forward<Args>(args));
+			auto obj = std::make_shared<T>(std::forward<Args>(args)...);
 			m_PendingAdditions.push_back(obj);
-			AssignCBIdx(obj->GetUUID());
 			return obj;
 		}
+		void QueueGameObject(std::shared_ptr<GameObject> gameObject);
 		void RemoveGameObject(std::shared_ptr<GameObject> gameObject);
 
 		const std::vector<StaticMeshComponent*>& GetRenderObjects() const { return m_AllRenderObjects; }
@@ -42,6 +46,9 @@ namespace Blainn
 	private:
 		void ProcessPendingAdditions();
 		void ProcessPendingRemovals();
+
+		void RegisterObject(std::shared_ptr<GameObject> obj);
+		void RemoveFromScene(std::shared_ptr<GameObject> obj);
 
 		UINT32 AssignCBIdx(UUID uuid);
 		void ReleaseCBIdx(UUID uuid);
