@@ -8,6 +8,7 @@
 
 namespace solar
 {
+	class Planet;
 	class Player;
 	class SolarAppLayer : public Blainn::Layer
 	{
@@ -23,6 +24,7 @@ namespace solar
 	private:
 		std::shared_ptr<Blainn::Scene> m_Scene;
 
+		std::shared_ptr<Planet> m_Sun;
 		std::shared_ptr<Player> m_Player;
 	};
 }

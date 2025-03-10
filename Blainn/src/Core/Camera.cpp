@@ -34,14 +34,31 @@ namespace Blainn
 
 	void Camera::SetRotation(const DirectX::SimpleMath::Vector3& rot)
 	{
-		m_Rotation = rot;
+		m_Quaternion = DirectX::SimpleMath::Quaternion::CreateFromYawPitchRoll(rot);
 		UpdateViewMatrix();
 	}
 
 	void Camera::SetPositionAndRotation(const DirectX::SimpleMath::Vector3& pos, const DirectX::SimpleMath::Vector3& rot)
 	{
 		m_Position = pos;
-		m_Rotation = rot;
+
+		using namespace DirectX;
+		using namespace DirectX::SimpleMath;
+
+		float yawRad = XMConvertToRadians(rot.x);
+		float pitchRad = XMConvertToRadians(rot.y);
+		float rollRad = XMConvertToRadians(rot.z);
+
+		m_Quaternion = DirectX::SimpleMath::Quaternion::CreateFromYawPitchRoll(yawRad, pitchRad, rollRad);
+		m_Quaternion.Normalize();
+		UpdateViewMatrix();
+	}
+
+	void Camera::SetPositionAndQuaternion(const DirectX::SimpleMath::Vector3& pos, const DirectX::SimpleMath::Quaternion& quat)
+	{
+		m_Position = pos;
+		m_Quaternion = quat;
+		m_Quaternion.Normalize();
 		UpdateViewMatrix();
 	}
 
@@ -62,10 +79,13 @@ namespace Blainn
 		Vector3 forward = Vector3(0, 0, 1);
 		forward.Normalize();
 		
-		Matrix rotMatrix = Matrix::CreateFromYawPitchRoll(m_Rotation.x, m_Rotation.y, m_Rotation.z);
+		Matrix rotMatrix = Matrix::CreateFromQuaternion(m_Quaternion);
+		//Matrix rotMatrix = Matrix::CreateFromYawPitchRoll(m_Rotation.x, m_Rotation.y, m_Rotation.z);
 		forward = forward.Transform(forward, rotMatrix);
 
 		Vector3 up{ 0, 1, 0 };
+		up = up.Transform(up, rotMatrix);
+
 		Vector3 target = pos + forward;
 		Matrix view = Matrix::CreateLookAt(pos, target, up);
 		m_ViewMatrix = view;

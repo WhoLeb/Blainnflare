@@ -25,6 +25,7 @@ namespace Blainn
 		void SetRotation(const DirectX::SimpleMath::Vector3& pos);
 
 		void SetPositionAndRotation(const DirectX::SimpleMath::Vector3& pos, const DirectX::SimpleMath::Vector3& rot);
+		void SetPositionAndQuaternion(const DirectX::SimpleMath::Vector3& pos, const DirectX::SimpleMath::Quaternion& quat);
 
 		void SetViewportDimentions(int width, int height);
 
@@ -43,6 +44,7 @@ namespace Blainn
 	private:
 		DirectX::SimpleMath::Vector3 m_Position;
 		DirectX::SimpleMath::Vector3 m_Rotation;
+		DirectX::SimpleMath::Quaternion m_Quaternion;
 
 		float m_FOV;
 		float m_AspectRatio;

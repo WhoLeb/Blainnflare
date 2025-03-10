@@ -5,11 +5,30 @@
 
 namespace Blainn
 {
-	inline void Input::Update()
+	void Input::Init()
+	{
+		Rid[0].usUsagePage = 0x01; //usage page generic
+		Rid[0].usUsage = 0x02; // usage generic mouse
+		Rid[0].dwFlags = 0;
+		Rid[0].hwndTarget = nullptr;
+
+		if (RegisterRawInputDevices(Rid, _countof(Rid), sizeof(Rid[0])) == FALSE)
+			throw std::runtime_error("Failed to register raw input device");
+	}
+
+	void Input::Update()
 	{
 		TransitionPressedKeys();
 		TransitionPressedButtons();
-		UpdateMouseDelta();
+		if (s_CursorLocked)
+		{
+			RECT rect;
+			GetClientRect(GetActiveWindow(), &rect);
+			POINT center = { (rect.right - rect.left) / 2, (rect.bottom - rect.top) / 2 };
+			ClientToScreen(GetActiveWindow(), &center);
+			SetCursorPos(center.x, center.y);
+		}
+		//UpdateMouseDelta();
 	}
 
 	bool Input::IsKeyPressed(KeyCode key)
@@ -75,37 +94,30 @@ namespace Blainn
 		return { s_MouseDeltaX, s_MouseDeltaY };
 	}
 
+	void Input::UpdateMouseDelta(LONG x, LONG y)
+	{
+		s_MouseDeltaX = x;
+		s_MouseDeltaY = y;
+	}
+
 	void Input::SetCursorMode(CursorMode mode)
 	{
+		if (s_CursorMode == mode)
+			return;
 		s_CursorMode = mode;
 		switch (mode)
 		{
 		case Blainn::CursorMode::Normal:
 			ShowCursor(TRUE);
-			ClipCursor(nullptr);
 			s_CursorLocked = false;
 			break;
 		case Blainn::CursorMode::Hidden:
-			ShowCursor(FALSE);
-			ClipCursor(nullptr);
+			while(ShowCursor(FALSE) >= 0);
 			s_CursorLocked = false;
 			break;
 		case Blainn::CursorMode::Locked:
-		{
-			ShowCursor(FALSE);
-			HWND hwnd = GetActiveWindow();
-			if (!hwnd) return;
-
-			RECT rect;
-			GetClientRect(hwnd, &rect);
-			POINT center = { (rect.right - rect.left) / 2, (rect.bottom - rect.top) / 2 };
-			ClientToScreen(hwnd, &center);
-			ClipCursor(&rect);
-			SetCursorPos(center.x, center.y);
+			while(ShowCursor(FALSE) >= 0);
 			s_CursorLocked = true;
-		}
-			break;
-		default:
 			break;
 		}
 	}
@@ -163,35 +175,35 @@ namespace Blainn
 		}
 	}
 
-	void Input::UpdateMouseDelta()
-	{
-		POINT p;
-		GetCursorPos(&p);
-		ScreenToClient(GetActiveWindow(), &p);
+	//void Input::UpdateMouseDelta()
+	//{
+	//	POINT p;
+	//	GetCursorPos(&p);
+	//	//ScreenToClient(GetActiveWindow(), &p);
 
-		if (s_CursorLocked)
-		{
-			// Calculate delta movement
-			s_MouseDeltaX = p.x - s_LastMouseX;
-			s_MouseDeltaY = p.y - s_LastMouseY;
+	//	if (s_CursorLocked)
+	//	{
+	//		// Calculate delta movement
+	//		s_MouseDeltaX = p.x - s_LastMouseX;
+	//		s_MouseDeltaY = p.y - s_LastMouseY;
 
-			// Reset cursor to center to prevent large deltas
-			RECT rect;
-			GetClientRect(GetActiveWindow(), &rect);
-			POINT center = { (rect.right - rect.left) / 2, (rect.bottom - rect.top) / 2 };
-			ClientToScreen(GetActiveWindow(), &center);
-			SetCursorPos(center.x, center.y);
+	//		// Reset cursor to center to prevent large deltas
+	//		RECT rect;
+	//		GetClientRect(GetActiveWindow(), &rect);
+	//		POINT center = { (rect.right - rect.left) / 2, (rect.bottom - rect.top) / 2 };
+	//		ClientToScreen(GetActiveWindow(), &center);
+	//		SetCursorPos(center.x, center.y);
 
-			s_LastMouseX = center.x;
-			s_LastMouseY = center.y;
-		}
-		else
-		{
-			s_MouseDeltaX = 0;
-			s_MouseDeltaY = 0;
-			s_LastMouseX = p.x;
-			s_LastMouseY = p.y;
-		}
-	}
+	//		s_LastMouseX = center.x;
+	//		s_LastMouseY = center.y;
+	//	}
+	//	else
+	//	{
+	//		s_MouseDeltaX = 0;
+	//		s_MouseDeltaY = 0;
+	//		s_LastMouseX = p.x;
+	//		s_LastMouseY = p.y;
+	//	}
+	//}
 
 }

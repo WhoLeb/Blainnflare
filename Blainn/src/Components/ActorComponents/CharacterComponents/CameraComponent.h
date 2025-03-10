@@ -36,7 +36,7 @@ namespace Blainn
 			auto* transform = owner->GetComponent<TransformComponent>();
 			if (!transform) return;
 
-			m_Camera.SetPositionAndRotation(transform->GetWorldPosition(), transform->GetWorldRotation());
+			m_Camera.SetPositionAndQuaternion(transform->GetWorldPosition(), transform->GetWorldQuat());
 		}
 
 		Camera& GetCamera() { return m_Camera; }

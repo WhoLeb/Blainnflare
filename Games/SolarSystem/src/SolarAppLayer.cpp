@@ -27,18 +27,32 @@ namespace solar
 	{
 		Super::OnAttach();
 
-		auto planet1 = m_Scene->QueueGameObject<::solar::Planet>();
-		planet1->AddComponent<Blainn::StaticMeshComponent>("Meshes/cube.obj");
-		planet1->AddComponent<Blainn::TransformComponent>()->SetPosition({0.f, 0.f, 10.f});
+		m_Sun = m_Scene->QueueGameObject<Planet>();
+		m_Sun->AddComponent<Blainn::StaticMeshComponent>("Meshes/wiener.gltf");
+		auto* transform = m_Sun->AddComponent<Blainn::TransformComponent>();
+		transform->SetWorldPosition({ 0.f, 0.f, 10.f });
+		transform->SetWorldScale({ 3.f, 3.f, 3.f });
+
+
+		auto planet1 = m_Sun->AddChild<Planet>();
+		planet1->AddComponent<Blainn::StaticMeshComponent>("Meshes/wiener.gltf");
+		planet1->AddComponent<Blainn::TransformComponent>();
+		transform->SetLocalPosition({ 0.f, 0.f, 10.f });
+		transform->SetWorldScale({ 3.f, 3.f, 3.f });
 
 		m_Player = m_Scene->QueueGameObject<Player>();
-		m_Player->AddComponent<Blainn::TransformComponent>()->SetPosition({0.f, 0.f, -5.f});
+		m_Player->AddComponent<Blainn::TransformComponent>()->SetWorldPosition({0.f, 0.f, -5.f});
 		m_Player->AddComponent<Blainn::PlayerInputComponent>();
 		m_Scene->SetMainCamera(m_Player->AddComponent<Blainn::CameraComponent>(800, 600));
 	}
 
 	void SolarAppLayer::OnUpdate(const Blainn::GameTimer& gt)
 	{
+		//auto transform =m_Sun->GetComponent<Blainn::TransformComponent>();
+		//auto prevRot = transform->GetWorldQuat();
+		//DirectX::SimpleMath::Quaternion deltaQuat =
+		//	DirectX::SimpleMath::Quaternion::CreateFromYawPitchRoll(10.f * gt.DeltaTime(), 0.f, 0.f);
+		//transform->SetWorldQuat(prevRot + deltaQuat);
 	}
 
 	void SolarAppLayer::OnEvent(Blainn::Event& event)

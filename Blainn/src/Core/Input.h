@@ -24,6 +24,8 @@ namespace Blainn
 	class Input
 	{
 	public:
+		static void Init();
+
 		static void Update();
 
 		static bool IsKeyPressed(KeyCode keyCode);
@@ -40,6 +42,7 @@ namespace Blainn
 		static int GetMouseY();
 		static std::pair<int, int> GetMousePosition();
 		static std::pair<int, int> GetMouseDelta();
+		static void UpdateMouseDelta(LONG x, LONG y);
 
 		static void SetCursorMode(CursorMode mode);
 		static CursorMode GetCursorMode();
@@ -52,18 +55,19 @@ namespace Blainn
 		static void ClearReleasedKeys();
 
 	private:
-		static void UpdateMouseDelta();
+		//static void UpdateMouseDelta();
 
 	private:
 		inline static std::map<KeyCode, KeyData> s_KeyData;
 		inline static std::map<MouseButton, ButtonData> s_MouseData;
 
-		inline static int s_MouseDeltaX = 0;
-		inline static int s_MouseDeltaY = 0;
-		inline static int s_LastMouseX = 0;
-		inline static int s_LastMouseY = 0;
+		inline static LONG s_MouseDeltaX = 0;
+		inline static LONG s_MouseDeltaY = 0;
 		inline static bool s_CursorLocked = false;
 
 		inline static CursorMode s_CursorMode;
+		inline static HCURSOR s_OldCursor;
+
+		inline static RAWINPUTDEVICE Rid[1];
 	};
 }

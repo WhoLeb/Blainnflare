@@ -50,6 +50,8 @@ namespace Blainn
 		m_Window = std::shared_ptr<Window>(Window::Create(windowDesc));
 		m_Window->SetEventCallback([this](Event& e) { OnEvent(e); });
 
+		Input::Init();
+
 		if (!m_Window->Init())
 			return false;
 
@@ -99,6 +101,7 @@ namespace Blainn
 				else
 					Sleep(10);
 			}
+
 		}
 		return (int)msg.wParam;
 	}
@@ -121,6 +124,8 @@ namespace Blainn
 
 	void Application::Update(const GameTimer& timer)
 	{
+		Blainn::Input::Update();
+
 		for (Layer* layer : m_LayerStack)
 			layer->OnUpdate(timer);
 
@@ -131,6 +136,8 @@ namespace Blainn
 				timer, m_Scene->GetMainCamera()->GetCamera()
 			);
 		Application::Get().GetRenderingContext()->UpdateObjectsConstantBuffers(*m_Scene);
+
+		Input::UpdateMouseDelta(0, 0);
 	}
 
 	void Application::Draw(const GameTimer& timer)
