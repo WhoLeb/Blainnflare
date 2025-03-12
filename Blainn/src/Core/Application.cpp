@@ -30,7 +30,6 @@ namespace Blainn
 		m_ClientWidth = description.WindowWidth;
 		m_ClientHeight = description.WindowHeight;
 		s_Instance = this;
-
 	}
 
 	Application::~Application()

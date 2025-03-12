@@ -14,6 +14,7 @@ namespace Blainn
 		virtual ~Component() { OnDestroy(); }
 		
 		virtual void OnInit() {}
+		virtual void OnAttach() {};
 		virtual void OnBegin() {}
 		virtual void OnUpdate(const GameTimer& gt) {}
 		virtual void OnDestroy() {}

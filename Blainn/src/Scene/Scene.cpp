@@ -3,9 +3,12 @@
 
 #include "Components/ActorComponents/CharacterComponents/CameraComponent.h"
 #include "Components/ActorComponents/StaticMeshComponent.h"
+#include "Components/ComponentManager.h"
 #include "Core/Application.h"
 #include "Core/GameObject.h"
 #include "Core/GameTimer.h"
+
+#include <iostream>
 
 extern const UINT32 g_NumObjects;
 
@@ -25,6 +28,10 @@ namespace Blainn
 		for (auto& object : m_AllObjects)
 			object->OnUpdate(gt);
 		ProcessPendingAdditions();
+
+		auto transforms = ComponentManager::Get().GetComponents<TransformComponent>();
+		for (auto& transform : transforms)
+			transform->OnUpdate(gt);
 	}
 
 	void Scene::RenderScene()

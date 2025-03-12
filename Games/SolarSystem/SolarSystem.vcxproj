@@ -144,13 +144,16 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\Planet.cpp" />
+    <ClCompile Include="src\Player.cpp" />
     <ClCompile Include="src\SolarAppLayer.cpp" />
     <ClCompile Include="src\SolarSystem.cpp" />
+    <ClCompile Include="src\WeirdOne.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Planet.h" />
     <ClInclude Include="src\Player.h" />
     <ClInclude Include="src\SolarAppLayer.h" />
+    <ClInclude Include="src\WeirdOne.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

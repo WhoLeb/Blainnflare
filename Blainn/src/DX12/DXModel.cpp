@@ -85,14 +85,16 @@ namespace Blainn
 					mesh->mTextureCoords[0][i].y
 				) : DirectX::SimpleMath::Vector2(0, 0);
 
-			//if (mesh->mColors != nullptr)
-			//	v.Color = DirectX::SimpleMath::Vector4(
-			//		mesh->mColors[i]->r,
-			//		mesh->mColors[i]->g,
-			//		mesh->mColors[i]->b,
-			//		mesh->mColors[i]->a
-			//	);
-			//else 
+			if (mesh->mColors != nullptr
+				&& mesh->mColors[0] != NULL
+				)
+				v.Color = DirectX::SimpleMath::Vector4(
+					mesh->mColors[0]->r,
+					mesh->mColors[0]->g,
+					mesh->mColors[0]->b,
+					mesh->mColors[0]->a
+				);
+			else
 				v.Color = DirectX::SimpleMath::Vector4(1, 0, 1, 1);
 			vertices.push_back(v);
 		}

@@ -38,7 +38,6 @@ namespace Blainn
 
 		void OnUpdate();
 		void UpdateObjectsConstantBuffers(const Scene& scene);
-		// TODO: a temporary solution, should probably pass a camera instead
 		void UpdateMainPassConstantBuffers(
 			const GameTimer& gt, const Camera& camera
 		);

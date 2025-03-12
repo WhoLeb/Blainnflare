@@ -37,5 +37,10 @@ namespace Blainn
 
 		std::vector<SubMeshData> m_SubMeshes;
 
+	public:
+		static std::shared_ptr<DXModel> ColoredCube(float side = 1.f, const DirectX::SimpleMath::Color& color = {1.f, 1.f, 1.f, 1.f})
+		{
+			return std::make_shared<DXModel>(DXStaticMesh::CreateCube(side, color));
+		}
 	};
 }

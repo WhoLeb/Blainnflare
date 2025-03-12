@@ -11,13 +11,21 @@ namespace Blainn
 	class GameObject : public std::enable_shared_from_this<GameObject>
 	{
 		friend class Scene;
-	protected:
-		GameObject() { OnInit(); }
 	public:
+		GameObject() { OnInit(); }
 		virtual ~GameObject() noexcept {}
 
 		virtual void OnInit() {}
 		virtual void OnBegin() {}
+
+		virtual void OnAttach()
+		{
+			for (auto& comp : m_Components)
+				comp->OnAttach();
+			for (auto& child : m_Children)
+				child->OnAttach();
+		}
+
 		virtual void OnUpdate(const GameTimer& gt)
 		{
 			for (auto& component : m_Components)
@@ -25,7 +33,13 @@ namespace Blainn
 			for (auto& child : m_Children)
 				child->OnUpdate(gt);
 		}
+
 		virtual void OnDestroy() {}
+
+		const std::vector<std::unique_ptr<Component>>& GetComponents() const
+		{
+			return m_Components;
+		}
 
 		template<typename T>
 		std::vector<T*> GetComponents() const
@@ -57,6 +71,7 @@ namespace Blainn
 			auto component = std::make_unique<T>(std::forward<Args>(args)...);
 			component->m_OwningObject = this;
 			component->OnBegin();
+			component->OnAttach();
 			T* rawPtr = component.get();
 			m_Components.emplace_back(std::move(component));
 			return rawPtr;
@@ -119,14 +134,54 @@ namespace Blainn
 			if (it != m_Children.end())
 			{
 				child->m_Parent.reset();
-				m_Children.erase(it);
 				if (m_ParentScene)
 				{
 					child->m_ParentScene = nullptr;
 					m_ParentScene->RemoveGameObject(child);
 				}
+				m_Children.erase(it);
 			}
 		}
+
+
+		void AddChild(std::shared_ptr<GameObject> child)
+		{
+			auto prevParent = child->m_Parent.lock();
+			if (prevParent)
+			{
+				auto it = std::find(prevParent->m_Children.begin(), prevParent->m_Children.end(), child);
+				if (it != prevParent->m_Children.end())
+					prevParent->m_Children.erase(it);
+
+				child->m_Parent.reset();
+			}
+
+			child->m_Parent = shared_from_this();
+
+			child->OnAttach();
+
+			m_Children.push_back(child);
+		}
+
+
+		void AttachTo(std::shared_ptr<GameObject> newParent)
+		{
+			if(newParent)
+				newParent->AddChild(shared_from_this());
+			else
+			{
+				auto prevParent = m_Parent.lock();
+				if (prevParent)
+				{
+					auto it = std::find(prevParent->m_Children.begin(), prevParent->m_Children.end(), shared_from_this());
+					if (it != prevParent->m_Children.end())
+						prevParent->m_Children.erase(it);
+
+					m_Parent.reset();
+				}
+			}
+		}
+
 
 		const std::vector<std::shared_ptr<GameObject>>& GetChildren() const { return m_Children; }
 		UUID GetUUID() const { return m_UUID; }

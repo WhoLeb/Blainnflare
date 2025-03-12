@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Components/Component.h"
+#include "Components/ComponentManager.h"
 
 #include "SimpleMath.h"
 
@@ -18,8 +19,13 @@ namespace Blainn
 
 	class TransformComponent : public Component
 	{
+		using Super = Component;
 	public:
-		TransformComponent() {}
+		TransformComponent() { ComponentManager::Get().RegisterComponent<TransformComponent>(this); }
+		~TransformComponent() { ComponentManager::Get().UnregisterComponent<TransformComponent>(this); }
+
+		void OnAttach() override;
+		void OnUpdate(const GameTimer& gt) override { Super::OnUpdate(gt); UpdateWorldMatrix(); }
 
 		void SetLocalPosition(const DirectX::SimpleMath::Vector3& newLocalPos);
 		void SetLocalYawPitchRoll(const DirectX::SimpleMath::Vector3& newLocalRot);
@@ -52,12 +58,12 @@ namespace Blainn
 		DirectX::SimpleMath::Matrix GetWorldMatrix() const { return m_WorldMatrix; }
 
 		DirectX::SimpleMath::Vector3 GetWorldPosition() const { return m_WorldTransform.Position; }
-		DirectX::SimpleMath::Vector3 GetWorldYawPitchRoll() const { return m_WorldTransform.Quaternion.ToEuler(); }
+		DirectX::SimpleMath::Vector3 GetWorldYawPitchRoll() const;
 		DirectX::SimpleMath::Quaternion GetWorldQuat() const { return m_WorldTransform.Quaternion; }
 		DirectX::SimpleMath::Vector3 GetWorldScale() const { return m_WorldTransform.Scale; }
 
 		DirectX::SimpleMath::Vector3 GetLocalPosition() const { return m_LocalTransform.Position; }
-		DirectX::SimpleMath::Vector3 GetLocalYawPitchRoll() const { return m_LocalTransform.Quaternion.ToEuler(); }
+		DirectX::SimpleMath::Vector3 GetLocalYawPitchRoll() const;
 		DirectX::SimpleMath::Quaternion GetLocalQuat() const { return m_LocalTransform.Quaternion; }
 		DirectX::SimpleMath::Vector3 GetLocalScale() const { return m_LocalTransform.Scale; }
 
@@ -67,7 +73,11 @@ namespace Blainn
 		
 		int GetFramesDirty() const { return m_NumFramesDirty; }
 		void DecreaseFramesDirty() { if (m_NumFramesDirty > 0) m_NumFramesDirty--; }
+
+		bool IsTransformDirty() const { return m_bIsTransformDirty; }
 	private:
+		void MarkDirty();
+
 		void UpdateWorldMatrix();
 	private:
 		Transform m_LocalTransform{};
@@ -79,5 +89,7 @@ namespace Blainn
 		DirectX::SimpleMath::Vector3 m_UpVector{};
 
 		int m_NumFramesDirty = g_NumFrameResources;
+
+		bool m_bIsTransformDirty = true;
 	};
 }

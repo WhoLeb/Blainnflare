@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include "Components/ActorComponents/TransformComponent.h"
 #include "Core/GameObject.h"
 #include "Core/GameTimer.h"
@@ -32,20 +33,60 @@ namespace Blainn
 			{
 				Input::SetCursorMode(CursorMode::Locked);
 
-				auto [mouseDX, mouseDY] = Input::GetMouseDelta();
+				//auto [mouseDX, mouseDY] = Input::GetMouseDelta();
 
-				float yawDeltaRad = XMConvertToRadians(mouseDX * m_Sensitivity);
-				float pitchDeltaRad  = XMConvertToRadians(mouseDY * m_Sensitivity);
+				//float yawDeltaRad = XMConvertToRadians(mouseDX * m_Sensitivity);
+				//float pitchDeltaRad  = XMConvertToRadians(mouseDY * m_Sensitivity);
 
-				auto currentQuat = transform->GetLocalQuat();
+				//auto currentQuat = transform->GetWorldQuat();
 
-				Quaternion yawQuat = Quaternion::CreateFromAxisAngle({ 0.f, 1.f, 0.f }, yawDeltaRad);
-				Quaternion pitchQuat = Quaternion::CreateFromAxisAngle({1.f, 0.f, 0.f}, pitchDeltaRad);
+				//Quaternion yawQuat = Quaternion::CreateFromAxisAngle({ 0.f, 1.f, 0.f }, yawDeltaRad);
+				//Quaternion pitchQuat = Quaternion::CreateFromAxisAngle({1.f, 0.f, 0.f}, pitchDeltaRad);
 
-				Quaternion finalQuat = pitchQuat * currentQuat * yawQuat;
+				//Quaternion finalQuat = pitchQuat * currentQuat * yawQuat;
 
-				finalQuat.Normalize();
-				transform->SetWorldQuat(finalQuat);
+				//finalQuat.Normalize();
+				//transform->SetWorldQuat(finalQuat);
+				{
+					//float yawDelta = mouseDX * m_Sensitivity;
+					//float pitchDelta = mouseDY * m_Sensitivity;
+
+					//auto currRot = transform->GetWorldYawPitchRoll();
+
+					//currRot.x += yawDelta;
+					//currRot.y += pitchDelta;
+
+					//currRot.y = std::clamp(currRot.y, -89.9f, 89.9f);
+
+					//transform->SetWorldYawPitchRoll(currRot);
+				}
+
+				{
+					auto [mouseDX, mouseDY] = Input::GetMouseDelta();
+
+					auto [totalYaw, totalPitch, totalRoll] = transform->GetWorldYawPitchRoll();
+					// Accumulate total angles based on mouse input
+					totalYaw += mouseDX * m_Sensitivity;
+					totalPitch += mouseDY * m_Sensitivity;
+
+					// Clamp pitch to prevent flipping (between -89° and 89°)
+					totalPitch = std::clamp(totalPitch, -89.0f, 89.0f);
+
+					// Convert angles from degrees to radians
+					float yawRad = XMConvertToRadians(totalYaw);
+					float pitchRad = XMConvertToRadians(totalPitch);
+
+					// Create quaternions for Yaw (around Y-axis) and Pitch (around X-axis)
+					Quaternion yawQuat = Quaternion::CreateFromAxisAngle({ 0.0f, 1.0f, 0.0f }, yawRad);
+					Quaternion pitchQuat = Quaternion::CreateFromAxisAngle({ 1.0f, 0.0f, 0.0f }, pitchRad);
+
+					// Combine rotations in YXZ order: Yaw first, then Pitch
+					Quaternion finalQuat = pitchQuat * yawQuat;
+					finalQuat.Normalize();
+
+					// Update the camera's world rotation
+					transform->SetWorldQuat(finalQuat);
+				}
 
 				DirectX::SimpleMath::Vector3 movement = { 0, 0, 0 };
 
@@ -61,7 +102,7 @@ namespace Blainn
 					auto forward = transform->GetWorldForwardVector();
 					auto right = transform->GetWorldRightVector();
 					auto up = Vector3{ 0, 1, 0 };
-					
+
 					auto moveDir = right * movement.x + up * movement.y + forward * movement.z;
 					moveDir.Normalize();
 

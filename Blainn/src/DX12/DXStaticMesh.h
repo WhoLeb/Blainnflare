@@ -46,5 +46,9 @@ namespace Blainn
 		bool m_bHasIndexBuffer = false;
 		Microsoft::WRL::ComPtr<ID3D12Resource> m_IndexBuffer;
 		UINT32 m_IndexCount;
+
+	public:
+
+		static std::shared_ptr<Blainn::DXStaticMesh> CreateCube(float side, const DirectX::SimpleMath::Color& color);
 	};
 }

@@ -175,35 +175,9 @@ namespace Blainn
 		}
 	}
 
-	//void Input::UpdateMouseDelta()
-	//{
-	//	POINT p;
-	//	GetCursorPos(&p);
-	//	//ScreenToClient(GetActiveWindow(), &p);
-
-	//	if (s_CursorLocked)
-	//	{
-	//		// Calculate delta movement
-	//		s_MouseDeltaX = p.x - s_LastMouseX;
-	//		s_MouseDeltaY = p.y - s_LastMouseY;
-
-	//		// Reset cursor to center to prevent large deltas
-	//		RECT rect;
-	//		GetClientRect(GetActiveWindow(), &rect);
-	//		POINT center = { (rect.right - rect.left) / 2, (rect.bottom - rect.top) / 2 };
-	//		ClientToScreen(GetActiveWindow(), &center);
-	//		SetCursorPos(center.x, center.y);
-
-	//		s_LastMouseX = center.x;
-	//		s_LastMouseY = center.y;
-	//	}
-	//	else
-	//	{
-	//		s_MouseDeltaX = 0;
-	//		s_MouseDeltaY = 0;
-	//		s_LastMouseX = p.x;
-	//		s_LastMouseY = p.y;
-	//	}
-	//}
+	KeyPressedDelegate Input::OnKeyPressedDelegate;
+	KeyReleasedDelegate Input::OnKeyReleasedDelegate;
+	MouseButtonPressedDelegate Input::OnMouseButtonPressedDelegate;
+	MouseButtonReleasedDelegate Input::OnMouseButtonReleasedDelegate;
 
 }

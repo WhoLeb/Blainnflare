@@ -200,49 +200,49 @@ namespace Blainn
 		}
 		//case WM_LBUTTONDOWN:
 		//{
-		//	Input::UpdateButtonState(Button::Left, KeyState::Pressed);
+		//	Input::UpdateButtonState(MouseButton::Left, KeyState::Pressed);
 		//	int xOffset = (short)LOWORD(lParam), yOffset = (short)HIWORD(lParam);
-		//	MouseButtonDownEvent event(Button::Left, xOffset, yOffset);
+		//	MouseButtonDownEvent event(MouseButton::Left, xOffset, yOffset);
 		//	m_Data.EventCallback(event);
 		//	return 0;
 		//}
 		//case WM_MBUTTONDOWN:
 		//{
-		//	Input::UpdateButtonState(Button::Middle, KeyState::Pressed);
+		//	Input::UpdateButtonState(MouseButton::Middle, KeyState::Pressed);
 		//	int xOffset = (short)LOWORD(lParam), yOffset = (short)HIWORD(lParam);
-		//	MouseButtonDownEvent event(Button::Middle, xOffset, yOffset);
+		//	MouseButtonDownEvent event(MouseButton::Middle, xOffset, yOffset);
 		//	m_Data.EventCallback(event);
 		//	return 0;
 		//}
 		//case WM_RBUTTONDOWN:
 		//{
-		//	Input::UpdateButtonState(Button::Right, KeyState::Pressed);
+		//	Input::UpdateButtonState(MouseButton::Right, KeyState::Pressed);
 		//	int xOffset = (short)LOWORD(lParam), yOffset = (short)HIWORD(lParam);
-		//	MouseButtonDownEvent event(Button::Right, xOffset, yOffset);
+		//	MouseButtonDownEvent event(MouseButton::Right, xOffset, yOffset);
 		//	m_Data.EventCallback(event);
 		//	return 0;
 		//}
 		//case WM_LBUTTONUP:
 		//{
-		//	Input::UpdateButtonState(Button::Left, KeyState::Released);
+		//	Input::UpdateButtonState(MouseButton::Left, KeyState::Released);
 		//	int xOffset = (short)LOWORD(lParam), yOffset = (short)HIWORD(lParam);
-		//	MouseButtonReleasedEvent event(Button::Left, xOffset, yOffset);
+		//	MouseButtonReleasedEvent event(MouseButton::Left, xOffset, yOffset);
 		//	m_Data.EventCallback(event);
 		//	return 0;
 		//}
 		//case WM_MBUTTONUP:
 		//{
-		//	Input::UpdateButtonState(Button::Middle, KeyState::Released);
+		//	Input::UpdateButtonState(MouseButton::Middle, KeyState::Released);
 		//	int xOffset = (short)LOWORD(lParam), yOffset = (short)HIWORD(lParam);
-		//	MouseButtonReleasedEvent event(Button::Middle, xOffset, yOffset);
+		//	MouseButtonReleasedEvent event(MouseButton::Middle, xOffset, yOffset);
 		//	m_Data.EventCallback(event);
 		//	return 0;
 		//}
 		//case WM_RBUTTONUP:
 		//{
-		//	Input::UpdateButtonState(Button::Right, KeyState::Released);
+		//	Input::UpdateButtonState(MouseButton::Right, KeyState::Released);
 		//	int xOffset = (short)LOWORD(lParam), yOffset = (short)HIWORD(lParam);
-		//	MouseButtonReleasedEvent event(Button::Right, xOffset, yOffset);
+		//	MouseButtonReleasedEvent event(MouseButton::Right, xOffset, yOffset);
 		//	m_Data.EventCallback(event);
 		//	return 0;
 		//}
@@ -271,39 +271,45 @@ namespace Blainn
 				auto& mouse = raw->data.mouse;
 				// mouse buttons down
 				{
+					bool mbd = false;
 					if (mouse.usButtonFlags & RI_MOUSE_LEFT_BUTTON_DOWN)
 					{
-						Input::UpdateButtonState(Button::Left, KeyState::Pressed);
+						Input::UpdateButtonState(MouseButton::Left, KeyState::Pressed);
+						Input::OnMouseButtonPressedDelegate.Broadcast(MouseButton::Left);
 						int xOffset = (short)LOWORD(lParam), yOffset = (short)HIWORD(lParam);
-						MouseButtonDownEvent event(Button::Left, xOffset, yOffset);
+						MouseButtonDownEvent event(MouseButton::Left, xOffset, yOffset);
 						m_Data.EventCallback(event);
 					}
 					if (mouse.usButtonFlags & RI_MOUSE_RIGHT_BUTTON_DOWN)
 					{
-						Input::UpdateButtonState(Button::Right, KeyState::Pressed);
+						Input::UpdateButtonState(MouseButton::Right, KeyState::Pressed);
+						Input::OnMouseButtonPressedDelegate.Broadcast(MouseButton::Right);
 						int xOffset = (short)LOWORD(lParam), yOffset = (short)HIWORD(lParam);
-						MouseButtonDownEvent event(Button::Right, xOffset, yOffset);
+						MouseButtonDownEvent event(MouseButton::Right, xOffset, yOffset);
 						m_Data.EventCallback(event);
 					}
 					if (mouse.usButtonFlags & RI_MOUSE_MIDDLE_BUTTON_DOWN)
 					{
-						Input::UpdateButtonState(Button::Middle, KeyState::Pressed);
+						Input::UpdateButtonState(MouseButton::Middle, KeyState::Pressed);
+						Input::OnMouseButtonPressedDelegate.Broadcast(MouseButton::Middle);
 						int xOffset = (short)LOWORD(lParam), yOffset = (short)HIWORD(lParam);
-						MouseButtonDownEvent event(Button::Middle, xOffset, yOffset);
+						MouseButtonDownEvent event(MouseButton::Middle, xOffset, yOffset);
 						m_Data.EventCallback(event);
 					}
 					if (mouse.usButtonFlags & RI_MOUSE_BUTTON_4_DOWN)
 					{
-						Input::UpdateButtonState(Button::ThumbForward, KeyState::Pressed);
+						Input::UpdateButtonState(MouseButton::ThumbForward, KeyState::Pressed);
+						Input::OnMouseButtonPressedDelegate.Broadcast(MouseButton::ThumbForward);
 						int xOffset = (short)LOWORD(lParam), yOffset = (short)HIWORD(lParam);
-						MouseButtonDownEvent event(Button::ThumbForward, xOffset, yOffset);
+						MouseButtonDownEvent event(MouseButton::ThumbForward, xOffset, yOffset);
 						m_Data.EventCallback(event);
 					}
 					if (mouse.usButtonFlags & RI_MOUSE_BUTTON_5_DOWN)
 					{
-						Input::UpdateButtonState(Button::ThumbBack, KeyState::Pressed);
+						Input::UpdateButtonState(MouseButton::ThumbBack, KeyState::Pressed);
+						Input::OnMouseButtonPressedDelegate.Broadcast(MouseButton::ThumbBack);
 						int xOffset = (short)LOWORD(lParam), yOffset = (short)HIWORD(lParam);
-						MouseButtonDownEvent event(Button::ThumbBack, xOffset, yOffset);
+						MouseButtonDownEvent event(MouseButton::ThumbBack, xOffset, yOffset);
 						m_Data.EventCallback(event);
 					}
 				}
@@ -311,37 +317,42 @@ namespace Blainn
 				{
 					if (mouse.usButtonFlags & RI_MOUSE_LEFT_BUTTON_UP)
 					{
-						Input::UpdateButtonState(Button::Left, KeyState::Released);
+						Input::UpdateButtonState(MouseButton::Left, KeyState::Released);
+						Input::OnMouseButtonReleasedDelegate.Broadcast(MouseButton::Left);
 						int xOffset = (short)LOWORD(lParam), yOffset = (short)HIWORD(lParam);
-						MouseButtonReleasedEvent event(Button::Left, xOffset, yOffset);
+						MouseButtonReleasedEvent event(MouseButton::Left, xOffset, yOffset);
 						m_Data.EventCallback(event);
 					}
 					if (mouse.usButtonFlags & RI_MOUSE_RIGHT_BUTTON_UP)
 					{
-						Input::UpdateButtonState(Button::Right, KeyState::Released);
+						Input::UpdateButtonState(MouseButton::Right, KeyState::Released);
+						Input::OnMouseButtonReleasedDelegate.Broadcast(MouseButton::Right);
 						int xOffset = (short)LOWORD(lParam), yOffset = (short)HIWORD(lParam);
-						MouseButtonReleasedEvent event(Button::Right, xOffset, yOffset);
+						MouseButtonReleasedEvent event(MouseButton::Right, xOffset, yOffset);
 						m_Data.EventCallback(event);
 					}
 					if (mouse.usButtonFlags & RI_MOUSE_MIDDLE_BUTTON_UP)
 					{
-						Input::UpdateButtonState(Button::Middle, KeyState::Released);
+						Input::UpdateButtonState(MouseButton::Middle, KeyState::Released);
+						Input::OnMouseButtonReleasedDelegate.Broadcast(MouseButton::Middle);
 						int xOffset = (short)LOWORD(lParam), yOffset = (short)HIWORD(lParam);
-						MouseButtonReleasedEvent event(Button::Middle, xOffset, yOffset);
+						MouseButtonReleasedEvent event(MouseButton::Middle, xOffset, yOffset);
 						m_Data.EventCallback(event);
 					}
 					if (mouse.usButtonFlags & RI_MOUSE_BUTTON_4_UP)
 					{
-						Input::UpdateButtonState(Button::ThumbForward, KeyState::Released);
+						Input::UpdateButtonState(MouseButton::ThumbForward, KeyState::Released);
+						Input::OnMouseButtonReleasedDelegate.Broadcast(MouseButton::ThumbForward);
 						int xOffset = (short)LOWORD(lParam), yOffset = (short)HIWORD(lParam);
-						MouseButtonReleasedEvent event(Button::ThumbForward, xOffset, yOffset);
+						MouseButtonReleasedEvent event(MouseButton::ThumbForward, xOffset, yOffset);
 						m_Data.EventCallback(event);
 					}
 					if (mouse.usButtonFlags & RI_MOUSE_BUTTON_5_UP)
 					{
-						Input::UpdateButtonState(Button::ThumbBack, KeyState::Released);
+						Input::UpdateButtonState(MouseButton::ThumbBack, KeyState::Released);
+						Input::OnMouseButtonReleasedDelegate.Broadcast(MouseButton::ThumbBack);
 						int xOffset = (short)LOWORD(lParam), yOffset = (short)HIWORD(lParam);
-						MouseButtonReleasedEvent event(Button::ThumbBack, xOffset, yOffset);
+						MouseButtonReleasedEvent event(MouseButton::ThumbBack, xOffset, yOffset);
 						m_Data.EventCallback(event);
 					}
 				}
@@ -359,6 +370,7 @@ namespace Blainn
 		case WM_KEYUP:
 		{
 			Input::UpdateKeyState(static_cast<KeyCode>(wParam), KeyState::Released);
+			Input::OnKeyReleasedDelegate.Broadcast((KeyCode)wParam);
 			KeyReleasedEvent event((int)wParam);
 			m_Data.EventCallback(event);
 			return 0;
@@ -366,6 +378,7 @@ namespace Blainn
 		case WM_KEYDOWN:
 		{
 			Input::UpdateKeyState(static_cast<KeyCode>(wParam), KeyState::Pressed);
+			Input::OnKeyPressedDelegate.Broadcast((KeyCode)wParam);
 			// 30th bit is set to 1 if the button was already pressed when the
 			// message is sent. So it is set to 1 if the button is held.
 			KeyPressedEvent event((int)wParam, (lParam & BIT(30)) != 0);

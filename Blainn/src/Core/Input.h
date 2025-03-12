@@ -1,12 +1,19 @@
 #pragma once
 
 #include "KeyCodes.h"
+#include "Delegates.h"
 
 #include <map>
 #include <utility>
 
+DECLARE_MULTICAST_DELEGATE(KeyPressedDelegate, Blainn::KeyCode);
+DECLARE_MULTICAST_DELEGATE(KeyReleasedDelegate, Blainn::KeyCode);
+DECLARE_MULTICAST_DELEGATE(MouseButtonPressedDelegate, Blainn::MouseButton);
+DECLARE_MULTICAST_DELEGATE(MouseButtonReleasedDelegate, Blainn::MouseButton);
+
 namespace Blainn
 {
+
 	struct KeyData
 	{
 		KeyCode Key;
@@ -53,6 +60,11 @@ namespace Blainn
 		static void UpdateKeyState(KeyCode key, KeyState newState);
 		static void UpdateButtonState(MouseButton button, KeyState newState);
 		static void ClearReleasedKeys();
+
+		static KeyPressedDelegate OnKeyPressedDelegate;
+		static KeyReleasedDelegate OnKeyReleasedDelegate;
+		static MouseButtonPressedDelegate OnMouseButtonPressedDelegate;
+		static MouseButtonReleasedDelegate OnMouseButtonReleasedDelegate;
 
 	private:
 		//static void UpdateMouseDelta();

@@ -62,6 +62,8 @@ namespace Blainn
 		UpdateViewMatrix();
 	}
 
+	
+
 	void Camera::SetViewportDimentions(int width, int height)
 	{
 		m_AspectRatio = float(width) / float(height);
@@ -81,10 +83,10 @@ namespace Blainn
 		
 		Matrix rotMatrix = Matrix::CreateFromQuaternion(m_Quaternion);
 		//Matrix rotMatrix = Matrix::CreateFromYawPitchRoll(m_Rotation.x, m_Rotation.y, m_Rotation.z);
-		forward = forward.Transform(forward, rotMatrix);
+		forward = Vector3::Transform(forward, rotMatrix);
 
 		Vector3 up{ 0, 1, 0 };
-		up = up.Transform(up, rotMatrix);
+		up = Vector3::Transform(up, rotMatrix);
 
 		Vector3 target = pos + forward;
 		Matrix view = Matrix::CreateLookAt(pos, target, up);

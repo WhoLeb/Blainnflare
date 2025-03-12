@@ -71,4 +71,48 @@ namespace Blainn
 		else
 			cmdList->DrawInstanced(m_VertexCount, 1, 0, 0);
 	}
+
+	std::shared_ptr<Blainn::DXStaticMesh> DXStaticMesh::CreateCube(float side, const DirectX::SimpleMath::Color& color)
+	{
+		using namespace DirectX;
+		std::vector<Blainn::DXStaticMesh::Vertex> vertices =
+		{
+			{ SimpleMath::Vector3(-side / 2, -side / 2, -side / 2), SimpleMath::Vector3(0, 0, 0), color,	SimpleMath::Vector2(0, 0)},
+			{ SimpleMath::Vector3(-side / 2, +side / 2, -side / 2), SimpleMath::Vector3(0, 0, 0), color,	SimpleMath::Vector2(0, 0)},
+			{ SimpleMath::Vector3(+side / 2, +side / 2, -side / 2), SimpleMath::Vector3(0, 0, 0), color,	SimpleMath::Vector2(0, 0)},
+			{ SimpleMath::Vector3(+side / 2, -side / 2, -side / 2), SimpleMath::Vector3(0, 0, 0), color,	SimpleMath::Vector2(0, 0)},
+			{ SimpleMath::Vector3(-side / 2, -side / 2, +side / 2), SimpleMath::Vector3(0, 0, 0), color,	SimpleMath::Vector2(0, 0)},
+			{ SimpleMath::Vector3(-side / 2, +side / 2, +side / 2), SimpleMath::Vector3(0, 0, 0), color,	SimpleMath::Vector2(0, 0)},
+			{ SimpleMath::Vector3(+side / 2, +side / 2, +side / 2), SimpleMath::Vector3(0, 0, 0), color,	SimpleMath::Vector2(0, 0)},
+			{ SimpleMath::Vector3(+side / 2, -side / 2, +side / 2), SimpleMath::Vector3(0, 0, 0), color,	SimpleMath::Vector2(0, 0)}
+		};
+
+		std::vector<UINT32> indices =
+		{
+			// front face
+			0, 1, 2,
+			0, 2, 3,
+			// back face
+			4, 6, 5,
+			4, 7, 6,
+			// left face
+			4, 5, 1,
+			4, 1, 0,
+			// right face
+			3, 2, 6,
+			3, 6, 7,
+			// top face
+			1, 5, 6,
+			1, 6, 2,
+			// bottom face
+			4, 0, 3,
+			4, 3, 7
+		};
+
+		Application::Get().GetResourceManager()->StartUploadCommands();
+		auto mesh = std::make_shared<Blainn::DXStaticMesh>(vertices, &indices);
+		Application::Get().GetResourceManager()->EndUploadCommands();
+		return mesh;
+	}
+
 }
