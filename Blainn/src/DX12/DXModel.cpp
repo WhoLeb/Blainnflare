@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "DXModel.h"
 
 #include "Core/Application.h"
@@ -25,6 +26,7 @@ namespace Blainn
 	{
 		for (auto& sm : m_SubMeshes)
 		{
+			sm.Mesh->Bind();
 			//bind textures, then draw mesh
 
 			sm.Mesh->Draw();

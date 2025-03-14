@@ -3,6 +3,8 @@
 
 #include "Components/ActorComponents/StaticMeshComponent.h"
 #include "Components/ActorComponents/TransformComponent.h"
+#include "Components/DebugComponents/WorldGridComponent.h"
+#include "Components/ComponentManager.h"
 #include "Core/Camera.h"
 #include "Core/GameObject.h"
 #include "Core/GameTimer.h"
@@ -115,7 +117,7 @@ namespace Blainn
 		auto cmdListAlloc = m_CurrentFrameResource->GetCommandAlloc();
 		ThrowIfFailed(cmdListAlloc->Reset());
 		
-		ThrowIfFailed(m_CommandList->Reset(cmdListAlloc.Get(), m_PSOs["opaque"].Get()));
+		ThrowIfFailed(m_CommandList->Reset(cmdListAlloc.Get(), m_PSOs["Opaque"].Get()));
 
 		m_CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
 			CurrentBackBuffer(),
@@ -187,6 +189,22 @@ namespace Blainn
 
 			model->OnRender();
 		}
+
+		m_CommandList->SetPipelineState(m_PSOs["LineList"].Get());
+
+		auto& lineListComponents = ComponentManager::Get().GetComponents<WorldGridComponent>();
+		for (auto& lineListComponent : lineListComponents)
+		{
+			auto bufferIndex = 9999;
+			UINT cbvIndex = m_CurrentFrameResourceIndex * g_NumObjects + bufferIndex;
+			auto cbvHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(m_CBVHeap->GetGPUDescriptorHandleForHeapStart());
+			cbvHandle.Offset(cbvIndex, m_CbvSrvUavDescriptorSize);
+
+			m_CommandList->SetGraphicsRootDescriptorTable(0, cbvHandle);
+			lineListComponent->Render();
+		}
+			
+
 	}
 
 	void DXRenderingContext::OnUpdate()
@@ -206,6 +224,8 @@ namespace Blainn
 	void DXRenderingContext::UpdateObjectsConstantBuffers(const Scene& scene)
 	{
 		auto currentObjectCB = m_CurrentFrameResource->GetObjectConstantBuffer();
+		ObjectConstants temp = { .World = DirectX::SimpleMath::Matrix::Identity };
+		currentObjectCB->CopyData(9999, temp);
 		const auto& renderObjects = scene.GetRenderObjects();
 		for (auto& mesh : renderObjects)
 		{
@@ -531,11 +551,16 @@ namespace Blainn
 		psoDesc.SampleDesc.Count = 1;
 		psoDesc.SampleDesc.Quality = 0;
 		psoDesc.DSVFormat = m_DepthStencilFormat;
-		ThrowIfFailed(m_Device->Device()->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&m_PSOs["opaque"])));
+		ThrowIfFailed(m_Device->Device()->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&m_PSOs["Opaque"])));
 
 		D3D12_GRAPHICS_PIPELINE_STATE_DESC wireframePSOdesc = psoDesc;
 		wireframePSOdesc.RasterizerState.FillMode = D3D12_FILL_MODE_WIREFRAME;
-		ThrowIfFailed(m_Device->Device()->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&m_PSOs["wireframe"])));
+		ThrowIfFailed(m_Device->Device()->CreateGraphicsPipelineState(&wireframePSOdesc, IID_PPV_ARGS(&m_PSOs["Wireframe"])));
+
+		D3D12_GRAPHICS_PIPELINE_STATE_DESC linelistDesc = psoDesc;
+		linelistDesc.RasterizerState.FillMode = D3D12_FILL_MODE_WIREFRAME;
+		linelistDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE;
+		ThrowIfFailed(m_Device->Device()->CreateGraphicsPipelineState(&linelistDesc, IID_PPV_ARGS(&m_PSOs["LineList"])));
 	}
 
 	void DXRenderingContext::BuildFrameResources()

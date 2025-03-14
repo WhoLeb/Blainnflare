@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -155,7 +155,7 @@
       <AdditionalDependencies>DirectXTK12.lib;assimp-vc143-mtd.lib;zlibstaticd.lib</AdditionalDependencies>
     </Lib>
     <Lib>
-      <AdditionalLibraryDirectories>$(SolutionDir)Dependencies\assimp\lib\Debug\;$(SolutionDir)Dependencies\assimp\contrib\zlib\Debug\;$(SolutionDir)Dependencies\DXTK\Bin\Desktop_2022_Win10\$(Platform)\$(Configuration)\</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)Dependencies\assimp\lib\Release\;$(SolutionDir)Dependencies\assimp\contrib\zlib\Release\;$(SolutionDir)Dependencies\DXTK\Bin\Desktop_2022_Win10\$(Platform)\$(Configuration)\</AdditionalLibraryDirectories>
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -168,6 +168,7 @@
     <ClInclude Include="src\Components\ActorComponents\TransformComponent.h" />
     <ClInclude Include="src\Components\Component.h" />
     <ClInclude Include="src\Components\ComponentManager.h" />
+    <ClInclude Include="src\Components\DebugComponents\WorldGridComponent.h" />
     <ClInclude Include="src\Core\Buffer.h" />
     <ClInclude Include="src\Core\Camera.h" />
     <ClInclude Include="src\Core\Delegates.h" />
@@ -209,6 +210,7 @@
   <ItemGroup>
     <ClCompile Include="src\Components\ActorComponents\CharacterComponents\OrbitalCameraController.cpp" />
     <ClCompile Include="src\Components\ActorComponents\TransformComponent.cpp" />
+    <ClCompile Include="src\Components\DebugComponents\WorldGridComponent.cpp" />
     <ClCompile Include="src\Core\Camera.cpp" />
     <ClCompile Include="src\Core\Delegates.cpp" />
     <ClCompile Include="src\Core\GameObject.cpp" />

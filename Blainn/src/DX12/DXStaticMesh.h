@@ -38,6 +38,7 @@ namespace Blainn
 			const std::vector<UINT32>* indices = nullptr
 		);
 
+		void Bind();
 		void Draw();
 	private:
 		Microsoft::WRL::ComPtr<ID3D12Resource> m_VertexBuffer;
@@ -50,5 +51,9 @@ namespace Blainn
 	public:
 
 		static std::shared_ptr<Blainn::DXStaticMesh> CreateCube(float side, const DirectX::SimpleMath::Color& color);
+		static std::shared_ptr<Blainn::DXStaticMesh> CreateSphere(float radius, UINT sliceCount, UINT stackCount, const DirectX::SimpleMath::Color& color);
+		static std::shared_ptr<Blainn::DXStaticMesh> CreateTorus(float majorRadius, float minorRadius, UINT majorSegments, UINT minorSegments, const DirectX::SimpleMath::Color& color);
+		static std::shared_ptr<Blainn::DXStaticMesh> CreatePyramid(float width, float height, const DirectX::SimpleMath::Color& color);
+
 	};
 }

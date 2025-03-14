@@ -38,9 +38,21 @@ namespace Blainn
 		std::vector<SubMeshData> m_SubMeshes;
 
 	public:
-		static std::shared_ptr<DXModel> ColoredCube(float side = 1.f, const DirectX::SimpleMath::Color& color = {1.f, 1.f, 1.f, 1.f})
+		static std::shared_ptr<DXModel> ColoredCube(float side = 1.f, const DirectX::SimpleMath::Color& color = {1.f, 0.f, 1.f, 1.f})
 		{
 			return std::make_shared<DXModel>(DXStaticMesh::CreateCube(side, color));
+		}
+		static std::shared_ptr<DXModel> ColoredSphere(float radius = 1.f, UINT sliceCount = 10, UINT stackCount = 10, const DirectX::SimpleMath::Color& color = {1.f, 0.f, 1.f, 1.f})
+		{
+			return std::make_shared<DXModel>(DXStaticMesh::CreateSphere(radius, sliceCount, stackCount, color));
+		}
+		static std::shared_ptr<DXModel> ColoredTorus(float majorRadius = 2.f, float minorRadius = 1.f, UINT majorSegments = 20, UINT minorSegments = 10, const DirectX::SimpleMath::Color& color = {1.f, 0.f, 1.f, 1.f})
+		{
+			return std::make_shared<DXModel>(DXStaticMesh::CreateTorus(majorRadius, minorRadius, majorSegments, minorSegments, color));
+		}
+		static std::shared_ptr<DXModel> ColoredPyramid(float width = 1.f, float height = 1.f, const DirectX::SimpleMath::Color& color = { 1.f, 0.f, 1.f, 1.f })
+		{
+			return std::make_shared<DXModel>(DXStaticMesh::CreatePyramid(width, height, color));
 		}
 	};
 }

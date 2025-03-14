@@ -8,6 +8,7 @@
 #include "Components/ActorComponents/CharacterComponents/CameraComponent.h"
 #include "Components/ActorComponents/CharacterComponents/PlayerInputComponent.h"
 #include "Components/ActorComponents/TransformComponent.h"
+#include "Components/DebugComponents/WorldGridComponent.h"
 #include "Core/Application.h"
 #include "Core/Events/Event.h"
 #include "Core/GameObject.h"
@@ -32,27 +33,30 @@ namespace solar
 
 		SetupInput();
 
+		auto worldGrid = m_Scene->QueueGameObject<Blainn::GameObject>();
+		worldGrid->AddComponent<Blainn::WorldGridComponent>();
+
 		auto sun = m_Scene->QueueGameObject<Planet>("sun", 0.f);
 		m_CelestialBodies.push_back(sun);
-		auto mesh = Blainn::DXModel::ColoredCube(6.f, DirectX::SimpleMath::Color{ 0.9f, 0.9f, 0.2f, 1.f });
+		auto mesh = Blainn::DXModel::ColoredTorus(3.f, 0.5f, 20, 10, DirectX::SimpleMath::Color{ 0.9f, 0.9f, 0.2f, 1.f });
 		sun->AddComponent<Blainn::StaticMeshComponent>(mesh);
 		auto* transform = sun->GetComponent<Blainn::TransformComponent>();
 		transform->SetLocalPosition({ 0.f, 0.f, 0.f });
 
-		auto planet1 = sun->AddChild<Planet>("planet 1", 8.f, 0.f, 2.f, Planet::DIRCounterClockwise, 10.f);
+		auto planet1 = sun->AddChild<Planet>("planet 1", 8.f, 0.f, 4.f, Planet::DIRCounterClockwise, 10.f);
 		m_CelestialBodies.push_back(planet1);
-		planet1->AddComponent<Blainn::StaticMeshComponent>(Blainn::DXModel::ColoredCube(1.f, DirectX::SimpleMath::Color{ 0.1f, 0.2f, 0.3f, 1.f }));
+		planet1->AddComponent<Blainn::StaticMeshComponent>(Blainn::DXModel::ColoredPyramid(2.f, 1.3f, DirectX::SimpleMath::Color{ 0.1f, 0.2f, 0.3f, 1.f }));
 
-		auto planet2 = sun->AddChild<Planet>("planet 2", 13.f, 40.f, 1.9f, Planet::DIRCounterClockwise, 10.f);
+		auto planet2 = sun->AddChild<Planet>("planet 2", 13.f, 40.f, 4.f, Planet::DIRCounterClockwise, 10.f);
 		m_CelestialBodies.push_back(planet2);
-		planet2->AddComponent<Blainn::StaticMeshComponent>(Blainn::DXModel::ColoredCube(1.7f, DirectX::SimpleMath::Color{ 0.1f, 0.2f, 0.3f, 1.f }));
+		planet2->AddComponent<Blainn::StaticMeshComponent>(Blainn::DXModel::ColoredSphere(1.7f, 15, 15, DirectX::SimpleMath::Color{ 0.1f, 0.2f, 0.3f, 1.f }));
 
-		auto planet3 = sun->AddChild<Planet>("planet 3", 19.f, 15.f, 3.8f, Planet::DIRClockwise, 70.f);
+		auto planet3 = sun->AddChild<Planet>("planet 3", 19.f, 15.f, 8.f, Planet::DIRClockwise, 70.f);
 		m_CelestialBodies.push_back(planet3);
 		planet3->AddComponent<Blainn::StaticMeshComponent>(Blainn::DXModel::ColoredCube(.6f, DirectX::SimpleMath::Color{ 0.1f, 0.2f, 0.3f, 1.f }));
 		transform = planet3->GetComponent<Blainn::TransformComponent>();
 
-		auto planet4 = sun->AddChild<Planet>("planet 4", 25.f, 170.f, 8.f, Planet::DIRCounterClockwise, 10.f);
+		auto planet4 = sun->AddChild<Planet>("planet 4", 25.f, 170.f, 16.f, Planet::DIRCounterClockwise, 10.f);
 		m_CelestialBodies.push_back(planet4);
 		planet4->AddComponent<Blainn::StaticMeshComponent>(Blainn::DXModel::ColoredCube(2.f, DirectX::SimpleMath::Color{ 0.1f, 0.2f, 0.3f, 1.f }));
 		auto moon4_1 = planet4->AddChild<Planet>("moon 4-1", 4.f, 15.f, 3.8f, Planet::DIRClockwise, 70.f);
@@ -60,10 +64,11 @@ namespace solar
 
 		m_CustomObject = m_Scene->QueueGameObject<Blainn::GameObject>();
 		m_CustomObject->AddComponent<Blainn::TransformComponent>();
-		m_CustomObject->AddComponent<Blainn::StaticMeshComponent>(Blainn::DXModel::ColoredCube(.5f));
+		//m_CustomObject->AddComponent<Blainn::StaticMeshComponent>(Blainn::DXModel::ColoredCube(.5f));
+		m_CustomObject->AddComponent<Blainn::StaticMeshComponent>("Meshes/wiener.gltf");
 
 		m_Player = m_Scene->QueueGameObject<Player>();
-		m_Player->GetComponent<Blainn::TransformComponent>()->SetWorldPosition({0.f, 0.f, -5.f});
+		m_Player->GetComponent<Blainn::TransformComponent>()->SetWorldPosition({0.f, 0.f, -10.f});
 		m_Scene->SetMainCamera(m_Player->GetComponent<Blainn::CameraComponent>());
 
 	}
