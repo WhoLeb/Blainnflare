@@ -14,8 +14,8 @@ namespace Blainn
 	{
 		using Super = InputComponent;
 	public:
-		PlayerInputComponent(float speed = 5.f, float sensitivity = .1f)
-			: Super(), m_Speed(speed), m_Sensitivity(sensitivity)
+		PlayerInputComponent(float speed = 5.f, float lowSpeed = 5.f, float highSpeed = 10.f, float sensitivity = .1f)
+			: Super(), m_Speed(speed), m_LowSpeed(lowSpeed), m_HighSpeed(highSpeed), m_Sensitivity(sensitivity)
 		{}
 
 		void HandleInput(const GameTimer& gt)
@@ -33,60 +33,30 @@ namespace Blainn
 			{
 				Input::SetCursorMode(CursorMode::Locked);
 
-				//auto [mouseDX, mouseDY] = Input::GetMouseDelta();
+				auto [mouseDX, mouseDY] = Input::GetMouseDelta();
 
-				//float yawDeltaRad = XMConvertToRadians(mouseDX * m_Sensitivity);
-				//float pitchDeltaRad  = XMConvertToRadians(mouseDY * m_Sensitivity);
+				auto [totalYaw, totalPitch, totalRoll] = transform->GetWorldYawPitchRoll();
+				totalYaw += mouseDX * m_Sensitivity;
+				totalPitch += mouseDY * m_Sensitivity;
 
-				//auto currentQuat = transform->GetWorldQuat();
+				if (totalYaw > 360.f)
+					totalYaw -= 360.f;
+				else if (totalYaw < 0.)
+					totalYaw += 360.f;
+					
+				totalPitch = std::clamp(totalPitch, -89.0f, 89.0f);
+				
 
-				//Quaternion yawQuat = Quaternion::CreateFromAxisAngle({ 0.f, 1.f, 0.f }, yawDeltaRad);
-				//Quaternion pitchQuat = Quaternion::CreateFromAxisAngle({1.f, 0.f, 0.f}, pitchDeltaRad);
+				float yawRad = XMConvertToRadians(totalYaw);
+				float pitchRad = XMConvertToRadians(totalPitch);
 
-				//Quaternion finalQuat = pitchQuat * currentQuat * yawQuat;
+				Quaternion yawQuat = Quaternion::CreateFromAxisAngle({ 0.0f, 1.0f, 0.0f }, yawRad);
+				Quaternion pitchQuat = Quaternion::CreateFromAxisAngle({ 1.0f, 0.0f, 0.0f }, pitchRad);
 
-				//finalQuat.Normalize();
-				//transform->SetWorldQuat(finalQuat);
-				{
-					//float yawDelta = mouseDX * m_Sensitivity;
-					//float pitchDelta = mouseDY * m_Sensitivity;
+				Quaternion finalQuat = pitchQuat * yawQuat;
+				finalQuat.Normalize();
 
-					//auto currRot = transform->GetWorldYawPitchRoll();
-
-					//currRot.x += yawDelta;
-					//currRot.y += pitchDelta;
-
-					//currRot.y = std::clamp(currRot.y, -89.9f, 89.9f);
-
-					//transform->SetWorldYawPitchRoll(currRot);
-				}
-
-				{
-					auto [mouseDX, mouseDY] = Input::GetMouseDelta();
-
-					auto [totalYaw, totalPitch, totalRoll] = transform->GetWorldYawPitchRoll();
-					// Accumulate total angles based on mouse input
-					totalYaw += mouseDX * m_Sensitivity;
-					totalPitch += mouseDY * m_Sensitivity;
-
-					// Clamp pitch to prevent flipping (between -89° and 89°)
-					totalPitch = std::clamp(totalPitch, -89.0f, 89.0f);
-
-					// Convert angles from degrees to radians
-					float yawRad = XMConvertToRadians(totalYaw);
-					float pitchRad = XMConvertToRadians(totalPitch);
-
-					// Create quaternions for Yaw (around Y-axis) and Pitch (around X-axis)
-					Quaternion yawQuat = Quaternion::CreateFromAxisAngle({ 0.0f, 1.0f, 0.0f }, yawRad);
-					Quaternion pitchQuat = Quaternion::CreateFromAxisAngle({ 1.0f, 0.0f, 0.0f }, pitchRad);
-
-					// Combine rotations in YXZ order: Yaw first, then Pitch
-					Quaternion finalQuat = pitchQuat * yawQuat;
-					finalQuat.Normalize();
-
-					// Update the camera's world rotation
-					transform->SetWorldQuat(finalQuat);
-				}
+				transform->SetWorldQuat(finalQuat);
 
 				DirectX::SimpleMath::Vector3 movement = { 0, 0, 0 };
 
@@ -96,6 +66,11 @@ namespace Blainn
 				if (Input::IsKeyHeld(KeyCode::D)) movement.x += 1.0f;
 				if (Input::IsKeyHeld(KeyCode::Q)) movement.y -= 1.0f;
 				if (Input::IsKeyHeld(KeyCode::E)) movement.y += 1.0f;
+				float speed;
+				if (Input::IsKeyHeld(KeyCode::Shift))
+					speed = m_HighSpeed;
+				else
+					speed = m_LowSpeed;
 
 				if (movement.LengthSquared() > 0)
 				{
@@ -108,13 +83,12 @@ namespace Blainn
 
 					auto prevPos = transform->GetWorldPosition();
 
-					transform->SetWorldPosition(prevPos + moveDir * m_Speed * gt.DeltaTime());
+					transform->SetWorldPosition(prevPos + moveDir * speed * gt.DeltaTime());
 				}
 
 			}
 			else
 			{
-				// Unlock cursor when not rotating
 				Input::SetCursorMode(CursorMode::Normal);
 			}
 		}
@@ -122,6 +96,9 @@ namespace Blainn
 	private:
 		float m_Speed;
 		float m_Sensitivity;
+
+		const float m_LowSpeed;
+		const float m_HighSpeed;
 	};
 }
 

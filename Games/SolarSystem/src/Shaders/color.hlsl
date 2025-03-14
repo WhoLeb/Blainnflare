@@ -23,6 +23,7 @@ cbuffer cbPass : register(b1)
 
 struct VSin
 {
+    uint vertexID : SV_VertexID;
     float3 pos : POSITION;
     float3 normal : NORMAL;
     float4 color : COLOR;
@@ -41,7 +42,8 @@ struct VSout
 VSout VSmain(VSin vin)
 {
     VSout vout;
-	
+    float sinTotal = sin(gTotalTime);
+
     float4 posW = mul(float4(vin.pos, 1.f), gWorld);
     vout.posH = mul(posW, gViewProj);
 

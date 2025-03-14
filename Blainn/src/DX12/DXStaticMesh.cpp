@@ -123,86 +123,146 @@ namespace Blainn
 
 	std::shared_ptr<Blainn::DXStaticMesh> DXStaticMesh::CreateSphere(float radius, UINT sliceCount, UINT stackCount, const DirectX::SimpleMath::Color& color)
 	{
+		return CreateCapsule(radius, 2 * radius, sliceCount, stackCount, 1, color);
+	}
+
+	std::shared_ptr<Blainn::DXStaticMesh> DXStaticMesh::CreateCapsule(float radius, float height, UINT sliceCount, UINT sphereStackCount, UINT cylinderStackCount, const DirectX::SimpleMath::Color& color)
+	{
 		using namespace DirectX;
 		using namespace DirectX::SimpleMath;
-
 		std::vector<DXStaticMesh::Vertex> vertices;
 		std::vector<UINT32> indices;
 
-		vertices.push_back({
-				.Position = {0.f, radius, 0},
-				.Normal = {0.f, 1.f, 0.f},
-				.Color = color,
-				.UV = {0.f, 0.f}
-			});
+		if (cylinderStackCount == 0)
+		{
+			cylinderStackCount = 1;
+		}
 
-		float phiStep = XM_PI / stackCount;
+		if (height < radius * 2.f)
+			height = radius * 2.f;
+
+		float halfHeight = (height - 2.f * radius) * 0.5f;
+		float phiStep = XM_PI / (sphereStackCount + 1);
 		float thetaStep = XM_2PI / sliceCount;
 
-		for (UINT i = 1; i < stackCount; ++i)
+		UINT topPoleIndex = (UINT)vertices.size();
+		vertices.push_back({ {0, halfHeight + radius, 0}, {0, 1, 0}, color, {0.5f, 0.0f} });
+
+		UINT topRingIndex = (UINT)vertices.size();
+		for (UINT i = 1; i <= sphereStackCount / 2; ++i)
 		{
 			float phi = i * phiStep;
-			for (UINT j = 0; j <= sliceCount; ++j)
+			float y = halfHeight + radius * cosf(phi);
+			float r = radius * sinf(phi);
+
+			for (UINT j = 0; j < sliceCount; ++j)
 			{
 				float theta = j * thetaStep;
 
-				Vertex v;
+				float x = r * cosf(theta);
+				float z = r * sinf(theta);
 
-				v.Position.x = radius * sinf(phi) * cosf(theta);
-				v.Position.y = radius * cosf(phi);
-				v.Position.z = radius * sinf(phi) * sin(theta);
+				Vector3 normal = Vector3(x, radius * cosf(phi), z);
+				normal.Normalize();
 
-				v.Normal = v.Position / radius;
-
-				v.Color = color;
-
-				v.UV.x = theta / (XM_2PI);
-				v.UV.y = phi / (XM_PI);
-
-				vertices.push_back(v);
+				vertices.push_back({ {x, y, z}, normal, color, { (float)j / sliceCount, (float)i / sphereStackCount } });
 			}
 		}
 
-		vertices.push_back({
-				.Position = {0.f, -radius, 0},
-				.Normal = {0.f, -1.f, 0.f},
-				.Color = color,
-				.UV = {0.f, 1.f}
-			});
-
-		UINT baseIndex = 1;
-		UINT ringVertexCount = sliceCount + 1;
-
-		for (UINT i = 1; i <= sliceCount; ++i)
+		UINT cylinderStartIndex = (UINT)vertices.size() - sliceCount;
+		for (UINT i = 1; i < cylinderStackCount; ++i)
 		{
-			indices.push_back(i + 1);
-			indices.push_back(i);
-			indices.push_back(0);
+			float y = halfHeight - (i * (2.0f * halfHeight) / cylinderStackCount);
+
+			for (UINT j = 0; j < sliceCount; ++j)
+			{
+				float theta = j * thetaStep;
+				float x = radius * cosf(theta);
+				float z = radius * sinf(theta);
+
+				vertices.push_back({ {x, y, z}, {x, 0.0f, z}, color, { (float)j / sliceCount, (float)(i + cylinderStackCount / 2) / cylinderStackCount } });
+			}
 		}
 
-		for (UINT i = 0; i < stackCount - 2; ++i)
+		UINT bottomStartIndex = (UINT)vertices.size() - sliceCount;
+		for (UINT i = sphereStackCount / 2; i <= sphereStackCount; ++i)
+		{
+			float phi = i * phiStep;
+			float y = -halfHeight + radius * cosf(phi);
+			float r = radius * sinf(phi);
+
+			for (UINT j = 0; j < sliceCount; ++j)
+			{
+				float theta = j * thetaStep;
+
+				float x = r * cosf(theta);
+				float z = r * sinf(theta);
+
+				Vector3 normal = Vector3(x, radius * cosf(phi), z);
+				normal.Normalize();
+
+				vertices.push_back({ {x, y, z}, normal, color, { (float)j / sliceCount, (float)i / sphereStackCount } });
+			}
+		}
+
+		UINT bottomPoleIndex = (UINT)vertices.size();
+		vertices.push_back({ {0, -halfHeight - radius, 0}, {0, -1, 0}, color, {0.5f, 0.5f} }); // Bottom center
+
+		for (UINT j = 0; j < sliceCount; ++j)
+			indices.insert(indices.end(), {
+					topPoleIndex, topRingIndex + (j + 1) % sliceCount, topRingIndex + j
+				});
+
+		UINT ringVertexCount = sliceCount + 1;
+		for (UINT i = 0; i < (sphereStackCount / 2) - 1; ++i)
 		{
 			for (UINT j = 0; j < sliceCount; ++j)
 			{
-				indices.push_back(baseIndex + i * ringVertexCount + j);
-				indices.push_back(baseIndex + i * ringVertexCount + j + 1);
-				indices.push_back(baseIndex + (i + 1) * ringVertexCount + j);
+				UINT a = topRingIndex + i * sliceCount + j;
+				UINT b = topRingIndex + (i + 1) * sliceCount + j;
+				UINT c = topRingIndex + (i + 1) * sliceCount + (j + 1) % sliceCount;
+				UINT d = topRingIndex + i * sliceCount + (j + 1) % sliceCount;
 
-				indices.push_back(baseIndex + (i + 1) * ringVertexCount + j);
-				indices.push_back(baseIndex + i * ringVertexCount + j + 1);
-				indices.push_back(baseIndex + (i + 1) * ringVertexCount + j + 1);
+				indices.insert(indices.end(), { d, b, a });
+				indices.insert(indices.end(), { c, b, d });
 			}
 		}
 
-		UINT southPoleIndex = (UINT)vertices.size() - 1;
-		baseIndex = southPoleIndex - ringVertexCount;
-
-		for (UINT i = 0; i < sliceCount; ++i)
+		for (UINT i = 0; i < cylinderStackCount - 1; ++i)
 		{
-			indices.push_back(southPoleIndex);
-			indices.push_back(baseIndex + i);
-			indices.push_back(baseIndex + i + 1);
+			for (UINT j = 0; j < sliceCount; ++j)
+			{
+				UINT a = cylinderStartIndex + i * sliceCount + j;
+				UINT b = cylinderStartIndex + (i + 1) * sliceCount + j;
+				UINT next_j = (j + 1) % sliceCount;
+				UINT c = cylinderStartIndex + i * sliceCount + next_j;
+				UINT d = cylinderStartIndex + (i + 1) * sliceCount + next_j;
+
+				indices.insert(indices.end(), { c, b, a });
+				indices.insert(indices.end(), { d, b, c });
+			}
 		}
+
+		for (UINT i = 0; i <= sphereStackCount / 2 + 1; ++i)
+		{
+			for (UINT j = 0; j < sliceCount; ++j)
+			{
+				UINT a = bottomStartIndex + i * sliceCount + j;
+				UINT b = bottomStartIndex + (i + 1) * sliceCount + j;
+				UINT c = bottomStartIndex + (i + 1) * sliceCount + (j + 1) % sliceCount;
+				UINT d = bottomStartIndex + i * sliceCount + (j + 1) % sliceCount;
+
+				indices.insert(indices.end(), { d, b, a });
+				indices.insert(indices.end(), { c, b, d });
+			}
+		}
+
+		UINT lastRingStart = bottomPoleIndex - sliceCount;
+
+		for (UINT j = 0; j < sliceCount; ++j)
+			indices.insert(indices.end(), {
+				bottomPoleIndex, lastRingStart + j, lastRingStart + (j+1) % sliceCount
+				});
 
 		Application::Get().GetResourceManager()->StartUploadCommands();
 		auto mesh = std::make_shared<DXStaticMesh>(vertices, &indices);
@@ -212,66 +272,78 @@ namespace Blainn
 
 	std::shared_ptr<Blainn::DXStaticMesh> DXStaticMesh::CreateTorus(float majorRadius, float minorRadius, UINT majorSegments, UINT minorSegments, const DirectX::SimpleMath::Color& color)
 	{
+		return CreateTorusKnot(1, 0, majorRadius, minorRadius, majorSegments, minorSegments, color);
+	}
+
+	std::shared_ptr<Blainn::DXStaticMesh> DXStaticMesh::CreateTorusKnot(int p, int q, float radius, float tubeRadius, UINT curveSegments, UINT tubeSegments, const DirectX::SimpleMath::Color& color)
+	{
 		using namespace DirectX;
 		using namespace DirectX::SimpleMath;
 		std::vector<DXStaticMesh::Vertex> vertices;
 		std::vector<UINT32> indices;
 
-		float majorStep = XM_2PI / majorSegments;
-		float minorStep = XM_2PI / minorSegments;
+		std::vector<Vector3> curvePoints;
 
-		for (UINT i = 0; i <= majorSegments; ++i) {
-			float majorAngle = i * majorStep;
+		float phiStep = XM_2PI / curveSegments;
 
-			float cosMajor = cosf(majorAngle);
-			float sinMajor = sinf(majorAngle);
+		for (UINT i = 0; i < curveSegments; ++i)
+		{
+			float phi = i * phiStep;
 
-			Vector3 center = { majorRadius * cosMajor, 0, majorRadius * sinMajor };
-			Matrix rotation = Matrix::CreateFromAxisAngle({ 0.f, 1.f, 0.f }, majorAngle);
-
-			for (UINT j = 0; j <= minorSegments; ++j) {
-				float minorAngle = j * minorStep;
-				float cosMinor = cosf(minorAngle);
-				float sinMinor = sinf(minorAngle);
-
-
-				Vector3 pos = {
-					(majorRadius + minorRadius * cosMinor) * cosMajor,
-					minorRadius * sinMinor,
-					(majorRadius + minorRadius * cosMinor) * sinMajor
-				};
-
-
-				Vertex v;
-				v.Position = pos;
-
-				v.Normal = {
-					cosMinor * cosMajor,
-					sinMajor,
-					cosMinor * sinMajor
-				};
-
-				v.Color = color;
-
-				v.UV = { (float)i / majorSegments, (float)j / minorSegments };
-
-				vertices.push_back(v);
-			}
+			float r = cosf(q * phi) + 2.f;
+			float x = r * cosf(p * phi);
+			float y = -sinf(q * phi);
+			float z = r * sinf(p * phi);
+			curvePoints.push_back({ x, y, z });
 		}
 
-		UINT ringVertexCount = minorSegments + 1;
-		for (UINT i = 0; i < majorSegments; ++i) {
-			for (UINT j = 0; j < minorSegments; ++j) {
+		UINT ringVertexCount = tubeSegments + 1;
+
+		for (UINT i = 0; i < curveSegments; ++i)
+		{
+			Vector3 tangent;
+
+			auto next = curvePoints[(i + 1) % curvePoints.size()];
+			auto curr = curvePoints[i];
+			auto T = next - curr;
+			T.Normalize();
+
+			Vector3 N = T.Cross({ 0.f, 1.f, 0.f });
+			N.Normalize();
+			Vector3 B = N.Cross(T);
+
+			for (UINT j = 0; j <= tubeSegments; ++j)
+			{
+				float theta = j * XM_2PI / tubeSegments;
+				float cosTheta = cosf(theta);
+				float sinTheta = cosf(theta);
+
+				Vector3 radialOffset = N * (cosf(theta) * tubeRadius) + B * (sinf(theta) * tubeRadius);
+				Vector3 pos = curr + radialOffset;
+
+				radialOffset.Normalize();
+				Vector2 texcoord = { float(i) / curveSegments, float(j) / tubeSegments };
+
+				vertices.push_back({ pos, radialOffset, color, texcoord });
+			}
+
+		}
+
+		for (UINT i = 0; i < curveSegments; ++i)
+		{
+			for (UINT j = 0; j < tubeSegments; ++j)
+			{
 				UINT a = i * ringVertexCount + j;
-				UINT b = (i + 1) * ringVertexCount + j;
-				UINT c = (i + 1) * ringVertexCount + j + 1;
+				UINT b = ((i + 1) % (curveSegments)) * ringVertexCount + j;
+				UINT c = ((i + 1) % (curveSegments)) * ringVertexCount + j + 1;
 				UINT d = i * ringVertexCount + j + 1;
 
 				// Correct CCW winding order
-				indices.insert(indices.end(), { a, d, b });
-				indices.insert(indices.end(), { d, c, b });
+				indices.insert(indices.end(), { a, b, d });
+				indices.insert(indices.end(), { d, b, c });
 			}
 		}
+
 
 		Application::Get().GetResourceManager()->StartUploadCommands();
 		auto mesh = std::make_shared<DXStaticMesh>(vertices, &indices);
@@ -281,28 +353,91 @@ namespace Blainn
 
 	std::shared_ptr<Blainn::DXStaticMesh> DXStaticMesh::CreatePyramid(float width, float height, const DirectX::SimpleMath::Color& color)
 	{
+		return CreateCylinder(width / 2.f, 0.f, height, 4, 1, color);
+	}
+
+	std::shared_ptr<Blainn::DXStaticMesh> DXStaticMesh::CreateCone(float bottomRadius, float height, UINT sliceCount, const DirectX::SimpleMath::Color& color)
+	{
+		return CreateCylinder(bottomRadius, 0.f, height, sliceCount, 1, color);
+	}
+
+	std::shared_ptr<Blainn::DXStaticMesh> DXStaticMesh::CreateCylinder(float bottomRadius, float topRadius, float height, UINT sliceCount, UINT stackCount, const DirectX::SimpleMath::Color& color)
+	{
 		using namespace DirectX;
 		using namespace DirectX::SimpleMath;
 		std::vector<DXStaticMesh::Vertex> vertices;
 		std::vector<UINT32> indices;
 
-		float halfWidth = width / 2.0f;
-		float halfHeight = height / 2.0f;
+		float stackHeight = height / stackCount;
+		float radiusStep = (topRadius - bottomRadius) / stackCount;
+		UINT ringCount = stackCount + 1;
 
-		vertices = {
-			{{ -halfWidth, -halfHeight, -halfWidth }, {0,-1,0}, color, {0,1}},
-			{{ halfWidth, -halfHeight, -halfWidth }, {0,-1,0}, color, {1,1}},
-			{{ halfWidth, -halfHeight, halfWidth }, {0,-1,0}, color, {1,0}},
-			{{ -halfWidth, -halfHeight, halfWidth }, {0,-1,0}, color, {0,0}},
-			{{ 0, halfHeight, 0 }, {0,1,0}, color, {0.5f,0.5f}}
-		};
+		float dTheta = XM_2PI / sliceCount;
 
-		indices.insert(indices.end(), { 0,1,2, 0,2,3 });
+		// Vertices
+		for (UINT i = 0; i < ringCount; ++i)
+		{
+			float y = -0.5f * height + i * stackHeight;
+			float r = bottomRadius + i * radiusStep;
 
-		indices.insert(indices.end(), { 0,4,1 });
-		indices.insert(indices.end(), { 1,4,2 });
-		indices.insert(indices.end(), { 2,4,3 });
-		indices.insert(indices.end(), { 3,4,0 });
+			float dTheta = XM_2PI / sliceCount;
+
+			for (UINT j = 0; j <= sliceCount; ++j)
+			{
+				float c = cosf(j * dTheta);
+				float s = sinf(j * dTheta);
+
+				Vertex vertex;
+
+				vertex.Position = Vector3(r * c, y, r * s);
+				vertex.Normal = Vector3(c, 0.0f, s);
+				vertex.Color = color;
+				vertex.UV.x = (float)j / sliceCount;
+				vertex.UV.y = 1.0f - (float)i / stackCount;
+
+				vertices.push_back(vertex);
+			}
+		}
+
+		// Indices for side
+		UINT ringVertexCount = sliceCount + 1;
+		for (UINT i = 0; i < stackCount; ++i)
+		{
+			for (UINT j = 0; j < sliceCount; ++j)
+			{
+				indices.push_back(i * ringVertexCount + j);
+				indices.push_back((i + 1) * ringVertexCount + j);
+				indices.push_back((i + 1) * ringVertexCount + j + 1);
+
+				indices.push_back(i * ringVertexCount + j);
+				indices.push_back((i + 1) * ringVertexCount + j + 1);
+				indices.push_back(i * ringVertexCount + j + 1);
+			}
+		}
+
+		// Top Cap (Using existing top ring vertices)
+		if (topRadius > 0.0f)
+		{
+			UINT baseIndex = (ringCount - 1) * ringVertexCount; // First vertex of top ring
+			for (UINT i = 0; i < sliceCount; ++i)
+			{
+				indices.push_back(baseIndex + sliceCount); // Last vertex in the ring
+				indices.push_back(baseIndex + (i + 1) % ringVertexCount);
+				indices.push_back(baseIndex + i);
+			}
+		}
+
+		// Bottom Cap (Using existing bottom ring vertices)
+		if (bottomRadius > 0.0f)
+		{
+			UINT baseIndex = 0; // First vertex of bottom ring
+			for (UINT i = 0; i < sliceCount; ++i)
+			{
+				indices.push_back(baseIndex + sliceCount); // Last vertex in the ring
+				indices.push_back(baseIndex + i);
+				indices.push_back(baseIndex + (i + 1) % ringVertexCount);
+			}
+		}
 
 		Application::Get().GetResourceManager()->StartUploadCommands();
 		auto mesh = std::make_shared<DXStaticMesh>(vertices, &indices);

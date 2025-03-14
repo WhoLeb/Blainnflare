@@ -95,7 +95,7 @@ namespace Blainn
 		std::unordered_map<std::string, Microsoft::WRL::ComPtr<ID3D12PipelineState>> m_PSOs;
 
 		// TODO: this should also be moved into another shader manager(or library, 
-		// like in Hazel) class that would manage shaders and give them based
+		// like in Hazel) class that would manage shaders and give them out based
 		// on what the pipeline asks for
 		std::unordered_map<std::string, std::shared_ptr<DXShader>> m_Shaders;
 

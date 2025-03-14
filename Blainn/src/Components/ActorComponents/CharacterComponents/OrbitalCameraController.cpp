@@ -55,6 +55,7 @@ namespace Blainn
 
 			m_Phi += phiDeltaRad;
 			m_Theta += thetaDeltaRad;
+
 			m_Phi = std::clamp(m_Phi, 0.01f, XM_PI - 0.01f);
 
 			if (m_Theta > XM_2PI)
@@ -78,13 +79,13 @@ namespace Blainn
 		Vector3 camWorldPos = targetPos + rotatedOffset;
 
 		Vector3 forward = (targetPos - camWorldPos);
-		if (forward.LengthSquared() > 0.001f)
+		if (forward.LengthSquared() > 0.00001f)
 			forward.Normalize();
 		else
 			forward = Vector3::UnitZ;
 
 		Vector3 right = Vector3::Up.Cross(forward);
-		if(right.LengthSquared() < 0.001f)
+		if(right.LengthSquared() < 0.00001f)
 		{
 			right = Vector3::Right;
 		}

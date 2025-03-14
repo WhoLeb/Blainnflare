@@ -51,9 +51,16 @@ namespace Blainn
 	public:
 
 		static std::shared_ptr<Blainn::DXStaticMesh> CreateCube(float side, const DirectX::SimpleMath::Color& color);
+
 		static std::shared_ptr<Blainn::DXStaticMesh> CreateSphere(float radius, UINT sliceCount, UINT stackCount, const DirectX::SimpleMath::Color& color);
+		static std::shared_ptr<Blainn::DXStaticMesh> CreateCapsule(float radius, float height, UINT sliceCount, UINT sphereStackCount, UINT cylinderStackCount, const DirectX::SimpleMath::Color& color);
+
 		static std::shared_ptr<Blainn::DXStaticMesh> CreateTorus(float majorRadius, float minorRadius, UINT majorSegments, UINT minorSegments, const DirectX::SimpleMath::Color& color);
+		static std::shared_ptr<Blainn::DXStaticMesh> CreateTorusKnot(int p, int q, float radius, float tubeRadius, UINT curveSegments, UINT tubeSegments, const DirectX::SimpleMath::Color& color);
+
 		static std::shared_ptr<Blainn::DXStaticMesh> CreatePyramid(float width, float height, const DirectX::SimpleMath::Color& color);
+		static std::shared_ptr<Blainn::DXStaticMesh> CreateCone(float bottomRadius, float height, UINT sliceCount, const DirectX::SimpleMath::Color& color);
+		static std::shared_ptr<Blainn::DXStaticMesh> CreateCylinder(float bottomRadius, float topRadius, float height, UINT sliceCount, UINT stackCount, const DirectX::SimpleMath::Color& color);
 
 	};
 }

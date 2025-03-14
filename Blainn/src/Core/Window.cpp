@@ -198,62 +198,6 @@ namespace Blainn
 			((MINMAXINFO*)lParam)->ptMinTrackSize.y = 200;
 			return 0;
 		}
-		//case WM_LBUTTONDOWN:
-		//{
-		//	Input::UpdateButtonState(MouseButton::Left, KeyState::Pressed);
-		//	int xOffset = (short)LOWORD(lParam), yOffset = (short)HIWORD(lParam);
-		//	MouseButtonDownEvent event(MouseButton::Left, xOffset, yOffset);
-		//	m_Data.EventCallback(event);
-		//	return 0;
-		//}
-		//case WM_MBUTTONDOWN:
-		//{
-		//	Input::UpdateButtonState(MouseButton::Middle, KeyState::Pressed);
-		//	int xOffset = (short)LOWORD(lParam), yOffset = (short)HIWORD(lParam);
-		//	MouseButtonDownEvent event(MouseButton::Middle, xOffset, yOffset);
-		//	m_Data.EventCallback(event);
-		//	return 0;
-		//}
-		//case WM_RBUTTONDOWN:
-		//{
-		//	Input::UpdateButtonState(MouseButton::Right, KeyState::Pressed);
-		//	int xOffset = (short)LOWORD(lParam), yOffset = (short)HIWORD(lParam);
-		//	MouseButtonDownEvent event(MouseButton::Right, xOffset, yOffset);
-		//	m_Data.EventCallback(event);
-		//	return 0;
-		//}
-		//case WM_LBUTTONUP:
-		//{
-		//	Input::UpdateButtonState(MouseButton::Left, KeyState::Released);
-		//	int xOffset = (short)LOWORD(lParam), yOffset = (short)HIWORD(lParam);
-		//	MouseButtonReleasedEvent event(MouseButton::Left, xOffset, yOffset);
-		//	m_Data.EventCallback(event);
-		//	return 0;
-		//}
-		//case WM_MBUTTONUP:
-		//{
-		//	Input::UpdateButtonState(MouseButton::Middle, KeyState::Released);
-		//	int xOffset = (short)LOWORD(lParam), yOffset = (short)HIWORD(lParam);
-		//	MouseButtonReleasedEvent event(MouseButton::Middle, xOffset, yOffset);
-		//	m_Data.EventCallback(event);
-		//	return 0;
-		//}
-		//case WM_RBUTTONUP:
-		//{
-		//	Input::UpdateButtonState(MouseButton::Right, KeyState::Released);
-		//	int xOffset = (short)LOWORD(lParam), yOffset = (short)HIWORD(lParam);
-		//	MouseButtonReleasedEvent event(MouseButton::Right, xOffset, yOffset);
-		//	m_Data.EventCallback(event);
-		//	return 0;
-		//}
-		//case WM_MOUSEMOVE:
-		//{
-		//	int offsetX = (int)(short)LOWORD(lParam);
-		//	int offsetY = (int)(short)HIWORD(lParam);
-		//	MouseMovedEvent event(offsetX, offsetY);
-		//	m_Data.EventCallback(event);
-		//	return 0;
-		//}
 		case WM_INPUT:
 		{
 			UINT dwSize;

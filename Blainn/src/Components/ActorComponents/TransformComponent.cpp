@@ -29,8 +29,22 @@ namespace Blainn
 		MarkDirty();
 
 		float yawRad = XMConvertToRadians(newLocalRot.x);
+		if (yawRad > XM_2PI)
+			yawRad -= XM_2PI;
+		else if (yawRad < 0)
+			yawRad += XM_2PI;
+
 		float pitchRad = XMConvertToRadians(newLocalRot.y);
+		if (pitchRad > XM_2PI)
+			pitchRad -= XM_2PI;
+		else if (pitchRad < 0)
+			pitchRad += XM_2PI;
+
 		float rollRad = XMConvertToRadians(newLocalRot.z);
+		if (rollRad > XM_2PI)
+			rollRad -= XM_2PI;
+		else if (rollRad < 0)
+			rollRad += XM_2PI;
 
 		Quaternion localRot = Quaternion::CreateFromYawPitchRoll(yawRad, pitchRad, rollRad);
 		localRot.Normalize();
@@ -59,8 +73,22 @@ namespace Blainn
 		using namespace DirectX;
 
 		float yawRad = XMConvertToRadians(newLocalRot.x);
+		if (yawRad > XM_2PI)
+			yawRad -= XM_2PI;
+		else if (yawRad < 0)
+			yawRad += XM_2PI;
+
 		float pitchRad = XMConvertToRadians(newLocalRot.y);
+		if (pitchRad > XM_2PI)
+			pitchRad -= XM_2PI;
+		else if (pitchRad < 0)
+			pitchRad += XM_2PI;
+
 		float rollRad = XMConvertToRadians(newLocalRot.z);
+		if (rollRad > XM_2PI)
+			rollRad -= XM_2PI;
+		else if (rollRad < 0)
+			rollRad += XM_2PI;
 
 		m_LocalTransform.Position = newLocalPos;
 		m_LocalTransform.Quaternion = DirectX::SimpleMath::Quaternion::CreateFromYawPitchRoll(yawRad, pitchRad, rollRad);
@@ -108,8 +136,22 @@ namespace Blainn
 		MarkDirty();
 
 		float yawRad = XMConvertToRadians(newWorldRot.x);
+		if (yawRad > XM_2PI)
+			yawRad -= XM_2PI;
+		else if (yawRad < 0)
+			yawRad += XM_2PI;
+
 		float pitchRad = XMConvertToRadians(newWorldRot.y);
+		if (pitchRad > XM_2PI)
+			pitchRad -= XM_2PI;
+		else if (pitchRad < 0)
+			pitchRad += XM_2PI;
+
 		float rollRad = XMConvertToRadians(newWorldRot.z);
+		if (rollRad > XM_2PI)
+			rollRad -= XM_2PI;
+		else if (rollRad < 0)
+			rollRad += XM_2PI;
 
 		Quaternion worldQ = Quaternion::CreateFromYawPitchRoll(yawRad, pitchRad, rollRad);
 		worldQ.Normalize();
