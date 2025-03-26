@@ -38,10 +38,15 @@ namespace solar
 
 		auto sun = m_Scene->QueueGameObject<Planet>("sun", 0.f);
 		m_CelestialBodies.push_back(sun);
-		auto mesh = Blainn::DXModel::ColoredTorus(3.f, 0.5f, 20, 10, DirectX::SimpleMath::Color{ 0.9f, 0.9f, 0.2f, 1.f });
+		auto mesh = Blainn::DXModel::ColoredTorus(1.f, 0.5f, 20, 10, DirectX::SimpleMath::Color{ 0.9f, 0.9f, 0.2f, 1.f });
 		sun->AddComponent<Blainn::StaticMeshComponent>(mesh);
 		auto* transform = sun->GetComponent<Blainn::TransformComponent>();
 		transform->SetLocalPosition({ 0.f, 0.f, 0.f });
+
+		//std::shared_ptr<Blainn::DXMaterial> basicMaterial = std::make_shared<Blainn::DXMaterial>();
+		//basicMaterial->DiffuseAlbedo = { 1.f, 1.f, 1.f, 1.f };
+		//basicMaterial->Fresel = { 0.01f, 0.01f, 0.01f };
+		//basicMaterial->Roughness = 0.4f;
 
 		auto planet1 = sun->AddChild<Planet>("planet 1", 8.f, 0.f, 4.f, Planet::DIRCounterClockwise, 10.f);
 		m_CelestialBodies.push_back(planet1);
@@ -60,9 +65,11 @@ namespace solar
 
 		auto planet4 = sun->AddChild<Planet>("planet 4", 25.f, 170.f, 16.f, Planet::DIRCounterClockwise, 10.f);
 		m_CelestialBodies.push_back(planet4);
-		planet4->AddComponent<Blainn::StaticMeshComponent>(Blainn::DXModel::ColoredTorusKnot(3, 4, 2.f, 0.3f, 100, 16, DirectX::SimpleMath::Color{ 0.1f, 0.2f, 0.3f, 1.f }));
+		//planet4->GetComponent<Blainn::TransformComponent>()->SetWorldYawPitchRoll({ 0.f, 0.f, 90.f });
+		planet4->AddComponent<Blainn::StaticMeshComponent>(Blainn::DXModel::ColoredTorusKnot(3, 5, 1.7f, 0.1f, 3000, 16, DirectX::SimpleMath::Color{ 0.1f, 0.2f, 0.3f, 1.f }));
 		auto moon4_1 = planet4->AddChild<Planet>("moon 4-1", 4.f, 15.f, 3.8f, Planet::DIRClockwise, 70.f);
 		moon4_1->AddComponent<Blainn::StaticMeshComponent>(Blainn::DXModel::ColoredCube(.7f, DirectX::SimpleMath::Color{ 0.5f, 0.2f, 0.3f, 1.f }));
+		//moon4_1->AddComponent<Blainn::StaticMeshComponent>(Blainn::DXModel::ColoredTorus(.7f, 0.1f, 100, 16,  DirectX::SimpleMath::Color{ 0.5f, 0.2f, 0.3f, 1.f }));
 
 		auto planet5 = sun->AddChild<Planet>("planet 5", 40.f, 170.f, 16.f, Planet::DIRClockwise, 40.f);
 		m_CelestialBodies.push_back(planet5);
@@ -75,8 +82,14 @@ namespace solar
 		m_CelestialBodies.push_back(planet6);
 
 		m_CustomObject = m_Scene->QueueGameObject<Blainn::GameObject>();
-		m_CustomObject->AddComponent<Blainn::TransformComponent>();
-		//m_CustomObject->AddComponent<Blainn::StaticMeshComponent>("Meshes/wiener.gltf");
+		m_CustomObject->AddComponent<Blainn::TransformComponent>()->SetWorldYawPitchRoll({0.f, 0.f, 0.f});
+		//m_CustomObject->AddComponent<Blainn::StaticMeshComponent>(Blainn::DXModel::ColoredTorus(0.3, 0.1, 100));
+		//m_CustomObject->AddComponent<Blainn::StaticMeshComponent>("Meshes/cube.obj");
+		m_CustomObject->AddComponent<Blainn::StaticMeshComponent>("../../Resources/Models/CoolCube.glb");
+		//m_CustomObject->AddComponent<Blainn::StaticMeshComponent>("../../Resources/Models/CoolTexturedCube.fbx");
+		m_CustomObject->AddComponent<Blainn::StaticMeshComponent>("D:\\dev\\Blainnflare\\Resources\\Models\\dragonkin\\scene.gltf");
+		//m_CustomObject->GetComponent<Blainn::TransformComponent>()->SetWorldScale({ 0.01f, 0.01f, 0.01f });
+		//auto rot = m_CustomObject->GetComponent<Blainn::TransformComponent>()->GetWorldYawPitchRoll();
 
 		m_Player = m_Scene->QueueGameObject<Player>();
 		m_Player->GetComponent<Blainn::TransformComponent>()->SetWorldPosition({0.f, 0.f, -10.f});
@@ -85,14 +98,17 @@ namespace solar
 
 	void SolarAppLayer::OnUpdate(const Blainn::GameTimer& gt)
 	{
-		auto* transform = m_CustomObject->GetComponent<Blainn::TransformComponent>();
-		auto curPos = transform->GetWorldPosition();
-		//curPos.x += gt.DeltaTime() * 1.f;
-		//curPos.y += gt.DeltaTime() * 1.f;
-		auto curRot = transform->GetLocalYawPitchRoll();
-		curRot.y += 20.f * gt.DeltaTime();
-		transform->SetLocalPositionYawPitchRoll(curPos, curRot);
-	//	transform->SetLocalYawPitchRoll(curRot);
+		//auto* transform = m_CustomObject->GetComponent<Blainn::TransformComponent>();
+		//auto curPos = transform->GetWorldPosition();
+		//auto curRot = transform->GetWorldYawPitchRoll();
+		//auto q = transform->GetLocalQuat();
+		////std::cout << "Obj rotation: " << curRot.x << ", " << curRot.y << ", " << curRot.z << "\n";
+		////std::cout << "Obj quat: " << q.x << ", " << q.y << ", " << q.z << ", " << q.w << "\n";
+		//curRot.y += 20.f * gt.DeltaTime();
+		////transform->SetWorldPositionYawPitchRoll(curPos, curRot);
+		//q *= DirectX::SimpleMath::Quaternion::CreateFromAxisAngle({ 1, 0, 0 }, DirectX::XMConvertToRadians(20 * gt.DeltaTime()));
+		//transform->SetWorldPositionQuat(curPos, q);
+		//Sleep(100);
 	}
 
 	void SolarAppLayer::OnEvent(Blainn::Event& event)

@@ -7,6 +7,8 @@
 
 #include <dxgi.h>
 
+#include "DX12/D3D12MemAlloc.h"
+
 namespace Blainn
 {
 	DXDevice::DXDevice()
@@ -24,15 +26,20 @@ namespace Blainn
 			}
 		}
 #endif
-		IDXGIAdapter* adapter = SelectAdapter();
+		m_Adapter = SelectAdapter();
 		HRESULT hr = D3D12CreateDevice(
-			adapter,
+			m_Adapter,
 			D3D_FEATURE_LEVEL_12_0,
 			IID_PPV_ARGS(&m_Device)
 		);
 
 		if (FAILED(hr))
 			assert(false && "Failed to create D3D12 device");
+	}
+
+	DXDevice::~DXDevice()
+	{
+		m_Device->Release();
 	}
 
 	bool DXDevice::IsFeatureLevelSupported(D3D_FEATURE_LEVEL featureLevel) const
@@ -79,6 +86,7 @@ namespace Blainn
 			adapters.push_back(adapter);
 			adapterNames.push_back(desc.Description);
 			++i;
+			return adapter;
 		}
 
 		ComboBoxSelector cmbb(GetModuleHandle(nullptr), Application::Get().GetWindow().GetNativeWindow(), adapterNames);
@@ -86,12 +94,8 @@ namespace Blainn
 
 		if (selectedAdapterIndex >= 0)
 			return adapters[selectedAdapterIndex];
-		else
-		{
-			MessageBox(nullptr, L"You didn't select an adapter. Falling back to default adapter.", L"Warning", MB_OK);
-			return nullptr;
-		}
 
+		MessageBox(nullptr, L"You didn't select an adapter. Falling back to default adapter.", L"Warning", MB_OK);
 		return nullptr;
 	}
 }

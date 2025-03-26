@@ -4,6 +4,8 @@
 
 #include "Util/Util.h"
 
+#include "D3D12MemAlloc.h"
+
 namespace Blainn
 {
 	template<typename T>
@@ -18,21 +20,15 @@ namespace Blainn
 			if (bIsConstantBuffer)
 				m_ElementByteSize = d3dUtil::CalcConstantBufferByteSize(sizeof(T));
 
-			//Microsoft::WRL::ComPtr<ID3D12Device> device = renderingContext->GetDevice()->Device();
-			//ThrowIfFailed(device->CreateCommittedResource(
-			//	&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
-			//	D3D12_HEAP_FLAG_NONE,
-			//	&CD3DX12_RESOURCE_DESC::Buffer(m_ElementByteSize * elementCount),
-			//	D3D12_RESOURCE_STATE_GENERIC_READ,
-			//	nullptr,
-			//	IID_PPV_ARGS(&m_UploadBuffer)
-			//));
-			m_UploadBuffer = resourceManager->CreateBuffer(
-				m_ElementByteSize * elementCount,
+			CD3DX12_RESOURCE_DESC resDesc = CD3DX12_RESOURCE_DESC::Buffer(m_ElementByteSize * elementCount);
+
+			m_UploadAllocation = resourceManager->CreateAllocation(
+				resDesc,
 				D3D12_HEAP_TYPE_UPLOAD,
 				D3D12_HEAP_FLAG_NONE,
 				D3D12_RESOURCE_STATE_GENERIC_READ
 				);
+			m_UploadBuffer = m_UploadAllocation->GetResource();
 
 			ThrowIfFailed(m_UploadBuffer->Map(0, nullptr, reinterpret_cast<void**>(&m_MappedData)))
 		}
@@ -45,6 +41,9 @@ namespace Blainn
 			if (m_UploadBuffer)
 				m_UploadBuffer->Unmap(0, nullptr);
 			m_MappedData = nullptr;
+
+			m_UploadBuffer->Release();
+			m_UploadAllocation->Release();
 		}
 
 		ID3D12Resource* GetResource() const { return m_UploadBuffer.Get(); }
@@ -56,6 +55,7 @@ namespace Blainn
 
 	private:
 		Microsoft::WRL::ComPtr<ID3D12Resource> m_UploadBuffer;
+		Microsoft::WRL::ComPtr<D3D12MA::Allocation> m_UploadAllocation;
 		BYTE* m_MappedData;
 
 		bool m_bIsConstantBuffer;

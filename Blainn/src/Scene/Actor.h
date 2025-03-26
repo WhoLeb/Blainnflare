@@ -3,8 +3,6 @@
 #include "SimpleMath.h"
 #include "Core/GameObject.h"
 
-#include "Components/ActorComponents/TransformComponent.h"
-
 #include <memory>
 
 extern const int g_NumFrameResources;
@@ -13,16 +11,19 @@ namespace Blainn
 {
 	class DXStaticMesh;
 	class TransformComponent;
+	class Scene;
+
 	class Actor : public GameObject
 	{
 		using Super = GameObject;
 	public:
-		Actor();
+		Actor() {}
 		~Actor() noexcept override {}
 		
+		void OnAttach() override;
 	protected:
 
-		TransformComponent* transform;
+		std::shared_ptr<TransformComponent> transform = nullptr;
 	private:
 
 	};

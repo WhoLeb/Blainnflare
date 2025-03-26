@@ -1,6 +1,9 @@
 #include "pch.h"
 #include "DXBuffer.h"
 
+#include "DXResourceManager.h"
+
+
 namespace Blainn
 {
 	DXBuffer::DXBuffer(

@@ -1,14 +1,19 @@
 #pragma once
 
 #include "DXRenderingContext.h"
-#include "DXResourceManager.h"
 
 #include "SimpleMath.h"
 #include <d3d12.h>
 #include <vector>
 
+namespace D3D12MA
+{
+	class Allocation;
+}
+
 namespace Blainn
 {
+	class DXResourceManager;
 
 	class DXStaticMesh
 	{
@@ -37,15 +42,16 @@ namespace Blainn
 			const std::vector<Vertex>& vertices,
 			const std::vector<UINT32>* indices = nullptr
 		);
+		~DXStaticMesh();
 
 		void Bind();
 		void Draw();
 	private:
-		Microsoft::WRL::ComPtr<ID3D12Resource> m_VertexBuffer;
+		Microsoft::WRL::ComPtr<D3D12MA::Allocation> m_VBAlloc;
 		UINT32 m_VertexCount;
 
 		bool m_bHasIndexBuffer = false;
-		Microsoft::WRL::ComPtr<ID3D12Resource> m_IndexBuffer;
+		Microsoft::WRL::ComPtr<D3D12MA::Allocation> m_IBAlloc;
 		UINT32 m_IndexCount;
 
 	public:

@@ -15,10 +15,10 @@ namespace Blainn
 		using namespace DirectX;
 		using namespace DirectX::SimpleMath;
 
-		auto* owner = GetOwner();
+		auto owner = GetOwner();
 		if (!owner) return;
 
-		auto* transform = owner->GetComponent<TransformComponent>();
+		auto transform = owner->GetComponent<TransformComponent>();
 		if (!transform) return;
 
 		Vector3 targetPos = Vector3::Zero;
@@ -28,7 +28,7 @@ namespace Blainn
 		auto parent = owner->GetParent();
 		if (parent)
 		{
-			if (auto* parentTransform = parent->GetComponent<TransformComponent>())
+			if (auto parentTransform = parent->GetComponent<TransformComponent>())
 			{
 				targetPos = parentTransform->GetWorldPosition();
 				parentQuat = parentTransform->GetWorldQuat();

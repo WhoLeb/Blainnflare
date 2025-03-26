@@ -305,6 +305,7 @@ namespace Blainn
 				LONG yPosRelative = mouse.lLastY;
 
 				Input::UpdateMouseDelta(xPosRelative, yPosRelative);
+				Input::OnMouseMovedDelegate.Broadcast(xPosRelative, yPosRelative);
 				MouseMovedEvent event(xPosRelative, yPosRelative);
 				m_Data.EventCallback(event);
 			}

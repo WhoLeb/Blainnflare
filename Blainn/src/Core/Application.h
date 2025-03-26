@@ -1,11 +1,5 @@
 #pragma once
 
-#include "DX12/DXFrameResource.h"
-#include "DX12/DXStaticMesh.h"
-#include "DX12/DXRenderingContext.h"
-#include "DX12/DXResourceManager.h"
-#include "DX12/DXShader.h"
-#include "DX12/DXUploadBuffer.h"
 #include "Events/ApplicationEvent.h"
 #include "Events/KeyEvent.h"
 #include "Events/MouseEvent.h"
@@ -26,6 +20,9 @@ extern const UINT32 g_NumObjects;
 
 namespace Blainn
 {
+	class DXRenderingContext;
+	class DXResourceManager;
+
 
 	struct ApplicationDesc
 	{

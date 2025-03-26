@@ -1,8 +1,9 @@
 #pragma once
 
-#include <string>
-
 #include "Events/Event.h"
+
+#include <cassert>
+#include <string>
 
 namespace Blainn
 {

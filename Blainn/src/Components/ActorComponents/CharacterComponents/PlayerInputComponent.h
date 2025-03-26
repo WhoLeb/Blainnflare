@@ -16,17 +16,18 @@ namespace Blainn
 	public:
 		PlayerInputComponent(float speed = 5.f, float lowSpeed = 5.f, float highSpeed = 10.f, float sensitivity = .1f)
 			: Super(), m_Speed(speed), m_LowSpeed(lowSpeed), m_HighSpeed(highSpeed), m_Sensitivity(sensitivity)
-		{}
+		{
+		}
 
 		void HandleInput(const GameTimer& gt)
 		{
 			using namespace DirectX;
 			using namespace DirectX::SimpleMath;
 
-			auto* owner = GetOwner();
+			auto owner = GetOwner();
 			if (!owner) return;
 
-			auto* transform = owner->GetComponent<TransformComponent>();
+			auto transform = owner->GetComponent<TransformComponent>();
 			if (!transform) return;
 
 			if (Input::IsMouseButtonHeld(MouseButton::Right))

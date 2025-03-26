@@ -179,5 +179,6 @@ namespace Blainn
 	KeyReleasedDelegate Input::OnKeyReleasedDelegate;
 	MouseButtonPressedDelegate Input::OnMouseButtonPressedDelegate;
 	MouseButtonReleasedDelegate Input::OnMouseButtonReleasedDelegate;
+	MouseMovedDelegate Input::OnMouseMovedDelegate;
 
 }

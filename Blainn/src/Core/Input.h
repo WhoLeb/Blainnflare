@@ -6,10 +6,13 @@
 #include <map>
 #include <utility>
 
+typedef long LONG;
+
 DECLARE_MULTICAST_DELEGATE(KeyPressedDelegate, Blainn::KeyCode);
 DECLARE_MULTICAST_DELEGATE(KeyReleasedDelegate, Blainn::KeyCode);
 DECLARE_MULTICAST_DELEGATE(MouseButtonPressedDelegate, Blainn::MouseButton);
 DECLARE_MULTICAST_DELEGATE(MouseButtonReleasedDelegate, Blainn::MouseButton);
+DECLARE_MULTICAST_DELEGATE(MouseMovedDelegate, LONG, LONG);
 
 namespace Blainn
 {
@@ -65,6 +68,7 @@ namespace Blainn
 		static KeyReleasedDelegate OnKeyReleasedDelegate;
 		static MouseButtonPressedDelegate OnMouseButtonPressedDelegate;
 		static MouseButtonReleasedDelegate OnMouseButtonReleasedDelegate;
+		static MouseMovedDelegate OnMouseMovedDelegate;
 
 	private:
 		//static void UpdateMouseDelta();

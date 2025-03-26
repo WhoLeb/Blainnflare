@@ -1,9 +1,9 @@
 #pragma once
 
-#include "DXResourceManager.h"
-
 namespace Blainn
 {
+	class DXResourceManager;
+
 	class DXBuffer
 	{
 	public:

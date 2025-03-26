@@ -36,18 +36,19 @@ namespace Blainn
 
 		virtual void OnDestroy() {}
 
-		const std::vector<std::unique_ptr<Component>>& GetComponents() const
+		const std::vector<std::shared_ptr<ComponentBase>>& GetComponents() const
 		{
 			return m_Components;
 		}
 
 		template<typename T>
-		std::vector<T*> GetComponents() const
+		std::vector<std::shared_ptr<T>> GetComponents() const
 		{
+			static_assert(std::is_base_of<ComponentBase, T>::value, "Component must be derived from component");
 			std::vector<T*> foundComponents;
 
 			for (const auto& comp : m_Components)
-				if (T* castedComp = dynamic_cast<T*>(comp.get()))
+				if (std::shared_ptr<T> castedComp = std::dynamic_pointer_cast<T>(comp))
 					foundComponents.push_back(castedComp);
 
 			return foundComponents;
@@ -55,26 +56,25 @@ namespace Blainn
 
 
 		template<typename T>
-		T* GetComponent() const
+		std::shared_ptr<T> GetComponent() const
 		{
+			static_assert(std::is_base_of<ComponentBase, T>::value, "Component must be derived from component");
 			for (const auto& comp : m_Components)
-				if (T* castedComp = dynamic_cast<T*>(comp.get()))
+				if (std::shared_ptr<T> castedComp = std::dynamic_pointer_cast<T>(comp))
 					return castedComp;
 			return nullptr;
 		}
 
 
 		template<typename T, typename... Args>
-		T* AddComponent(Args&&... args)
+		std::shared_ptr<T> AddComponent(Args&&... args)
 		{
-			static_assert(std::is_base_of<Component, T>::value, "T must be a component");
-			auto component = std::make_unique<T>(std::forward<Args>(args)...);
-			component->m_OwningObject = this;
-			component->OnBegin();
+			static_assert(std::is_base_of<ComponentBase, T>::value, "T must be a component");
+			auto component = std::make_shared<T>(std::forward<Args>(args)...);
+			component->m_OwningObject = shared_from_this();
 			component->OnAttach();
-			T* rawPtr = component.get();
-			m_Components.emplace_back(std::move(component));
-			return rawPtr;
+			m_Components.push_back(component);
+			return component;
 		}
 
 
@@ -82,7 +82,7 @@ namespace Blainn
 		void RemoveAllComponents()
 		{
 			auto it = std::remove_if(m_Components.begin(), m_Components.end(),
-				[](const std::unique_ptr<Component>& comp)
+				[](const std::shared_ptr<ComponentBase>& comp)
 				{
 					return dynamic_cast<T*>(comp.get()) != nullptr;
 				});
@@ -94,12 +94,12 @@ namespace Blainn
 		}
 
 
-		void RemoveComponent(Component* component)
+		void RemoveComponent(std::shared_ptr<ComponentBase> component)
 		{
 			auto it = std::find_if(m_Components.begin(), m_Components.end(),
-				[component](const std::unique_ptr<Component>& comp)
+				[&component](const std::shared_ptr<ComponentBase>& comp)
 				{
-					return comp.get() == component;
+					return comp == component;
 				});
 			
 			if (it != m_Components.end())
@@ -166,6 +166,8 @@ namespace Blainn
 
 		void AttachTo(std::shared_ptr<GameObject> newParent)
 		{
+			if (newParent == m_Parent.lock())
+				return;
 			if(newParent)
 				newParent->AddChild(shared_from_this());
 			else
@@ -192,7 +194,7 @@ namespace Blainn
 
 		std::weak_ptr<GameObject> m_Parent;
 		std::vector<std::shared_ptr<GameObject>> m_Children;
-		std::vector<std::unique_ptr<Component>> m_Components;
+		std::vector<std::shared_ptr<ComponentBase>> m_Components;
 
 		Scene* m_ParentScene = nullptr;
 	};

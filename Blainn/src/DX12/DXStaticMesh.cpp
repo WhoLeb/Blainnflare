@@ -2,6 +2,9 @@
 #include "DXStaticMesh.h"
 
 #include "Core/Application.h"
+#include "DXResourceManager.h"
+
+#include "D3D12MemAlloc.h"
 
 namespace Blainn
 {
@@ -10,19 +13,28 @@ namespace Blainn
 		const std::vector<UINT32>* indices)
 	{
 		auto resourceManager = Application::Get().GetResourceManager();
+		resourceManager->StartUploadCommands();
+
 		m_VertexCount = UINT32(vertices.size());
 		assert(m_VertexCount >= 1 && "There should at least be 1 vertex!");
 
 		UINT64 bufferSize = sizeof(Vertex) * m_VertexCount;
 		UINT64 vertexSize = sizeof(Vertex);
 
-		m_VertexBuffer = resourceManager->CreateBuffer(
-			bufferSize,
+		auto resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(bufferSize);
+
+		m_VBAlloc = resourceManager->CreateAllocation(
+			resourceDesc,
 			D3D12_HEAP_TYPE_DEFAULT,
 			D3D12_HEAP_FLAG_NONE,
 			D3D12_RESOURCE_STATE_COMMON
 		);
-		resourceManager->WriteToDefaultBuffer(m_VertexBuffer, vertices.data(), bufferSize);
+		D3D12_SUBRESOURCE_DATA vertexData;
+		vertexData.pData = vertices.data();
+		vertexData.RowPitch = bufferSize;
+		vertexData.SlicePitch = bufferSize;
+
+		resourceManager->WriteToAllocation(m_VBAlloc, 0, 1, &vertexData);
 
 		if (indices)
 		{
@@ -32,24 +44,38 @@ namespace Blainn
 			if (!m_bHasIndexBuffer) return;
 
 			bufferSize = sizeof(UINT32) * m_IndexCount;
-			m_IndexBuffer = resourceManager->CreateBuffer(
-				bufferSize,
+			resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(bufferSize);
+			m_IBAlloc = resourceManager->CreateAllocation(
+				resourceDesc,
 				D3D12_HEAP_TYPE_DEFAULT,
 				D3D12_HEAP_FLAG_NONE,
 				D3D12_RESOURCE_STATE_COMMON
 			);
-			resourceManager->WriteToDefaultBuffer(m_IndexBuffer, indices->data(), bufferSize);
+
+			D3D12_SUBRESOURCE_DATA indexData;
+			indexData.pData = indices->data();
+			indexData.RowPitch = bufferSize;
+			indexData.SlicePitch = bufferSize;
+
+			resourceManager->WriteToAllocation(m_IBAlloc, 0, 1, &indexData);
 		}
 
+		resourceManager->EndUploadCommands();
+	}
+
+	inline DXStaticMesh::~DXStaticMesh()
+	{
+		//m_VBAlloc->Release();
+		//m_IBAlloc->Release();
 	}
 
 	void DXStaticMesh::Bind()
 	{
-		assert(m_VertexBuffer);
+		assert(m_VBAlloc);
 		Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> cmdList = Application::Get().GetRenderingContext()->GetCommandList();
 
 		D3D12_VERTEX_BUFFER_VIEW vbv;
-		vbv.BufferLocation = m_VertexBuffer->GetGPUVirtualAddress();
+		vbv.BufferLocation = m_VBAlloc->GetResource()->GetGPUVirtualAddress();
 		vbv.StrideInBytes = sizeof(Vertex);
 		vbv.SizeInBytes = m_VertexCount * sizeof(Vertex);
 
@@ -59,13 +85,12 @@ namespace Blainn
 		if (m_bHasIndexBuffer)
 		{
 			D3D12_INDEX_BUFFER_VIEW ibv = {};
-			ibv.BufferLocation = m_IndexBuffer->GetGPUVirtualAddress();
+			ibv.BufferLocation = m_IBAlloc->GetResource()->GetGPUVirtualAddress();
 			ibv.Format = DXGI_FORMAT_R32_UINT;
 			ibv.SizeInBytes = m_IndexCount * sizeof(UINT32);
 
 			cmdList->IASetIndexBuffer(&ibv);
 		}
-		cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	}
 
 	void DXStaticMesh::Draw()
@@ -83,14 +108,14 @@ namespace Blainn
 		using namespace DirectX;
 		std::vector<Blainn::DXStaticMesh::Vertex> vertices =
 		{
-			{ SimpleMath::Vector3(-side / 2, -side / 2, -side / 2), SimpleMath::Vector3(0, 0, 0), color,	SimpleMath::Vector2(0, 0)},
-			{ SimpleMath::Vector3(-side / 2, +side / 2, -side / 2), SimpleMath::Vector3(0, 0, 0), color,	SimpleMath::Vector2(0, 0)},
-			{ SimpleMath::Vector3(+side / 2, +side / 2, -side / 2), SimpleMath::Vector3(0, 0, 0), color,	SimpleMath::Vector2(0, 0)},
-			{ SimpleMath::Vector3(+side / 2, -side / 2, -side / 2), SimpleMath::Vector3(0, 0, 0), color,	SimpleMath::Vector2(0, 0)},
-			{ SimpleMath::Vector3(-side / 2, -side / 2, +side / 2), SimpleMath::Vector3(0, 0, 0), color,	SimpleMath::Vector2(0, 0)},
-			{ SimpleMath::Vector3(-side / 2, +side / 2, +side / 2), SimpleMath::Vector3(0, 0, 0), color,	SimpleMath::Vector2(0, 0)},
-			{ SimpleMath::Vector3(+side / 2, +side / 2, +side / 2), SimpleMath::Vector3(0, 0, 0), color,	SimpleMath::Vector2(0, 0)},
-			{ SimpleMath::Vector3(+side / 2, -side / 2, +side / 2), SimpleMath::Vector3(0, 0, 0), color,	SimpleMath::Vector2(0, 0)}
+			{ SimpleMath::Vector3(-side / 2, -side / 2, -side / 2), SimpleMath::Vector3(-0.5774f, -0.5774f, -0.5774f), color,	SimpleMath::Vector2(0, 0)},
+			{ SimpleMath::Vector3(-side / 2, +side / 2, -side / 2), SimpleMath::Vector3(-0.5774f, +0.5774f, -0.5774f), color,	SimpleMath::Vector2(0, 0)},
+			{ SimpleMath::Vector3(+side / 2, +side / 2, -side / 2), SimpleMath::Vector3(+0.5774f, +0.5774f, -0.5774f), color,	SimpleMath::Vector2(0, 0)},
+			{ SimpleMath::Vector3(+side / 2, -side / 2, -side / 2), SimpleMath::Vector3(+0.5774f, -0.5774f, -0.5774f), color,	SimpleMath::Vector2(0, 0)},
+			{ SimpleMath::Vector3(-side / 2, -side / 2, +side / 2), SimpleMath::Vector3(-0.5774f, -0.5774f, +0.5774f), color,	SimpleMath::Vector2(0, 0)},
+			{ SimpleMath::Vector3(-side / 2, +side / 2, +side / 2), SimpleMath::Vector3(-0.5774f, +0.5774f, +0.5774f), color,	SimpleMath::Vector2(0, 0)},
+			{ SimpleMath::Vector3(+side / 2, +side / 2, +side / 2), SimpleMath::Vector3(+0.5774f, +0.5774f, +0.5774f), color,	SimpleMath::Vector2(0, 0)},
+			{ SimpleMath::Vector3(+side / 2, -side / 2, +side / 2), SimpleMath::Vector3(+0.5774f, -0.5774f, +0.5774f), color,	SimpleMath::Vector2(0, 0)}
 		};
 
 		std::vector<UINT32> indices =
@@ -115,9 +140,7 @@ namespace Blainn
 			4, 3, 7
 		};
 
-		Application::Get().GetResourceManager()->StartUploadCommands();
 		auto mesh = std::make_shared<Blainn::DXStaticMesh>(vertices, &indices);
-		Application::Get().GetResourceManager()->EndUploadCommands();
 		return mesh;
 	}
 
@@ -264,9 +287,7 @@ namespace Blainn
 				bottomPoleIndex, lastRingStart + j, lastRingStart + (j+1) % sliceCount
 				});
 
-		Application::Get().GetResourceManager()->StartUploadCommands();
 		auto mesh = std::make_shared<DXStaticMesh>(vertices, &indices);
-		Application::Get().GetResourceManager()->EndUploadCommands();
 		return mesh;
 	}
 
@@ -290,7 +311,7 @@ namespace Blainn
 		{
 			float phi = i * phiStep;
 
-			float r = cosf(q * phi) + 2.f;
+			float r = radius * (cosf(q * phi) + 2.f);
 			float x = r * cosf(p * phi);
 			float y = -sinf(q * phi);
 			float z = r * sinf(p * phi);
@@ -345,9 +366,7 @@ namespace Blainn
 		}
 
 
-		Application::Get().GetResourceManager()->StartUploadCommands();
 		auto mesh = std::make_shared<DXStaticMesh>(vertices, &indices);
-		Application::Get().GetResourceManager()->EndUploadCommands();
 		return mesh;
 	}
 
@@ -439,9 +458,7 @@ namespace Blainn
 			}
 		}
 
-		Application::Get().GetResourceManager()->StartUploadCommands();
 		auto mesh = std::make_shared<DXStaticMesh>(vertices, &indices);
-		Application::Get().GetResourceManager()->EndUploadCommands();
 		return mesh;
 	}
 

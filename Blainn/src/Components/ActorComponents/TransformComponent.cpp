@@ -11,7 +11,14 @@ namespace Blainn
 {
 	void TransformComponent::OnAttach()
 	{
+		Super::OnAttach();
 		MarkDirty();
+	}
+
+	void TransformComponent::OnUpdate(const GameTimer& gt)
+	{
+		Super::OnUpdate(gt);
+		UpdateWorldMatrix();
 	}
 
 	void TransformComponent::SetLocalPosition(const DirectX::SimpleMath::Vector3& newLocalPos)
@@ -29,22 +36,8 @@ namespace Blainn
 		MarkDirty();
 
 		float yawRad = XMConvertToRadians(newLocalRot.x);
-		if (yawRad > XM_2PI)
-			yawRad -= XM_2PI;
-		else if (yawRad < 0)
-			yawRad += XM_2PI;
-
 		float pitchRad = XMConvertToRadians(newLocalRot.y);
-		if (pitchRad > XM_2PI)
-			pitchRad -= XM_2PI;
-		else if (pitchRad < 0)
-			pitchRad += XM_2PI;
-
 		float rollRad = XMConvertToRadians(newLocalRot.z);
-		if (rollRad > XM_2PI)
-			rollRad -= XM_2PI;
-		else if (rollRad < 0)
-			rollRad += XM_2PI;
 
 		Quaternion localRot = Quaternion::CreateFromYawPitchRoll(yawRad, pitchRad, rollRad);
 		localRot.Normalize();
@@ -68,39 +61,14 @@ namespace Blainn
 
 	void TransformComponent::SetLocalPositionYawPitchRoll(const DirectX::SimpleMath::Vector3& newLocalPos, const DirectX::SimpleMath::Vector3& newLocalRot)
 	{
-		MarkDirty();
-
-		using namespace DirectX;
-
-		float yawRad = XMConvertToRadians(newLocalRot.x);
-		if (yawRad > XM_2PI)
-			yawRad -= XM_2PI;
-		else if (yawRad < 0)
-			yawRad += XM_2PI;
-
-		float pitchRad = XMConvertToRadians(newLocalRot.y);
-		if (pitchRad > XM_2PI)
-			pitchRad -= XM_2PI;
-		else if (pitchRad < 0)
-			pitchRad += XM_2PI;
-
-		float rollRad = XMConvertToRadians(newLocalRot.z);
-		if (rollRad > XM_2PI)
-			rollRad -= XM_2PI;
-		else if (rollRad < 0)
-			rollRad += XM_2PI;
-
-		m_LocalTransform.Position = newLocalPos;
-		m_LocalTransform.Quaternion = DirectX::SimpleMath::Quaternion::CreateFromYawPitchRoll(yawRad, pitchRad, rollRad);
+		SetLocalPosition(newLocalPos);
+		SetLocalYawPitchRoll(newLocalRot);
 	}
 
 	void TransformComponent::SetLocalPositionQuat(const DirectX::SimpleMath::Vector3& newLocalPos, const DirectX::SimpleMath::Quaternion& newLocalQuat)
 	{
-		MarkDirty();
-
-		m_LocalTransform.Position = newLocalPos;
-		m_LocalTransform.Quaternion = newLocalQuat;
-		m_LocalTransform.Quaternion.Normalize();
+		SetLocalPosition(newLocalPos);
+		SetLocalQuat(newLocalQuat);
 	}
 
 	void TransformComponent::SetWorldPosition(const DirectX::SimpleMath::Vector3& newWorldPos)
@@ -109,14 +77,15 @@ namespace Blainn
 
 		MarkDirty();
 
-		auto parentObj = GetOwner() ? GetOwner()->GetParent() : nullptr;
+		auto owner = GetOwner();
+		auto parentObj = owner ? owner->GetParent() : nullptr;
 		if (!parentObj) {
 			m_LocalTransform.Position = newWorldPos;
 			return;
 		}
 
 		// Else, invert parent's world matrix:
-		auto* parentTransform = parentObj->GetComponent<TransformComponent>();
+		auto parentTransform = parentObj->GetComponent<TransformComponent>();
 		if (!parentTransform) {
 			m_LocalTransform.Position = newWorldPos;
 			return;
@@ -136,39 +105,13 @@ namespace Blainn
 		MarkDirty();
 
 		float yawRad = XMConvertToRadians(newWorldRot.x);
-		if (yawRad > XM_2PI)
-			yawRad -= XM_2PI;
-		else if (yawRad < 0)
-			yawRad += XM_2PI;
-
 		float pitchRad = XMConvertToRadians(newWorldRot.y);
-		if (pitchRad > XM_2PI)
-			pitchRad -= XM_2PI;
-		else if (pitchRad < 0)
-			pitchRad += XM_2PI;
-
 		float rollRad = XMConvertToRadians(newWorldRot.z);
-		if (rollRad > XM_2PI)
-			rollRad -= XM_2PI;
-		else if (rollRad < 0)
-			rollRad += XM_2PI;
 
 		Quaternion worldQ = Quaternion::CreateFromYawPitchRoll(yawRad, pitchRad, rollRad);
 		worldQ.Normalize();
 
-		TransformComponent* parentTransform = GetOwner() ? GetOwner()->GetComponent<TransformComponent>() : nullptr;
-		if (parentTransform)
-		{
-			Quaternion parentWorldRot = parentTransform->GetWorldQuat();
-
-			parentWorldRot.Inverse(parentWorldRot);
-			Quaternion localQ = parentWorldRot * worldQ;
-			localQ.Normalize();
-
-			m_LocalTransform.Quaternion = localQ;
-		}
-		else
-			m_LocalTransform.Quaternion = worldQ;
+		SetWorldQuat(worldQ);
 	}
 
 	void TransformComponent::SetWorldQuat(const DirectX::SimpleMath::Quaternion& newWorldQuat)
@@ -177,17 +120,22 @@ namespace Blainn
 		MarkDirty();
 
 		// If no parent, local=world:
-		auto parentObj = GetOwner() ? GetOwner()->GetParent() : nullptr;
+		auto owner = GetOwner();
+		auto parentObj = owner ? owner->GetParent() : nullptr;
 		if (!parentObj) {
 			m_LocalTransform.Quaternion = newWorldQuat;
 			m_LocalTransform.Quaternion.Normalize();
+			m_WorldTransform.Quaternion = newWorldQuat;
+			m_WorldTransform.Quaternion.Normalize();
 			return;
 		}
 
-		auto* parentTransform = parentObj->GetComponent<TransformComponent>();
+		auto parentTransform = parentObj->GetComponent<TransformComponent>();
 		if (!parentTransform) {
 			m_LocalTransform.Quaternion = newWorldQuat;
 			m_LocalTransform.Quaternion.Normalize();
+			m_WorldTransform.Quaternion = newWorldQuat;
+			m_WorldTransform.Quaternion.Normalize();
 			return;
 		}
 
@@ -195,11 +143,12 @@ namespace Blainn
 		parentWorldRot.Normalize();
 
 		// local = conj(parentRot) * worldRot
-		//parentWorldRot.Conjugate();
-		Quaternion local = newWorldQuat * parentWorldRot;
+		parentWorldRot.Conjugate();
+		Quaternion local = parentWorldRot * newWorldQuat;
 		local.Normalize();
 
 		m_LocalTransform.Quaternion = local;
+		m_WorldTransform.Quaternion = local;
 	}
 
 	void TransformComponent::SetWorldScale(const DirectX::SimpleMath::Vector3& newWorldScale)
@@ -208,13 +157,14 @@ namespace Blainn
 
 		MarkDirty();
 
-		auto parentObj = GetOwner() ? GetOwner()->GetParent() : nullptr;
+		auto owner = GetOwner();
+		auto parentObj = owner ? owner->GetParent() : nullptr;
 		if (!parentObj) {
 			m_LocalTransform.Scale = newWorldScale;
 			return;
 		}
 
-		auto* parentTransform = parentObj->GetComponent<TransformComponent>();
+		auto parentTransform = parentObj->GetComponent<TransformComponent>();
 		if (!parentTransform) {
 			m_LocalTransform.Scale = newWorldScale;
 			return;
@@ -226,10 +176,14 @@ namespace Blainn
 
 	void TransformComponent::SetWorldPositionYawPitchRoll(const DirectX::SimpleMath::Vector3& newWorldPos, const DirectX::SimpleMath::Vector3& newWorldRot)
 	{
+		SetWorldPosition(newWorldPos);
+		SetWorldYawPitchRoll(newWorldRot);
 	}
 
 	void TransformComponent::SetWorldPositionQuat(const DirectX::SimpleMath::Vector3& newWorldPos, const DirectX::SimpleMath::Quaternion& newWorldQuat)
 	{
+		SetWorldPosition(newWorldPos);
+		SetWorldQuat(newWorldQuat);
 	}
 
 	DirectX::SimpleMath::Vector3 TransformComponent::GetWorldYawPitchRoll() const
@@ -237,32 +191,22 @@ namespace Blainn
 		using namespace DirectX;
 		auto q = m_WorldTransform.Quaternion;
 
-		float r02 = 2.f * q.x * q.z + 2.f * q.w * q.y;
-		float r22 = q.w * q.w - q.x * q.x - q.y * q.y + q.z * q.z;
-		float r12 = 2.f * q.y * q.z - 2.f * q.w * q.x;
-		float r10 = 2.f * q.x * q.y + 2.f * q.w * q.z;
-		float r11 = q.w * q.w - q.x * q.x + q.y * q.y + q.z * q.z;
+		DirectX::SimpleMath::Vector3 eulerAngles = m_WorldTransform.Quaternion.ToEuler();
 
-		float yaw = XMConvertToDegrees(atan2(r02, r22));
-		float pitch = XMConvertToDegrees(asin(-r12));
-		float roll = XMConvertToDegrees(atan2(r10, r11));
+		float yaw = XMConvertToDegrees(eulerAngles.y);
+		float pitch = XMConvertToDegrees(eulerAngles.x);
+		float roll = XMConvertToDegrees(eulerAngles.z);
 		return DirectX::SimpleMath::Vector3(yaw, pitch, roll);
 	}
 
 	DirectX::SimpleMath::Vector3 TransformComponent::GetLocalYawPitchRoll() const
 	{
 		using namespace DirectX;
-		auto q = m_LocalTransform.Quaternion;
+		DirectX::SimpleMath::Vector3 eulerAngles = m_LocalTransform.Quaternion.ToEuler();
 
-		float r02 = 2.f * q.x * q.z + 2.f * q.w * q.y;
-		float r22 = q.w * q.w - q.x * q.x - q.y * q.y + q.z * q.z;
-		float r12 = 2.f * q.y * q.z - 2.f * q.w * q.x;
-		float r10 = 2.f * q.x * q.y + 2.f * q.w * q.z;
-		float r11 = q.w * q.w - q.x * q.x + q.y * q.y + q.z * q.z;
-
-		float yaw = XMConvertToDegrees(atan2(r02, r22));
-		float pitch = XMConvertToDegrees(asin(-r12));
-		float roll = XMConvertToDegrees(atan2(r10, r11));
+		float yaw = XMConvertToDegrees(eulerAngles.y);
+		float pitch = XMConvertToDegrees(eulerAngles.x);
+		float roll = XMConvertToDegrees(eulerAngles.z);
 		return DirectX::SimpleMath::Vector3(yaw, pitch, roll);
 	}
 
@@ -273,11 +217,11 @@ namespace Blainn
 			m_bIsTransformDirty = true;
 
 
-			if (auto* owner = GetOwner())
+			if (auto owner = GetOwner())
 			{
 				for (auto& child : owner->GetChildren())
 				{
-					auto* childTransform = child->GetComponent<TransformComponent>();
+					auto childTransform = child->GetComponent<TransformComponent>();
 					if (childTransform)
 						childTransform->MarkDirty();
 				}
@@ -301,12 +245,12 @@ namespace Blainn
 
 		Matrix localMat = (scale * rot * trans);
 
-		if (auto* owner = GetOwner())
+		if (auto owner = GetOwner())
 		{
 			auto parentObj = owner->GetParent();
 			if (parentObj)
 			{
-				TransformComponent* parentTransform = parentObj->GetComponent<TransformComponent>();
+				auto parentTransform = parentObj->GetComponent<TransformComponent>();
 				if (parentTransform)
 				{
 					parentTransform->UpdateWorldMatrix();
@@ -327,8 +271,12 @@ namespace Blainn
 		m_WorldTransform.Quaternion = wRot;
 		m_WorldTransform.Scale = wScale;
 
-		m_RightVector = { m_WorldMatrix._11, m_WorldMatrix._12, m_WorldMatrix._13 };
-		m_UpVector = { m_WorldMatrix._21, m_WorldMatrix._22, m_WorldMatrix._23 };
+		//m_RightVector   = Vector3::Transform(Vector3::UnitX, m_WorldMatrix);
+		//m_UpVector      = Vector3::Transform(Vector3::UnitY, m_WorldMatrix);
+		//m_ForwardVector = Vector3::Transform(Vector3::UnitZ, m_WorldMatrix);
+
+		m_RightVector   = { m_WorldMatrix._11, m_WorldMatrix._12, m_WorldMatrix._13 };
+		m_UpVector      = { m_WorldMatrix._21, m_WorldMatrix._22, m_WorldMatrix._23 };
 		m_ForwardVector = { m_WorldMatrix._31, m_WorldMatrix._32, m_WorldMatrix._33 };
 
 		m_RightVector.Normalize();

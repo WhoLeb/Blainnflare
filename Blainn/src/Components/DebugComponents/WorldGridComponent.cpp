@@ -1,8 +1,43 @@
 #include "pch.h"
 #include "WorldGridComponent.h"
 
+#include "Components/ComponentManager.h"
+#include "Core/Application.h"
+#include "Core/CBIndexManager.h"
+#include "Core/GameObject.h"
+#include "DX12/DXStaticMesh.h"
+#include "DX12/DXResourceManager.h"
+
 namespace Blainn
 {
+	WorldGridComponent::WorldGridComponent()
+	{
+		m_PointList = CreateLineList();
+	}
+
+	WorldGridComponent::~WorldGridComponent()
+	{
+	}
+
+	void WorldGridComponent::OnAttach()
+	{
+		auto owner = GetOwner();
+		if (!owner)
+		{
+			OutputDebugStringW(L"The component didn't have an owning object");
+			return;
+		}
+		CBIndexManager::Get().AssignCBIdx(owner->GetUUID());
+	}
+
+	void WorldGridComponent::Render()
+	{
+		auto cmdList = Application::Get().GetRenderingContext()->GetCommandList();
+		m_PointList->Bind();
+
+		m_PointList->Draw();
+	}
+
 	std::shared_ptr<DXStaticMesh> Blainn::WorldGridComponent::CreateLineList()
 	{
 		std::vector<DXStaticMesh::Vertex> verticies;
@@ -34,9 +69,7 @@ namespace Blainn
 			});
 		}
 
-		Application::Get().GetResourceManager()->StartUploadCommands();
 		auto mesh = std::make_shared<DXStaticMesh>(verticies);
-		Application::Get().GetResourceManager()->EndUploadCommands();
 		return mesh;
 	}
 }

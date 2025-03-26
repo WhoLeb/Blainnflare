@@ -7,7 +7,7 @@
 
 namespace Blainn
 {
-	class CameraComponent : public Component
+	class CameraComponent : public Component<CameraComponent>
 	{
 		using Super = Component;
 	public:
@@ -30,10 +30,10 @@ namespace Blainn
 		{
 			Super::OnUpdate(gt);
 
-			auto* owner = GetOwner();
+			auto owner = GetOwner();
 			if (!owner) return;
 
-			auto* transform = owner->GetComponent<TransformComponent>();
+			auto transform = owner->GetComponent<TransformComponent>();
 			if (!transform) return;
 
 			m_Camera.SetPositionAndQuaternion(transform->GetWorldPosition(), transform->GetWorldQuat());

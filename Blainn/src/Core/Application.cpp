@@ -3,8 +3,12 @@
 #include "pch.h"
 
 #include "Components/ActorComponents/CharacterComponents/CameraComponent.h"
+#include "DX12/DXRenderingContext.h"
+#include "DX12/DXResourceManager.h"
 #include "Input.h"
 #include "Util/ComboboxSelector.h"
+
+#include "DX12Lib/DescriptorAllocator.h"
 
 #include <iostream>
 
@@ -58,11 +62,11 @@ namespace Blainn
 		m_RenderingContext->Init(m_Window);
 
 		m_ResourceManager = std::make_shared<DXResourceManager>(
-			m_RenderingContext->GetDevice()->Device(),
+			m_RenderingContext->GetDevice(),
 			m_RenderingContext->GetCommandQueue()
 		);
 
-		m_RenderingContext->CreateResources();
+		m_RenderingContext->CreateResources(m_ResourceManager);
 
 		m_Scene = std::make_shared<Scene>();
 
@@ -123,29 +127,26 @@ namespace Blainn
 
 	void Application::Update(const GameTimer& timer)
 	{
+		m_RenderingContext->OnUpdate();
+
 		Blainn::Input::Update();
 
 		for (Layer* layer : m_LayerStack)
 			layer->OnUpdate(timer);
 
-		m_RenderingContext->OnUpdate();
 		m_Scene->UpdateScene(timer);
 		if (m_Scene->GetMainCamera())
 			Application::Get().GetRenderingContext()->UpdateMainPassConstantBuffers(
 				timer, m_Scene->GetMainCamera()->GetCamera()
 			);
-		Application::Get().GetRenderingContext()->UpdateObjectsConstantBuffers(*m_Scene);
+		Application::Get().GetRenderingContext()->UpdateObjectsConstantBuffers();
 
 		Input::UpdateMouseDelta(0, 0);
 	}
 
 	void Application::Draw(const GameTimer& timer)
 	{
-		m_RenderingContext->BeginFrame();
-
-		m_RenderingContext->DrawSceneMeshes(*m_Scene);
-
-		m_RenderingContext->EndFrame();
+		m_RenderingContext->Draw();
 	}
 
 #pragma region Window Event Callbacks

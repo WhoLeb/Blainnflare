@@ -22,42 +22,46 @@ namespace solar
 	{
 		Super::OnUpdate(gt);
 
-		//m_Timer -= gt.DeltaTime();
-		//if (m_Timer <= 0.f)
-		//{
-		//	m_Timer = 3.f;
+		m_Timer -= gt.DeltaTime();
+		if (m_Timer <= 0.f)
+		{
+			m_Timer = 3.f;
 
-		//	std::cout << "===============================\n";
-		//	std::cout << "Player local pos (X, Y, Z): ("
-		//		<< transform->GetLocalPosition().x << ", "
-		//		<< transform->GetLocalPosition().y << ", "
-		//		<< transform->GetLocalPosition().z << ")\n"
-		//		<< "Player world pos(X, Y, Z) : ("
-		//		<< transform->GetWorldPosition().x << ", "
-		//		<< transform->GetWorldPosition().y << ", "
-		//		<< transform->GetWorldPosition().z << ")\n";
-		//	if (GetParent())
-		//	{
-		//		if (auto* pt = GetParent()->GetComponent<Blainn::TransformComponent>())
-		//			std::cout << "Parent local pos (X, Y, Z): ("
-		//			<< pt->GetLocalPosition().x << ", "
-		//			<< pt->GetLocalPosition().y << ", "
-		//			<< pt->GetLocalPosition().z << ")\n"
-		//			<< "Parent world pos(X, Y, Z) : ("
-		//			<< pt->GetWorldPosition().x << ", "
-		//			<< pt->GetWorldPosition().y << ", "
-		//			<< pt->GetWorldPosition().z << ")\n"
-		//			<< "Parent quaternion (W, X, Y, Z) : ("
-		//			<< pt->GetWorldQuat().w << ", "
-		//			<< pt->GetWorldQuat().x << ", "
-		//			<< pt->GetWorldQuat().y << ", "
-		//			<< pt->GetWorldQuat().z << ")\n";
-		//		auto* targetPlanet = dynamic_cast<Planet*>(GetParent().get());
-		//		if (targetPlanet)
-		//			std::cout << "Current target - " << targetPlanet->GetName() << "\n";
-		//	}
+			std::cout << "===============================\n";
+			std::cout << "Player local pos (X, Y, Z): ("
+				<< transform->GetLocalPosition().x << ", "
+				<< transform->GetLocalPosition().y << ", "
+				<< transform->GetLocalPosition().z << ")\n"
+				<< "Player world pos(X, Y, Z) : ("
+				<< transform->GetWorldPosition().x << ", "
+				<< transform->GetWorldPosition().y << ", "
+				<< transform->GetWorldPosition().z << ")\n"
+				<< "Player world rot(Y, P, R) : ("
+				<< transform->GetWorldYawPitchRoll().x << ", "
+				<< transform->GetWorldYawPitchRoll().y << ", "
+				<< transform->GetWorldYawPitchRoll().z << ")\n";
+			if (GetParent())
+			{
+				if (auto* pt = GetParent()->GetComponent<Blainn::TransformComponent>())
+					std::cout << "Parent local pos (X, Y, Z): ("
+					<< pt->GetLocalPosition().x << ", "
+					<< pt->GetLocalPosition().y << ", "
+					<< pt->GetLocalPosition().z << ")\n"
+					<< "Parent world pos(X, Y, Z) : ("
+					<< pt->GetWorldPosition().x << ", "
+					<< pt->GetWorldPosition().y << ", "
+					<< pt->GetWorldPosition().z << ")\n"
+					<< "Parent quaternion (W, X, Y, Z) : ("
+					<< pt->GetWorldQuat().w << ", "
+					<< pt->GetWorldQuat().x << ", "
+					<< pt->GetWorldQuat().y << ", "
+					<< pt->GetWorldQuat().z << ")\n";
+				auto* targetPlanet = dynamic_cast<Planet*>(GetParent().get());
+				if (targetPlanet)
+					std::cout << "Current target - " << targetPlanet->GetName() << "\n";
+			}
 
-		//}
+		}
 	}
 
 	void Player::ChangeInputModeToOrbital()

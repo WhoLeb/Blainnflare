@@ -1,32 +1,21 @@
 #pragma once
 
-#include "Core/Application.h"
 #include "Components/Component.h"
-#include "Components/ComponentManager.h"
-#include "DX12/DXStaticMesh.h"
 
 namespace Blainn
 {
+	class DXStaticMesh;
 	
-	class WorldGridComponent : public Component
+	class WorldGridComponent : public Component<WorldGridComponent>
 	{
 	public:
-		WorldGridComponent()
-		{
-			ComponentManager::Get().RegisterComponent(this);
+		WorldGridComponent();
 
-			m_PointList = CreateLineList();
-		}
+		~WorldGridComponent();
 
-		void Render()
-		{
-			auto cmdList = Application::Get().GetRenderingContext()->GetCommandList();
-			m_PointList->Bind();
+		void OnAttach() override;
 
-			cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_LINELIST);
-
-			m_PointList->Draw();
-		}
+		void Render();
 
 	private:
 		std::shared_ptr<DXStaticMesh> CreateLineList();

@@ -2,6 +2,8 @@
 #include "DXFrameResource.h"
 
 #include "Core/Application.h"
+#include "DXDevice.h"
+#include "DXRenderingContext.h"
 
 namespace Blainn
 {
@@ -15,6 +17,7 @@ namespace Blainn
 		auto& resourceManager = Application::Get().GetResourceManager();
 
 		m_PassConstantBuffer = std::make_unique<DXUploadBuffer<PassConstants>>(resourceManager, passCount, true);
+		m_MaterialsConstantBuffer = std::make_unique<DXUploadBuffer<MaterialConstants>>(resourceManager, objectCount, true);
 		m_ObjectsConstantBuffer = std::make_unique<DXUploadBuffer<ObjectConstants>>(resourceManager, objectCount, true);
 	}
 }

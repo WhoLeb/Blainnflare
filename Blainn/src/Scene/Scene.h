@@ -32,26 +32,22 @@ namespace Blainn
 
 			auto obj = std::make_shared<T>(std::forward<Args>(args)...);
 			m_PendingAdditions.push_back(obj);
+			obj->OnAttach();
 			return obj;
 		}
-		void QueueGameObject(std::shared_ptr<GameObject> gameObject);
+		std::shared_ptr<GameObject> QueueGameObject(std::shared_ptr<GameObject> gameObject);
 		void RemoveGameObject(std::shared_ptr<GameObject> gameObject);
 
 		const std::vector<StaticMeshComponent*>& GetRenderObjects() const { return m_AllRenderObjects; }
 
-		UINT32 GetCBIdx(UUID uuid) const;
-
-		void SetMainCamera(CameraComponent* camera) { m_MainCamera = camera; }
-		CameraComponent* GetMainCamera() const { return m_MainCamera; }
+		void SetMainCamera(std::shared_ptr<CameraComponent> camera) { m_MainCamera = camera; }
+		std::shared_ptr<CameraComponent> GetMainCamera() const { return m_MainCamera; }
 	private:
 		void ProcessPendingAdditions();
 		void ProcessPendingRemovals();
 
 		void RegisterObject(std::shared_ptr<GameObject> obj);
 		void RemoveFromScene(std::shared_ptr<GameObject> obj);
-
-		UINT32 AssignCBIdx(UUID uuid);
-		void ReleaseCBIdx(UUID uuid);
 
 	private:
 		std::vector<std::shared_ptr<GameObject>> m_AllObjects;
@@ -63,9 +59,6 @@ namespace Blainn
 		std::vector<std::shared_ptr<GameObject>> m_PendingRemovals;
 
 		// Constant buffer indices and a free list
-		std::unordered_map<UUID, UINT32> m_UUIDToCBIndex;
-		std::stack<UINT32> m_FreeBufferIndices;
-
-		CameraComponent* m_MainCamera = nullptr;
+		std::shared_ptr<CameraComponent> m_MainCamera = nullptr;
 	};
 }

@@ -7,8 +7,9 @@
 
 namespace Blainn
 {
-    Actor::Actor()
+    void Actor::OnAttach()
     {
+        Super::OnAttach();
         transform = AddComponent<TransformComponent>();
     }
 }

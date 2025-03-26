@@ -1,6 +1,9 @@
 #pragma once
 
+#include "Components/ComponentManager.h"
 #include "Components/Component.h"
+#include "Core/CBIndexManager.h"
+#include "Core/GameObject.h"
 
 #include "DX12/DXModel.h"
 
@@ -9,12 +12,14 @@
 namespace Blainn
 {
 
-	class StaticMeshComponent : public Component
+	class StaticMeshComponent : public Blainn::Component<StaticMeshComponent>
 	{
 		friend class Scene;
+		using Super = Blainn::Component<StaticMeshComponent>;
 
 	public:
 		StaticMeshComponent(std::filesystem::path filepath)
+		 : Blainn::Component<StaticMeshComponent>()
 		{
 			m_Model = (std::make_shared<DXModel>(filepath));
 		}
@@ -22,16 +27,22 @@ namespace Blainn
 			: m_Model(model)
 		{}
 
+		~StaticMeshComponent()
+		{
+			m_Model = nullptr;
+		}
 
-		void OnRender() { m_Model->Render(); };
+		void OnAttach() override
+		{
+			Super::OnAttach();
+			Blainn::CBIndexManager::Get().AssignCBIdx(GetOwner()->GetUUID());
+		}
 
-		// internal use for constant buffers
-		void SetBufferIndex(UINT32 index) { m_ObjectConstantBufferIndex = index; }
-		UINT32 GetBufferIndex() const { return m_ObjectConstantBufferIndex; }
+		void OnRender(DXFrameInfo& frameInfo) { m_Model->Render(frameInfo); };
+
+		std::shared_ptr<DXModel> GetModel() const { return m_Model; }
 
 	private:
 		std::shared_ptr<DXModel> m_Model;
-
-		UINT32 m_ObjectConstantBufferIndex = -1;
 	};
 }

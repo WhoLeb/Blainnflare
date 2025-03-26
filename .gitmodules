@@ -14,3 +14,12 @@
 [submodule "Dependencies/assimp"]
 	path = Dependencies/assimp
 	url = https://github.com/assimp/assimp.git
+[submodule "Dependencies/D3D12MA"]
+	path = Dependencies/D3D12MA
+	url = https://github.com/GPUOpen-LibrariesAndSDKs/D3D12MemoryAllocator
+[submodule "Dependencies/DirectXTex"]
+	path = Dependencies/DirectXTex
+	url = https://github.com/microsoft/DirectXTex.git
+[submodule "Dependencies/LearningDX12"]
+	path = Dependencies/LearningDX12
+	url = https://github.com/jpvanoosten/LearningDirectX12.git

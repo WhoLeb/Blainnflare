@@ -1,0 +1,11 @@
+Model Information:
+* title:	Pistol with Engravings
+* source:	https://sketchfab.com/3d-models/pistol-with-engravings-bccd75a0016d49448243135a56facb96
+* author:	Mateusz Woliński (https://sketchfab.com/jeandiz)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Pistol with Engravings" (https://sketchfab.com/3d-models/pistol-with-engravings-bccd75a0016d49448243135a56facb96) by Mateusz Woliński (https://sketchfab.com/jeandiz) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

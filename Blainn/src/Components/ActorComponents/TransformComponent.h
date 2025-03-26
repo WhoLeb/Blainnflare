@@ -17,15 +17,14 @@ namespace Blainn
 		DirectX::SimpleMath::Quaternion Quaternion{};
 	};
 
-	class TransformComponent : public Component
+	class TransformComponent : public Component<TransformComponent>
 	{
-		using Super = Component;
+		using Super = Component<TransformComponent>;
 	public:
-		TransformComponent() { ComponentManager::Get().RegisterComponent<TransformComponent>(this); }
-		~TransformComponent() { ComponentManager::Get().UnregisterComponent<TransformComponent>(this); }
+		~TransformComponent() = default;
 
 		void OnAttach() override;
-		void OnUpdate(const GameTimer& gt) override { Super::OnUpdate(gt); UpdateWorldMatrix(); }
+		void OnUpdate(const GameTimer& gt) override;
 
 		void SetLocalPosition(const DirectX::SimpleMath::Vector3& newLocalPos);
 		void SetLocalYawPitchRoll(const DirectX::SimpleMath::Vector3& newLocalRot);
