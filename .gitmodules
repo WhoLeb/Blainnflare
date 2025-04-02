@@ -17,3 +17,4 @@
 [submodule "Dependencies/LearningDX12"]
 	path = Dependencies/LearningDX12
 	url = https://github.com/WhoLeb/LearningDirectX12Fork.git
+	branch = MyChanges
