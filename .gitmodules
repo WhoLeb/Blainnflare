@@ -1,6 +1,7 @@
 [submodule "Dependencies/DXTK"]
 	path = Dependencies/DXTK
 	url = https://github.com/WhoLeb/MyDirectXTK12.git
+	branch = LH-coordinates
 [submodule "Dependencies/CppDelegates"]
 	path = Dependencies/CppDelegates
 	url = https://github.com/simco50/CppDelegates.git
