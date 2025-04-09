@@ -216,7 +216,6 @@ namespace Blainn
 		{
 			m_bIsTransformDirty = true;
 
-
 			if (auto owner = GetOwner())
 			{
 				for (auto& child : owner->GetChildren())
@@ -262,6 +261,8 @@ namespace Blainn
 			else
 				m_WorldMatrix = localMat;
 		}
+		else
+			return;
 
 		DirectX::SimpleMath::Vector3 wPos, wScale;
 		Quaternion wRot;

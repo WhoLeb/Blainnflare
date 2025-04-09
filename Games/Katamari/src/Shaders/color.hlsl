@@ -82,6 +82,8 @@ VSout VSmain(VSin vin)
     //float4 texc = mul(float4(vin.uv, 0.0f, 1.0f), gTexTransform);
     vout.uv = mul(float4(vin.uv, 0.0f, 1.0f), gMatTransform).xy;
 
+    vout.color = vin.color;
+
     return vout;
 }
 

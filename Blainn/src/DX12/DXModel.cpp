@@ -47,6 +47,9 @@ namespace Blainn
 			frameInfo.CommandList->SetGraphicsRootConstantBufferView(2, matCBAddr);
 			if (sm.DiffuseTexture)
 				sm.DiffuseTexture->Bind(frameInfo.CommandList);
+
+			Application::Get().GetResourceManager()->CommitStagedDescriptorHeaps(frameInfo.CommandList);
+
 			sm.Mesh->Draw();
 		}
 	}

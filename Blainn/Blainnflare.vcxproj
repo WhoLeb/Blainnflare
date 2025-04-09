@@ -128,7 +128,7 @@
       <AdditionalDependencies>dxguid.lib;DX12Libd.lib;DirectXTex.lib;DirectXTK12.lib;assimp-vc143-mtd.lib;zlibstaticd.lib</AdditionalDependencies>
     </Lib>
     <Lib>
-      <AdditionalLibraryDirectories>$(SolutionDir)Dependencies\DirectXTex\DirectXTex\Bin\Desktop_2022\$(Platform)\$(Configuration)\;$(SolutionDir)Dependencies\LearningDX12\lib\$(Configuration);$(SolutionDir)Dependencies\assimp\lib\Debug\;$(SolutionDir)Dependencies\assimp\contrib\zlib\Debug\;$(SolutionDir)Dependencies\DXTK\Bin\Desktop_2022_Win10\$(Platform)\$(Configuration)\</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)Dependencies\DirectXTex\DirectXTex\Bin\Desktop_2022\$(Platform)\$(Configuration)\;$(SolutionDir)Dependencies\LearningDX12\build_vs2022\lib\$(Configuration);$(SolutionDir)Dependencies\assimp\lib\Debug\;$(SolutionDir)Dependencies\assimp\contrib\zlib\Debug\;$(SolutionDir)Dependencies\DXTK\Bin\Desktop_2022_Win10\$(Platform)\$(Configuration)\</AdditionalLibraryDirectories>
     </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -231,6 +231,7 @@
     <ClCompile Include="src\DX12\DXRenderingContext.cpp" />
     <ClCompile Include="src\DX12\DXResourceManager.cpp" />
     <ClCompile Include="src\DX12\DXShader.cpp" />
+    <ClCompile Include="src\DX12\DXTexture.cpp" />
     <ClCompile Include="src\DX12\DynamicDescriptorHeap.cpp" />
     <ClCompile Include="src\ImGui\ImGuiLayer.cpp" />
     <ClCompile Include="src\pch.cpp" />

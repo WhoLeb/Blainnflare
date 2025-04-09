@@ -281,4 +281,13 @@ namespace Blainn
 			CloseHandle(eventHandle);
 		}
 	}
+
+	void DXResourceManager::ResetDynamicDescriptorHeaps()
+	{
+		for (int i = 0; i < D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES; ++i)
+		{
+			m_DynamicDescriptorHeaps[i]->Reset();
+			m_CurrentDescriptorHeaps[i] = nullptr;
+		}
+	}
 }

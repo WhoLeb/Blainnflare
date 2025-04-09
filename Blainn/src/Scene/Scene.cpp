@@ -29,24 +29,51 @@ namespace Blainn
 		ProcessPendingRemovals();
 		ProcessPendingAdditions();
 
-		auto transforms = ComponentManager::Get().GetComponents<TransformComponent>();
-		for (auto& transform : transforms)
-			transform->OnUpdate(gt);
-
 		auto collisions = ComponentManager::Get().GetComponents<CollisionComponent>();
-		for (auto& collisionA : collisions)
-		{
-			for (auto& collisionB : collisions)
-			{
-				if (collisionA == collisionB) continue;
 
-				if (collisionA->Intersects(collisionB))
+		if (m_PlayerCollision)
+		{
+			for (auto& collision : collisions)
+			{
+				if (m_PlayerCollision == collision) continue;
+
+				if (m_PlayerCollision->Intersects(collision))
 				{
-					if(collisionA && collisionB)
-						collisionA->OnCollision(collisionB);
+					m_PlayerCollision->OnCollision(collision);
 				}
 			}
 		}
+
+		// * runs N^2 times, well, very straightforward...
+		//for (auto& collisionA : collisions)
+		//{
+		//	for (auto& collisionB : collisions)
+		//	{
+		//		if (collisionA == collisionB) continue;
+
+		//		if (collisionA->Intersects(collisionB))
+		//		{
+		//			if (collisionA && collisionB)
+		//				collisionA->OnCollision(collisionB);
+		//		}
+		//	}
+		//}
+
+		// * this runs less times but i am creating the vector every frame which is not ideal. probably switcing
+		// * to an octree and reducing calculations this way is way more efficient and may be beneficial
+		// * this still runs N^2 times
+		//std::vector<std::shared_ptr<CollisionComponent>> colVec(collisions.begin(), collisions.end());
+		//for (int a = 0; a < colVec.size(); ++a)
+		//{
+		//	for (int b = a + 1; b < colVec.size(); ++b)
+		//	{
+		//		if (colVec[a]->Intersects(colVec[b]))
+		//		{
+		//			colVec[a]->OnCollision(colVec[b]);
+		//			colVec[b]->OnCollision(colVec[a]);
+		//		}
+		//	}
+		//}
 	}
 
 	void Scene::RenderScene()

@@ -190,18 +190,28 @@ void DynamicDescriptorHeap::CommitDescriptorTables(
             m_NumFreeHandles             = m_NumDescriptorsPerHeap;
             //commandList.SetDescriptorHeap( m_DescriptorHeapType, m_CurrentDescriptorHeap.Get() );
 
+            //Blainn::Application::Get().GetResourceManager()->SetDescriptorHeap(
+            //    d3d12GraphicsCommandList,
+            //    m_DescriptorHeapType,
+            //    m_CurrentDescriptorHeap.Get()
+            //);
+
             // When updating the descriptor heap on the command list, all descriptor
             // tables must be (re)recopied to the new descriptor heap (not just
             // the stale descriptor tables).
             m_StaleDescriptorTableBitMask = m_DescriptorTableBitMask;
         }
+        else
+        {
 
+        }
 
             Blainn::Application::Get().GetResourceManager()->SetDescriptorHeap(
                 d3d12GraphicsCommandList,
                 m_DescriptorHeapType,
                 m_CurrentDescriptorHeap.Get()
             );
+
         DWORD rootIndex;
         // Scan from LSB to MSB for a bit set in staleDescriptorsBitMask
         while ( _BitScanForward( &rootIndex, m_StaleDescriptorTableBitMask ) )

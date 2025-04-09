@@ -113,11 +113,6 @@ namespace Blainn
 
 		Microsoft::WRL::ComPtr<ID3D12Resource> m_DepthStencilBuffer;
 
-		//Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_RTVHeap;
-		//Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_DSVHeap;
-		//Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_SRVHeap;
-		//Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_CBVHeap;
-
 		std::unique_ptr<dx12lib::DescriptorAllocation> m_RTVAllocation;
 		std::unique_ptr<dx12lib::DescriptorAllocation> m_DSVAllocation;
 		std::unique_ptr<dx12lib::DescriptorAllocation> m_SRVAllocation;

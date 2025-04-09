@@ -163,6 +163,10 @@ public:
 		}
 	}
 
+	float GetRadius() { return m_Radius; }
+	void UpdateRadius(float newRadius) { m_Radius = newRadius; }
+
+
 private:
 	DelegateHandle m_MouseMovedHandle;
 	DelegateHandle m_MouseButtonPressedHandle;

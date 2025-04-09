@@ -13,8 +13,11 @@ extern const int g_NumFrameResources;
 
 namespace dx12lib
 {
+	class CommandList;
+	class CommandQueue;
 	class DescriptorAllocator;
 	class DescriptorAllocation;
+	class Device;
 	class RootSignature;
 }
 
@@ -84,6 +87,8 @@ namespace Blainn
 		void TryReleaseResources();
 		void FlushUploadCommands();
 		void WaitForFence(UINT64 fenceValue);
+
+		void ResetDynamicDescriptorHeaps();
 
 	private:
 		Microsoft::WRL::ComPtr<D3D12MA::Allocator> m_Allocator = nullptr;

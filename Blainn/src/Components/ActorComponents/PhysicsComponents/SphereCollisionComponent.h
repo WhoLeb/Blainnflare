@@ -42,6 +42,16 @@ namespace Blainn
 			return m_BoundingSphere.Intersects(*boundingSphere);
 		}
 
+		float GetRadius()
+		{
+			return m_BoundingSphere.Radius;
+		}
+
+		void UpdateRadius(float newRadius)
+		{
+			m_BoundingSphere.Radius = newRadius;
+		}
+
 	private:
 		DirectX::BoundingSphere m_BoundingSphere;
 

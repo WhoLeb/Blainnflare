@@ -118,7 +118,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(SolutionDir)Dependencies\LearningDX12\lib\$(Configuration);$(SolutionDir)bin\Blainnflare\$(Platform)\$(Configuration);</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)Dependencies\LearningDX12\build_vs2022\lib\$(Configuration);$(SolutionDir)bin\Blainnflare\$(Platform)\$(Configuration);</AdditionalLibraryDirectories>
       <AdditionalDependencies>IrrXMLd.lib;DX12Libd.lib;Blainnflare.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>

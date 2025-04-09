@@ -24,6 +24,7 @@ void KatamariLayer::OnAttach()
 	//camera->AddComponent<PlayerInputComponent>();
 	m_Scene->QueueGameObject(player);
 	m_Scene->SetMainCamera(player->GetCameraComponent());
+	m_Scene->SetPlayerCollision(player->GetCollisionComponent());
 
 	auto plane = std::make_shared<Blainn::Actor>();
 	m_Scene->QueueGameObject(plane);
@@ -40,6 +41,22 @@ void KatamariLayer::OnAttach()
 	randomObjCol->SetCollisionCallback([](std::shared_ptr<CollisionComponent> other) { OutputDebugStringW(L"Colliding with the object\n"); });
 	//ball->GetComponent<TransformComponent>()->SetWorldScale({ 0.01f, 0.01f, 0.01f });
 	coolCube->GetComponent<TransformComponent>()->SetWorldYawPitchRoll({ -90.0f, 0.0f, 180.0f });
+
+	//auto coolCubeModel = std::make_shared<Blainn::DXModel>("../../Resources/Models/CoolTexturedCube.fbx");
+	auto coolCubeModel = std::make_shared<Blainn::DXModel>("../../Resources/Models/dragonkin/scene.gltf");
+	for (int i = -50; i <= 50; i += 4)
+	{
+		for (int j = -50; j <= 50; j += 4)
+		{
+			auto instancedCube = std::make_shared<Blainn::GameObject>();
+			m_Scene->QueueGameObject(instancedCube);
+
+			instancedCube->AddComponent<Blainn::StaticMeshComponent>(coolCubeModel);
+			instancedCube->AddComponent<Blainn::TransformComponent>()->SetWorldPosition({ float(i), 0.f, float(j)});
+			instancedCube->GetComponent<TransformComponent>()->SetWorldScale({ 0.008f, 0.008f, 0.008f });
+			instancedCube->AddComponent<Blainn::SphereCollisionComponent>(1.f);
+		}
+	}
 
 	auto guy = std::make_shared<Blainn::Actor>();
 	m_Scene->QueueGameObject(guy);

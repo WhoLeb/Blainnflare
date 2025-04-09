@@ -10,10 +10,11 @@
 
 namespace Blainn
 {
+	class CameraComponent;
+	class CollisionComponent;
+	class GameObject;
 	class GameTimer;
 	class StaticMeshComponent;
-	class GameObject;
-	class CameraComponent;
 
 	class Scene
 	{
@@ -42,6 +43,10 @@ namespace Blainn
 
 		void SetMainCamera(std::shared_ptr<CameraComponent> camera) { m_MainCamera = camera; }
 		std::shared_ptr<CameraComponent> GetMainCamera() const { return m_MainCamera; }
+
+		void SetPlayerCollision(std::shared_ptr<CollisionComponent> collision) { m_PlayerCollision = collision; }
+		std::shared_ptr<CollisionComponent> GetPlayerCollision() const { return m_PlayerCollision; }
+
 	private:
 		void ProcessPendingAdditions();
 		void ProcessPendingRemovals();
@@ -58,7 +63,7 @@ namespace Blainn
 		std::vector<std::shared_ptr<GameObject>> m_PendingAdditions;
 		std::vector<std::shared_ptr<GameObject>> m_PendingRemovals;
 
-		// Constant buffer indices and a free list
 		std::shared_ptr<CameraComponent> m_MainCamera = nullptr;
+		std::shared_ptr<CollisionComponent> m_PlayerCollision = nullptr;
 	};
 }

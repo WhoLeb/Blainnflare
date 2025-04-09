@@ -25,18 +25,18 @@ public:
 
 		m_Camera = AddChild<Blainn::Actor>();
 		m_CameraComponent = m_Camera->AddComponent<Blainn::CameraComponent>(1920, 1080);
-		m_Camera->AddComponent<KatamariCameraInput>();
+		auto cameraInput = m_Camera->AddComponent<KatamariCameraInput>();
 
 		m_StaticMesh = AddChild<Blainn::Actor>();
 		m_StaticMeshComponent = m_StaticMesh->AddComponent<Blainn::StaticMeshComponent>("../../Resources/Models/CoolTexturedCube.fbx");
 		m_StaticMesh->AddComponent<KatamariCubeInput>();
-		auto staticMeshCollision = m_StaticMesh->AddComponent<Blainn::SphereCollisionComponent>(.5f);
+		m_CollisionComponent = m_StaticMesh->AddComponent<Blainn::SphereCollisionComponent>(.5f);
 
-		staticMeshCollision->SetCollisionCallback([staticMeshCollision](std::shared_ptr<Blainn::CollisionComponent> other)
+		m_CollisionComponent->SetCollisionCallback([this, cameraInput](std::shared_ptr<Blainn::CollisionComponent> other)
 			{
 					//OutputDebugStringW(L"Colliding with the player\n");
 				auto otherOwner = other->GetOwner();
-				auto thisOwner = staticMeshCollision->GetOwner();
+				auto thisOwner = this->m_StaticMesh;
 				if (!otherOwner || !thisOwner) return;
 				if (std::find(
 					thisOwner->GetChildren().begin(),
@@ -61,17 +61,31 @@ public:
 				otherOwner->AttachTo(thisOwner->shared_from_this());
 				otherTransform->SetLocalPosition(localOffset);
 				otherTransform->SetLocalQuat(localRot);
+
+				auto sphereCollision = dynamic_cast<Blainn::SphereCollisionComponent*>(this->m_CollisionComponent.get());
+				if (sphereCollision)
+				{
+					float oldRadius = sphereCollision->GetRadius();
+					float newRadius = std::clamp(oldRadius + 0.05f, 0.f, 6.f);
+					sphereCollision->UpdateRadius(newRadius);
+				}
+				
+				float oldCameraRadius = cameraInput->GetRadius();
+				float newCameraRadius = std::clamp(oldCameraRadius + 0.1f, 0.f, 25.f);
+				cameraInput->UpdateRadius(newCameraRadius);
 			});
 
 		Super::OnAttach();
 	}
 
-	std::shared_ptr<Blainn::CameraComponent> GetCameraComponent()const { return m_CameraComponent; }
+	std::shared_ptr<Blainn::CameraComponent> GetCameraComponent() const { return m_CameraComponent; }
+	std::shared_ptr<Blainn::CollisionComponent> GetCollisionComponent() const { return m_CollisionComponent; }
 
 private:
 	//KatamariInput* m_InputComponent = nullptr;
 	std::shared_ptr<Blainn::Actor> m_Camera;
 	std::shared_ptr<Blainn::Actor> m_StaticMesh;
 	std::shared_ptr<Blainn::CameraComponent> m_CameraComponent = nullptr;
+	std::shared_ptr<Blainn::CollisionComponent> m_CollisionComponent = nullptr;
 	std::shared_ptr<Blainn::StaticMeshComponent> m_StaticMeshComponent = nullptr;
 };

@@ -32,6 +32,7 @@ namespace Blainn
 {
 	DXRenderingContext::~DXRenderingContext()
 	{
+		FlushCommandQueue();
 	}
 
 	void DXRenderingContext::Init(std::shared_ptr<Window> wnd)
@@ -121,6 +122,8 @@ namespace Blainn
 	{
 		auto cmdListAlloc = m_CurrentFrameResource->GetCommandAlloc();
 		ThrowIfFailed(cmdListAlloc->Reset());
+
+		//m_ResourceManager->ResetDynamicDescriptorHeaps();
 		
 		ThrowIfFailed(m_CommandList->Reset(cmdListAlloc.Get(), m_PSOs["Opaque"].Get()));
 
@@ -165,6 +168,7 @@ namespace Blainn
 		m_CurrentFrameResource->SetFence(++m_CurrentFence);
 
 		m_CommandQueue->Signal(m_Fence.Get(), m_CurrentFence);
+		FlushCommandQueue();
 	}
 
 	void DXRenderingContext::Draw()
