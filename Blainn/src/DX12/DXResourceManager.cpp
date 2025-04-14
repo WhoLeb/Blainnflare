@@ -2,9 +2,13 @@
 #include "DXResourceManager.h"
 
 #include "DXDevice.h"
-#include "DynamicDescriptorHeap.h"
 
+#include "dx12lib/Adapter.h"
+#include "dx12lib/CommandList.h"
+#include "dx12lib/CommandQueue.h"
 #include "dx12lib/DescriptorAllocator.h"
+#include "dx12lib/Device.h"
+#include "dx12lib/DynamicDescriptorHeap.h"
 #include "dx12lib/RootSignature.h"
 
 using Microsoft::WRL::ComPtr;
@@ -12,36 +16,22 @@ using Microsoft::WRL::ComPtr;
 namespace Blainn
 {
 	DXResourceManager::DXResourceManager(
-		std::shared_ptr<DXDevice> device,
-		ComPtr<ID3D12CommandQueue> commandQueue
+		std::shared_ptr<dx12lib::Device> device
 	)
 		: m_Device(device)
-		, m_D3DDevice(device->Device())
-		, m_CommandQueue(commandQueue)
+		, m_D3DDevice(device->GetD3D12Device())
 		, m_CurrentFence(0)
 	{
+		m_CommandQueue = device->GetCommandQueue(D3D12_COMMAND_LIST_TYPE_COPY).GetD3D12CommandQueue();
 
 		using namespace D3D12MA;
 
 		D3D12MA::ALLOCATOR_DESC allocatorDesc = {};
-		allocatorDesc.pAdapter = m_Device->Adapter();
-		allocatorDesc.pDevice = m_Device->Device().Get();
+		allocatorDesc.pAdapter = m_Device->GetAdapter()->GetDXGIAdapter().Get();
+		allocatorDesc.pDevice = m_D3DDevice.Get();
 		allocatorDesc.Flags = D3D12MA_RECOMMENDED_ALLOCATOR_FLAGS;
 
 		ThrowIfFailed(D3D12MA::CreateAllocator(&allocatorDesc, &m_Allocator));
-
-		for (int i = 0; i < D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES; ++i)
-		{
-			m_DescriptorAllocators[i]
-				= std::make_shared<dx12lib::DescriptorAllocator>(
-					m_Device->Device(), static_cast<D3D12_DESCRIPTOR_HEAP_TYPE>(i)
-				);
-			m_DynamicDescriptorHeaps[i]
-				= std::make_shared<DynamicDescriptorHeap>(
-					m_Device->Device(), static_cast<D3D12_DESCRIPTOR_HEAP_TYPE>(i)
-				);
-			m_CurrentDescriptorHeaps[i] = nullptr;
-		}
 
 		ThrowIfFailed(m_D3DDevice->CreateFence(
 			0,
@@ -68,53 +58,6 @@ namespace Blainn
 		m_UploadCommandList->Close();
 	}
 
-	void DXResourceManager::SetRootSignature(Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> commandList, const std::shared_ptr<dx12lib::RootSignature>& rootSignature)
-	{
-		auto* d3d12RootSignature = rootSignature->GetD3D12RootSignature().Get();
-		if (m_CurrentRootSignature != d3d12RootSignature)
-		{
-			m_CurrentRootSignature = d3d12RootSignature;
-
-			for (int i = 0; i < D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES; ++i)
-				m_DynamicDescriptorHeaps[i]->ParseRootSignature(rootSignature);
-
-		}
-		commandList->SetGraphicsRootSignature(m_CurrentRootSignature);
-	}
-
-	void DXResourceManager::SetDescriptorHeap(Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> commandList,D3D12_DESCRIPTOR_HEAP_TYPE heapType, ID3D12DescriptorHeap* descriptorHeap)
-	{
-		if (true || m_CurrentDescriptorHeaps[heapType] != descriptorHeap)
-		{
-			m_CurrentDescriptorHeaps[heapType] = descriptorHeap;
-
-			UINT                  numDescriptorHeaps = 0;
-			ID3D12DescriptorHeap* descriptorHeaps[D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES] = {};
-
-			for (uint32_t i = 0; i < D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES; ++i)
-			{
-				ID3D12DescriptorHeap* aDescriptorHeap = m_CurrentDescriptorHeaps[i];
-				if (aDescriptorHeap)
-				{
-					descriptorHeaps[numDescriptorHeaps++] = aDescriptorHeap;
-				}
-			}
-
-			commandList->SetDescriptorHeaps(numDescriptorHeaps, descriptorHeaps);
-		}
-	}
-
-	void DXResourceManager::StageDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE descriptorType,UINT rootParameterIndex, UINT descriptorOffset, UINT numDescriptors, const D3D12_CPU_DESCRIPTOR_HANDLE srcDescriptor)
-	{
-		m_DynamicDescriptorHeaps[descriptorType]->StageDescriptors(rootParameterIndex, descriptorOffset, numDescriptors, srcDescriptor);
-	}
-
-	void DXResourceManager::CommitStagedDescriptorHeaps(Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> commandList)
-	{
-		for (int i = 0; i < D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES; ++i)
-			m_DynamicDescriptorHeaps[i]->CommitStagedDescriptorsForDraw(commandList);
-	}
-
 	ComPtr<D3D12MA::Allocation> DXResourceManager::CreateAllocation(
 		const CD3DX12_RESOURCE_DESC& resourceDesc,
 		D3D12_HEAP_TYPE heapType,
@@ -137,11 +80,6 @@ namespace Blainn
 		));
 
 		return alloc;
-	}
-
-	dx12lib::DescriptorAllocation DXResourceManager::AllocateDescriptors(D3D12_DESCRIPTOR_HEAP_TYPE type, UINT32 numDescriptors)
-	{
-		return m_DescriptorAllocators[type]->Allocate(numDescriptors);
 	}
 
 	inline void* DXResourceManager::Map(Microsoft::WRL::ComPtr<D3D12MA::Allocation> buffer)
@@ -282,12 +220,4 @@ namespace Blainn
 		}
 	}
 
-	void DXResourceManager::ResetDynamicDescriptorHeaps()
-	{
-		for (int i = 0; i < D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES; ++i)
-		{
-			m_DynamicDescriptorHeaps[i]->Reset();
-			m_CurrentDescriptorHeaps[i] = nullptr;
-		}
-	}
 }

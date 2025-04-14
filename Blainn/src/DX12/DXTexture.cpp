@@ -5,9 +5,12 @@
 #include "DXRenderingContext.h"
 #include "DXResourceManager.h"
 
-#include "DirectXTex.h"
+#include "../../../Dependencies/LearningDX12/extern/DirectXTex/DirectXTex/DirectXTex.h"
 #include "D3D12MemAlloc.h"
+
+#include "dx12lib/CommandList.h"
 #include "dx12lib/DescriptorAllocation.h"
+#include "dx12lib/Device.h"
 
 namespace Blainn
 {
@@ -24,7 +27,7 @@ namespace Blainn
 	{
 		//m_Allocator = Application::Get().GetResourceManager()->GetResourceAllocator();
 		auto resManager = Application::Get().GetResourceManager();
-		auto d3dDevice = Application::Get().GetRenderingContext()->GetDevice()->Device();
+		auto d3dDevice = Application::Get().GetRenderingContext()->GetDevice()->GetD3D12Device();
 		resManager->StartUploadCommands();
 
 		DirectX::TexMetadata metadata;
@@ -46,8 +49,6 @@ namespace Blainn
 		);
 
 		m_pImpl->m_TexAllocation = resManager->CreateAllocation(texDesc);
-		m_pImpl->m_TexDescAllocation = std::make_shared<dx12lib::DescriptorAllocation>
-			(resManager->AllocateDescriptors(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1));
 
 		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
@@ -83,15 +84,11 @@ namespace Blainn
 
 	DXTexture::~DXTexture() = default;
 
-	void DXTexture::Bind(Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> cmdList)
+	void DXTexture::Bind(std::shared_ptr<dx12lib::CommandList> commandList)
 	{
 		auto resManager = Application::Get().GetResourceManager();
 		auto allocPage = m_pImpl->m_TexDescAllocation->GetDescriptorAllocatorPage();
 		//m_TexDescAllocation->GetDescriptorHandle();
-
-		resManager->StageDescriptorHeap(
-			D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,
-			0, 0, 1, m_pImpl->m_TexDescAllocation->GetDescriptorHandle());
 	}
 
 }

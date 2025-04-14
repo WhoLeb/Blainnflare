@@ -41,17 +41,10 @@ namespace Blainn
 		};
 	public:
 		DXResourceManager(
-			std::shared_ptr<DXDevice> device,
-			Microsoft::WRL::ComPtr<ID3D12CommandQueue> commandQueue
+			std::shared_ptr<dx12lib::Device> device
 		);
 
 		D3D12MA::Allocator* GetResourceAllocator() const { return m_Allocator.Get(); }
-
-		void SetRootSignature(Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> commandList,const std::shared_ptr<dx12lib::RootSignature>& rootSignature);
-
-		void SetDescriptorHeap(Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> commandList, D3D12_DESCRIPTOR_HEAP_TYPE heapType, ID3D12DescriptorHeap* descriptorHeap);
-		void StageDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE descriptorType, UINT rootParameterIndex, UINT descriptorOffset, UINT numDescriptors, const D3D12_CPU_DESCRIPTOR_HANDLE srcDescriptor);
-		void CommitStagedDescriptorHeaps(Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> commandList);
 
 		Microsoft::WRL::ComPtr<D3D12MA::Allocation> CreateAllocation(
 			const CD3DX12_RESOURCE_DESC& resourceDesc,
@@ -59,8 +52,6 @@ namespace Blainn
 			D3D12_HEAP_FLAGS heapFlags = D3D12_HEAP_FLAG_NONE,
 			D3D12_RESOURCE_STATES initialResourceState = D3D12_RESOURCE_STATE_COMMON
 		);
-
-		dx12lib::DescriptorAllocation AllocateDescriptors(D3D12_DESCRIPTOR_HEAP_TYPE type, UINT32 numDescriptors = 1);
 
 		void* Map  (Microsoft::WRL::ComPtr<D3D12MA::Allocation> buffer);
 		void  Unmap(Microsoft::WRL::ComPtr<D3D12MA::Allocation> buffer);
@@ -88,22 +79,19 @@ namespace Blainn
 		void FlushUploadCommands();
 		void WaitForFence(UINT64 fenceValue);
 
-		void ResetDynamicDescriptorHeaps();
-
 	private:
 		Microsoft::WRL::ComPtr<D3D12MA::Allocator> m_Allocator = nullptr;
-		std::shared_ptr<DXDevice> m_Device;
-
-		std::shared_ptr<dx12lib::DescriptorAllocator> m_DescriptorAllocators[D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES];
-		std::shared_ptr<DynamicDescriptorHeap> m_DynamicDescriptorHeaps[D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES];
-		ID3D12DescriptorHeap* m_CurrentDescriptorHeaps[D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES];
-		ID3D12RootSignature* m_CurrentRootSignature;
+		std::shared_ptr<dx12lib::Device> m_Device;
 
 		Microsoft::WRL::ComPtr<ID3D12Device> m_D3DDevice;
 		Microsoft::WRL::ComPtr<ID3D12CommandQueue> m_CommandQueue;
+		//dx12lib::CommandQueue& m_CommandQueue;
+
 		std::vector<UploadBatch> m_UploadAllocators;
 		UINT m_AllocatorIndex = 0;
 		Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> m_UploadCommandList;
+
+		//std::shared_ptr<dx12lib::CommandList> m_UploadCommandList;
 
 		std::queue<std::pair<UINT64, std::vector<Microsoft::WRL::ComPtr<D3D12MA::Allocation>>>> m_UploadBufferBatches;
 		std::vector<Microsoft::WRL::ComPtr<D3D12MA::Allocation>> m_PendingUploads;

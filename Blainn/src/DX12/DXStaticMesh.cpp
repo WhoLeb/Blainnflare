@@ -4,6 +4,8 @@
 #include "Core/Application.h"
 #include "DXResourceManager.h"
 
+#include "dx12lib/CommandList.h"
+
 #include "D3D12MemAlloc.h"
 
 namespace Blainn
@@ -69,10 +71,11 @@ namespace Blainn
 		//m_IBAlloc->Release();
 	}
 
-	void DXStaticMesh::Bind()
+	void DXStaticMesh::Bind(std::shared_ptr<dx12lib::CommandList> commandList)
 	{
 		assert(m_VBAlloc);
-		Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> cmdList = Application::Get().GetRenderingContext()->GetCommandList();
+		//Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> cmdList = Application::Get().GetRenderingContext()->GetCommandList();
+		auto& cmdList = commandList->GetD3D12CommandList();
 
 		D3D12_VERTEX_BUFFER_VIEW vbv;
 		vbv.BufferLocation = m_VBAlloc->GetResource()->GetGPUVirtualAddress();
@@ -81,6 +84,7 @@ namespace Blainn
 
 		D3D12_VERTEX_BUFFER_VIEW vertexBuffers[1] = { vbv };
 		cmdList->IASetVertexBuffers(0, 1, vertexBuffers);
+		//commandList->SetVertexBuffer();
 
 		if (m_bHasIndexBuffer)
 		{
@@ -93,9 +97,10 @@ namespace Blainn
 		}
 	}
 
-	void DXStaticMesh::Draw()
+	void DXStaticMesh::Draw(std::shared_ptr<dx12lib::CommandList> commandList)
 	{
-		Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> cmdList = Application::Get().GetRenderingContext()->GetCommandList();
+		//Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> cmdList = Application::Get().GetRenderingContext()->GetCommandList();
+		auto& cmdList = commandList->GetD3D12CommandList();
 
 		if (m_bHasIndexBuffer)
 			cmdList->DrawIndexedInstanced(m_IndexCount, 1, 0, 0, 0);

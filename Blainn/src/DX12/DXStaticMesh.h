@@ -11,6 +11,13 @@ namespace D3D12MA
 	class Allocation;
 }
 
+namespace dx12lib
+{
+	class CommandList;
+	class VertexBuffer;
+	class IndexBuffer;
+}
+
 namespace Blainn
 {
 	class DXResourceManager;
@@ -44,15 +51,17 @@ namespace Blainn
 		);
 		~DXStaticMesh();
 
-		void Bind();
-		void Draw();
+		void Bind(std::shared_ptr<dx12lib::CommandList> commandList);
+		void Draw(std::shared_ptr<dx12lib::CommandList> commandList);
 	private:
 		Microsoft::WRL::ComPtr<D3D12MA::Allocation> m_VBAlloc;
 		UINT32 m_VertexCount;
+		std::shared_ptr<dx12lib::VertexBuffer> m_VertexBuffer;
 
 		bool m_bHasIndexBuffer = false;
 		Microsoft::WRL::ComPtr<D3D12MA::Allocation> m_IBAlloc;
 		UINT32 m_IndexCount;
+		std::shared_ptr<dx12lib::IndexBuffer> m_IndexBuffer;
 
 	public:
 

@@ -69,10 +69,10 @@ namespace Blainn
 
 		UINT64 GetFence() const { return Fence; }
 		void SetFence(UINT64 value) { Fence = value; }
-		Microsoft::WRL::ComPtr<ID3D12CommandAllocator> GetCommandAlloc() const { return m_CmdListAllocator; }
+		//Microsoft::WRL::ComPtr<ID3D12CommandAllocator> GetCommandAlloc() const { return m_CmdListAllocator; }
 
 	private:
-		Microsoft::WRL::ComPtr<ID3D12CommandAllocator> m_CmdListAllocator;
+		//Microsoft::WRL::ComPtr<ID3D12CommandAllocator> m_CmdListAllocator;
 
 		std::unique_ptr<DXUploadBuffer<PassConstants>> m_PassConstantBuffer;
 		std::unique_ptr<DXUploadBuffer<ObjectConstants>> m_ObjectsConstantBuffer;

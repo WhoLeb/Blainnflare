@@ -9,14 +9,20 @@
 #include <wrl.h>
 #include "Util/d3dx12.h"
 
+#include "dx12lib/RenderTarget.h"
+
 extern const int g_NumFrameResources;
 extern const UINT32 g_NumObjects;
 
 namespace dx12lib
 {
+	class Device;
 	class DescriptorAllocator;
 	class DescriptorAllocation;
+	class PipelineStateObject;
+	class RenderTarget;
 	class RootSignature;
+	class SwapChain;
 }
 
 namespace Blainn
@@ -27,6 +33,7 @@ namespace Blainn
 	class DXModel;
 	class DXResourceManager;
 	class DXShader;
+	class EffectPSO;
 	class GameTimer;
 	class Scene;
 	class StaticMeshComponent;
@@ -39,10 +46,7 @@ namespace Blainn
 		~DXRenderingContext();
 
 		void Init(std::shared_ptr<Window> wnd);
-		void CreateResources(std::shared_ptr<DXResourceManager> resourceManager);
-
-		void BeginFrame();
-		void EndFrame();
+		void CreateResources();
 
 		void Draw();
 
@@ -54,73 +58,34 @@ namespace Blainn
 		);
 
 		void Resize(int newWidth, int newHeight);
-		void FlushCommandQueue();
-		void WaitForGPU();
 
 		bool IsInitialized() const { return m_bIsInitialized; }
 
-		std::shared_ptr<DXDevice> GetDevice() const { return m_Device; }
-		Microsoft::WRL::ComPtr<ID3D12CommandQueue> GetCommandQueue() const { return m_CommandQueue; }
-
-		Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> GetCommandList() const { return m_CommandList; }
-
-	private:
-		void CreateDepthStencilBuffer(int width, int height);
-
-		void BuildDescriptorHeaps();
-		void BuildRootSignature();
-		void BuildPipelineState(); // the legendary PSO
-		void BuildFrameResources();
-
-		ID3D12Resource* CurrentBackBuffer() const
-		{
-			return m_SwapChainBuffer[m_CurrBackBuffer].Get();
-		}
-		D3D12_CPU_DESCRIPTOR_HANDLE DepthStencilView() const;
-		D3D12_CPU_DESCRIPTOR_HANDLE CurrentBackBufferView() const;
-
-		static std::array<const CD3DX12_STATIC_SAMPLER_DESC, 6> GetStaticSamplers();
+		std::shared_ptr<dx12lib::Device> GetDevice() const { return m_Device; }
 
 	private:
 		Microsoft::WRL::ComPtr<IDXGIFactory4> m_DXGIFactory;
-		std::shared_ptr<DXDevice> m_Device;
-		std::shared_ptr<DXResourceManager> m_ResourceManager;
+		//std::shared_ptr<DXDevice> m_Device;
+		std::shared_ptr<dx12lib::Device> m_Device;
 
-		Microsoft::WRL::ComPtr<IDXGISwapChain> m_SwapChain;
-		static const int s_SwapChainBufferCount = 2;
-		Microsoft::WRL::ComPtr<ID3D12Resource> m_SwapChainBuffer[s_SwapChainBufferCount];
-		int m_CurrBackBuffer = 0;
+		std::shared_ptr<dx12lib::SwapChain> m_SwapChain;
 
-		Microsoft::WRL::ComPtr<ID3D12Fence> m_Fence;
-		UINT64 m_CurrentFence;
-		HANDLE m_FenceEvent;
+		dx12lib::RenderTarget m_RenderTarget;
 
 		// TODO: should probably create some Pipeline class that would encapsulate
 		// the pipeline creation and some pipeline manager to bind pipeline and stuff
-		//Microsoft::WRL::ComPtr<ID3D12RootSignature> m_RootSignature;
 		std::shared_ptr<dx12lib::RootSignature> m_RootSignature;
 
-		std::unordered_map<std::string, Microsoft::WRL::ComPtr<ID3D12PipelineState>> m_PSOs;
+		std::unordered_map<std::string, std::shared_ptr<EffectPSO>> m_PSOs;
 
 		// TODO: this should also be moved into another shader manager(or library, 
 		// like in Hazel) class that would manage shaders and give them out based
 		// on what the pipeline asks for
-		std::unordered_map<std::string, std::shared_ptr<DXShader>> m_Shaders;
-
-		Microsoft::WRL::ComPtr<ID3D12CommandQueue> m_CommandQueue;
-		Microsoft::WRL::ComPtr<ID3D12CommandAllocator> m_DirectCmdListAlloc;
-		Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> m_CommandList;
-
-		Microsoft::WRL::ComPtr<ID3D12Resource> m_DepthStencilBuffer;
-
-		std::unique_ptr<dx12lib::DescriptorAllocation> m_RTVAllocation;
-		std::unique_ptr<dx12lib::DescriptorAllocation> m_DSVAllocation;
-		std::unique_ptr<dx12lib::DescriptorAllocation> m_SRVAllocation;
-		std::unique_ptr<dx12lib::DescriptorAllocation> m_CBVAllocation;
+		// std::unordered_map<std::string, std::shared_ptr<DXShader>> m_Shaders;
 
 		// These frame resources hold per object and per-frame data
-		std::vector<std::unique_ptr<DXFrameResource>> m_FrameResources;
-		DXFrameResource* m_CurrentFrameResource;
+		//std::vector<std::unique_ptr<DXFrameResource>> m_FrameResources;
+		//DXFrameResource* m_CurrentFrameResource;
 		UINT m_CurrentFrameResourceIndex = 0;
 		UINT m_PassConstantBufferOffset;
 

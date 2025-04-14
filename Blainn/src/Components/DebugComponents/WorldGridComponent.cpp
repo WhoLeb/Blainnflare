@@ -32,10 +32,11 @@ namespace Blainn
 
 	void WorldGridComponent::Render()
 	{
-		auto cmdList = Application::Get().GetRenderingContext()->GetCommandList();
-		m_PointList->Bind();
+		//auto cmdList = Application::Get().GetRenderingContext()->GetCommandList();
 
-		m_PointList->Draw();
+		//m_PointList->Bind();
+
+		//m_PointList->Draw();
 	}
 
 	std::shared_ptr<DXStaticMesh> Blainn::WorldGridComponent::CreateLineList()

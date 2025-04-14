@@ -152,6 +152,10 @@
     <ClInclude Include="src\Components\KatamariInputComponent.h" />
     <ClInclude Include="src\KatamariLayer.h" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="src\Shaders\BasePS.hlsli" />
+    <None Include="src\Shaders\Matrix.hlsli" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

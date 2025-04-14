@@ -4,6 +4,11 @@
 
 #include <filesystem>
 
+namespace dx12lib
+{
+	class CommandList;
+}
+
 namespace Blainn
 {
 	class DXTexture
@@ -13,7 +18,7 @@ namespace Blainn
 		~DXTexture();
 		UUID uuid;
 
-		void Bind(Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> cmdList);
+		void Bind(std::shared_ptr<dx12lib::CommandList> commandList);
 		
 		std::filesystem::path FilePath;
 	private:

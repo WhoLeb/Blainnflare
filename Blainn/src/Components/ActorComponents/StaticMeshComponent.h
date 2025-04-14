@@ -1,16 +1,18 @@
 #pragma once
 
-#include "Components/ComponentManager.h"
 #include "Components/Component.h"
-#include "Core/CBIndexManager.h"
-#include "Core/GameObject.h"
-
-#include "DX12/DXModel.h"
 
 #include <filesystem>
 
+namespace dx12lib
+{
+	class Scene;
+}
+
 namespace Blainn
 {
+	class DXModel;
+	class SceneVisitor;
 
 	class StaticMeshComponent : public Blainn::Component<StaticMeshComponent>
 	{
@@ -18,30 +20,16 @@ namespace Blainn
 		using Super = Blainn::Component<StaticMeshComponent>;
 
 	public:
-		StaticMeshComponent(std::filesystem::path filepath)
-		 : Blainn::Component<StaticMeshComponent>()
-		{
-			m_Model = (std::make_shared<DXModel>(filepath));
-		}
-		StaticMeshComponent(std::shared_ptr<DXModel> model)
-			: m_Model(model)
-		{}
+		StaticMeshComponent(std::filesystem::path filepath);
+		//StaticMeshComponent(std::shared_ptr<DXModel> model);
 
-		~StaticMeshComponent()
-		{
-			m_Model = nullptr;
-		}
+		~StaticMeshComponent();
 
-		void OnAttach() override
-		{
-			Super::OnAttach();
-			Blainn::CBIndexManager::Get().AssignCBIdx(GetOwner()->GetUUID());
-		}
+		void OnAttach() override;
 
-		void OnRender(DXFrameInfo& frameInfo) { m_Model->Render(frameInfo); };
+		void OnRender(SceneVisitor& frameInfo);;
 
-		std::shared_ptr<DXModel> GetModel() const { return m_Model; }
-
+		std::shared_ptr<DXModel> GetModel() const;
 	private:
 		std::shared_ptr<DXModel> m_Model;
 	};

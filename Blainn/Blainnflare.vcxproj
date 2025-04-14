@@ -125,10 +125,10 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <Lib>
-      <AdditionalDependencies>dxguid.lib;DX12Libd.lib;DirectXTex.lib;DirectXTK12.lib;assimp-vc143-mtd.lib;zlibstaticd.lib</AdditionalDependencies>
+      <AdditionalDependencies>dxguid.lib;DX12Libd.lib;DirectXTK12.lib;assimp-vc143-mtd.lib;zlibstaticd.lib;DirectXTexd.lib</AdditionalDependencies>
     </Lib>
     <Lib>
-      <AdditionalLibraryDirectories>$(SolutionDir)Dependencies\DirectXTex\DirectXTex\Bin\Desktop_2022\$(Platform)\$(Configuration)\;$(SolutionDir)Dependencies\LearningDX12\build_vs2022\lib\$(Configuration);$(SolutionDir)Dependencies\assimp\lib\Debug\;$(SolutionDir)Dependencies\assimp\contrib\zlib\Debug\;$(SolutionDir)Dependencies\DXTK\Bin\Desktop_2022_Win10\$(Platform)\$(Configuration)\</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)Dependencies\LearningDX12\build_vs2022\lib\$(Configuration);$(SolutionDir)Dependencies\DirectXTex\DirectXTex\Bin\Desktop_2022\$(Platform)\$(Configuration);$(SolutionDir)Dependencies\DXTK\Bin\Desktop_2022_Win10\$(Platform)\$(Configuration)\</AdditionalLibraryDirectories>
     </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -164,6 +164,7 @@
     <ClInclude Include="src\Components\ActorComponents\CharacterComponents\PlayerInputComponent.h" />
     <ClInclude Include="src\Components\ActorComponents\PhysicsComponents\CollisionComponent.h" />
     <ClInclude Include="src\Components\ActorComponents\PhysicsComponents\SphereCollisionComponent.h" />
+    <ClInclude Include="src\Components\ActorComponents\PointLightComponent.h" />
     <ClInclude Include="src\Components\ActorComponents\StaticMeshComponent.h" />
     <ClInclude Include="src\Components\ActorComponents\CharacterComponents\CameraComponent.h" />
     <ClInclude Include="src\Components\ActorComponents\TransformComponent.h" />
@@ -177,21 +178,15 @@
     <ClInclude Include="src\Core\CBIndexManager.h" />
     <ClInclude Include="src\Core\MaterialIndexManager.h" />
     <ClInclude Include="src\DX12\D3D12MemAlloc.h" />
-    <ClInclude Include="src\DX12\DXFrameResource.h" />
-    <ClInclude Include="src\DX12\DXMaterial.h" />
-    <ClInclude Include="src\DX12\DXStaticMesh.h" />
+    <ClInclude Include="src\DX12\DXModel.h" />
+    <ClInclude Include="src\DX12\DXSceneVisitor.h" />
     <ClInclude Include="src\Core\Layer.h" />
     <ClInclude Include="src\Core\LayerStack.h" />
     <ClInclude Include="src\Core\UUID.h" />
-    <ClInclude Include="src\DX12\DXBuffer.h" />
-    <ClInclude Include="src\DX12\DXModel.h" />
     <ClInclude Include="src\DX12\DXPipeline.h" />
     <ClInclude Include="src\DX12\DXRenderingContext.h" />
-    <ClInclude Include="src\DX12\DXResourceManager.h" />
     <ClInclude Include="src\DX12\DXShader.h" />
-    <ClInclude Include="src\DX12\DXTexture.h" />
-    <ClInclude Include="src\DX12\DXUploadBuffer.h" />
-    <ClInclude Include="src\DX12\DynamicDescriptorHeap.h" />
+    <ClInclude Include="src\DX12\EffectPSO.h" />
     <ClInclude Include="src\EntryPoint.h" />
     <ClInclude Include="src\ImGui\ImGuiLayer.h" />
     <ClInclude Include="src\pch.h" />
@@ -202,10 +197,9 @@
     <ClInclude Include="src\Core\GameTimer.h" />
     <ClInclude Include="src\Core\KeyCodes.h" />
     <ClInclude Include="src\Core\Window.h" />
-    <ClInclude Include="src\DX12\DXSwapChain.h" />
-    <ClInclude Include="src\DX12\DXDevice.h" />
     <ClInclude Include="src\Scene\Actor.h" />
     <ClInclude Include="src\Core\GameObject.h" />
+    <ClInclude Include="src\Scene\Light.h" />
     <ClInclude Include="src\Scene\Scene.h" />
     <ClInclude Include="src\Util\ComboboxSelector.h" />
     <ClInclude Include="src\Util\MathHelper.h" />
@@ -214,6 +208,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Components\ActorComponents\CharacterComponents\OrbitalCameraController.cpp" />
+    <ClCompile Include="src\Components\ActorComponents\PointLightComponent.cpp" />
+    <ClCompile Include="src\Components\ActorComponents\StaticMeshComponent.cpp" />
     <ClCompile Include="src\Components\ActorComponents\TransformComponent.cpp" />
     <ClCompile Include="src\Components\DebugComponents\WorldGridComponent.cpp" />
     <ClCompile Include="src\Core\Camera.cpp" />
@@ -224,22 +220,16 @@
     <ClCompile Include="src\Core\LayerStack.cpp" />
     <ClCompile Include="src\Core\UUID.cpp" />
     <ClCompile Include="src\DX12\D3D12MemAlloc.cpp" />
-    <ClCompile Include="src\DX12\DXBuffer.cpp" />
-    <ClCompile Include="src\DX12\DXFrameResource.cpp" />
     <ClCompile Include="src\DX12\DXModel.cpp" />
-    <ClCompile Include="src\DX12\DXStaticMesh.cpp" />
+    <ClCompile Include="src\DX12\DXSceneVisitor.cpp" />
     <ClCompile Include="src\DX12\DXRenderingContext.cpp" />
-    <ClCompile Include="src\DX12\DXResourceManager.cpp" />
     <ClCompile Include="src\DX12\DXShader.cpp" />
-    <ClCompile Include="src\DX12\DXTexture.cpp" />
-    <ClCompile Include="src\DX12\DynamicDescriptorHeap.cpp" />
+    <ClCompile Include="src\DX12\EffectPSO.cpp" />
     <ClCompile Include="src\ImGui\ImGuiLayer.cpp" />
     <ClCompile Include="src\pch.cpp" />
     <ClCompile Include="src\Core\Application.cpp" />
-    <ClCompile Include="src\DX12\DXSwapChain.cpp" />
     <ClCompile Include="src\Core\GameTimer.cpp" />
     <ClCompile Include="src\Core\Window.cpp" />
-    <ClCompile Include="src\DX12\DXDevice.cpp" />
     <ClCompile Include="src\Scene\Actor.cpp" />
     <ClCompile Include="src\Scene\Scene.cpp" />
     <ClCompile Include="src\Util\ComboboxSelector.cpp" />
