@@ -40,7 +40,8 @@ struct VertexPositionNormalTangentBitangentTexture
 
 struct VertexShaderOutput
 {
-    float4 PositionVS : POSITION;
+    float4 PositionVS : POSITION0;
+    float4 PositionW : POSITION1;
     float3 NormalVS : NORMAL;
     float3 TangentVS : TANGENT;
     float3 BitangentVS : BITANGENT;
@@ -55,16 +56,22 @@ VertexShaderOutput main(VertexPositionNormalTangentBitangentTexture IN)
     float4x4 ModelViewMatrix = mul(ObjectCB.WorldMatrix, PassCB.View);
     float4x4 ModelViewProjMatrix = mul(ObjectCB.WorldMatrix, PassCB.ViewProj);
 
-    float3x3 MV3x3 = (float3x3)ModelViewMatrix;
-    float3x3 invMV3x3 = Inverse3x3(MV3x3);
-    float3x3 InverseTransposeMV3x3 = invMV3x3;
+    OUT.PositionW = mul(float4(IN.Position, 1.0f), ObjectCB.WorldMatrix);
+
+    float4x4 MV = ModelViewMatrix;
+    float4x4 invMV = inverse(MV);
+    float4x4 InverseTransposeMV = (invMV);
 
     OUT.PositionVS = mul(float4(IN.Position, 1.0f), ModelViewMatrix);
-    OUT.Position = mul(float4(IN.Position, 1.0f), ModelViewProjMatrix);
+    OUT.Position = mul(OUT.PositionW, PassCB.ViewProj);
 
-    OUT.NormalVS = mul(IN.Normal, InverseTransposeMV3x3);
-    OUT.TangentVS = mul(IN.Tangent, InverseTransposeMV3x3);
-    OUT.BitangentVS = mul(IN.Bitangent, InverseTransposeMV3x3);
+    OUT.NormalVS = mul(InverseTransposeMV, IN.Normal);
+    OUT.TangentVS = mul(InverseTransposeMV, IN.Tangent);
+    OUT.BitangentVS = mul(InverseTransposeMV, IN.Bitangent);
+    
+    //OUT.NormalVS = mul(MV3x3, IN.Normal);
+    //OUT.TangentVS = mul(MV3x3, IN.Tangent);
+    //OUT.BitangentVS = mul(MV3x3, IN.Bitangent);
 
     OUT.TexCoord = IN.TexCoord.xy;
 

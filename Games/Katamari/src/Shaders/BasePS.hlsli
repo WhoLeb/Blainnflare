@@ -1,7 +1,8 @@
 // clang-format off
 struct PixelShaderInput
 {
-    float4 PositionVS : POSITION;
+    float4 PositionVS : POSITION0;
+    float4 PositionW : POSITION1;
     float3 NormalVS : NORMAL;
     float3 TangentVS : TANGENT;
     float3 BitangentVS : BITANGENT;
@@ -146,6 +147,11 @@ Texture2D NormalTexture        : register(t8);
 Texture2D BumpTexture          : register(t9);
 Texture2D OpacityTexture       : register(t10);
 
+Texture2D ShadowMap1           : register(t11);
+Texture2D ShadowMap2           : register(t12);
+Texture2D ShadowMap3           : register(t13);
+Texture2D ShadowMap4           : register(t14);
+
 SamplerState PointWrapSamp     : register(s0);
 SamplerState PointClampSamp    : register(s1);
 SamplerState LinWrapSamp       : register(s2);
@@ -170,6 +176,10 @@ float DoDiffuse( float3 N, float3 L )
 
 float DoSpecular( float3 V, float3 N, float3 L, float specularPower )
 {
+    //float3 H = normalize(L + V);
+    //float NdotH = max(0, dot(N, H));
+    //return pow(NdotH, specularPower);
+
     float3 R = normalize( reflect( -L, N ) );
     float RdotV = max( 0, dot( R, V ) );
 
@@ -435,9 +445,8 @@ float4 main(PixelShaderInput IN) : SV_Target
         }
         specular *= lit.Specular;
     }
-#else 
-    shadow = -N.z;
 #endif // ENABLE_LIGHTING
 
+    //return float4(N * 0.5 + 0.5, 1.0);
     return float4((emissive + ambient + diffuse + specular).rgb * shadow, alpha * material.Opacity);
 }

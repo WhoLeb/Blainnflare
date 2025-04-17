@@ -21,10 +21,10 @@ public:
 
 	void OnAttach() override
 	{
-		Super::OnAttach();
+		//Super::OnAttach();
 
 		m_Camera = AddChild<Blainn::Actor>();
-		m_CameraComponent = m_Camera->AddComponent<Blainn::CameraComponent>(1920, 1080);
+		m_CameraComponent = m_Camera->AddComponent<Blainn::CameraComponent>(1600, 800);
 		auto cameraInput = m_Camera->AddComponent<KatamariCameraInput>();
 
 		m_StaticMesh = AddChild<Blainn::Actor>();
