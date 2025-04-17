@@ -7,6 +7,7 @@
 namespace dx12lib
 {
 	class Scene;
+	class Visitor;
 }
 
 namespace Blainn
@@ -27,7 +28,7 @@ namespace Blainn
 
 		void OnAttach() override;
 
-		void OnRender(SceneVisitor& frameInfo);;
+		void OnRender(dx12lib::Visitor& frameInfo);;
 
 		std::shared_ptr<DXModel> GetModel() const;
 	private:

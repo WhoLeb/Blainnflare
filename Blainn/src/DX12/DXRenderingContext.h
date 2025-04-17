@@ -1,6 +1,6 @@
 #pragma once
 
-#include "DXFrameResource.h"
+//#include "DXFrameResource.h"
 
 #include <dxgi1_4.h>
 #include <d3d12.h>
@@ -27,6 +27,7 @@ namespace dx12lib
 
 namespace Blainn
 {
+	class CascadeShadowMaps;
 	class Camera;
 	class DXDevice;
 	class DXMaterial;
@@ -36,6 +37,7 @@ namespace Blainn
 	class EffectPSO;
 	class GameTimer;
 	class Scene;
+	class ShadowMapPSO;
 	class StaticMeshComponent;
 	class Window;
 
@@ -65,40 +67,23 @@ namespace Blainn
 
 	private:
 		Microsoft::WRL::ComPtr<IDXGIFactory4> m_DXGIFactory;
-		//std::shared_ptr<DXDevice> m_Device;
 		std::shared_ptr<dx12lib::Device> m_Device;
 
 		std::shared_ptr<dx12lib::SwapChain> m_SwapChain;
 
 		dx12lib::RenderTarget m_RenderTarget;
+		std::shared_ptr<CascadeShadowMaps> m_CascadeShadowMaps;
 
-		// TODO: should probably create some Pipeline class that would encapsulate
-		// the pipeline creation and some pipeline manager to bind pipeline and stuff
 		std::shared_ptr<dx12lib::RootSignature> m_RootSignature;
 
 		std::unordered_map<std::string, std::shared_ptr<EffectPSO>> m_PSOs;
-
-		// TODO: this should also be moved into another shader manager(or library, 
-		// like in Hazel) class that would manage shaders and give them out based
-		// on what the pipeline asks for
-		// std::unordered_map<std::string, std::shared_ptr<DXShader>> m_Shaders;
-
-		// These frame resources hold per object and per-frame data
-		//std::vector<std::unique_ptr<DXFrameResource>> m_FrameResources;
-		//DXFrameResource* m_CurrentFrameResource;
-		UINT m_CurrentFrameResourceIndex = 0;
-		UINT m_PassConstantBufferOffset;
-
-		UINT m_RtvDescriptorSize = 0;
-		UINT m_DsvDescriptorSize = 0;
-		UINT m_CbvSrvUavDescriptorSize = 0;
+		std::shared_ptr<ShadowMapPSO> m_SMPSO;
 
 		D3D12_VIEWPORT m_ScreenViewport;
 		D3D12_RECT m_ScissorRect;
 
-		D3D_DRIVER_TYPE m_D3dDriverType = D3D_DRIVER_TYPE_HARDWARE;
 		DXGI_FORMAT m_BackBufferFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
-		DXGI_FORMAT m_DepthStencilFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
+		DXGI_FORMAT m_DepthStencilFormat = DXGI_FORMAT_D32_FLOAT;
 
 		bool m_bIsInitialized = false;
 	};

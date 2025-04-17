@@ -20,6 +20,7 @@ namespace dx12lib
 	class CommandList;
 	class Scene;
 	class Texture;
+	class Visitor;
 }
 
 namespace Blainn
@@ -35,7 +36,7 @@ namespace Blainn
 		DXModel(const std::filesystem::path& modelFilePath);
 		//DXModel(std::shared_ptr<DXStaticMesh> staticMesh, std::shared_ptr<DXMaterial> materaial = nullptr);
 
-		void Render(SceneVisitor& sceneVisitor);
+		void Render(dx12lib::Visitor& sceneVisitor);
 
 		auto GetScene() { return m_Scene; }
 		auto GetScene() const { return m_Scene; }

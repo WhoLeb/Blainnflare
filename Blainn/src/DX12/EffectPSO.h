@@ -54,6 +54,8 @@ namespace dx12lib
 
 namespace Blainn
 {
+	class CascadeShadowMaps;
+
 	class EffectPSO
 	{
 	public:
@@ -68,7 +70,7 @@ namespace Blainn
 		// Transformation matrices for the vertex shader.
 		struct alignas(16) PerObjectData
 		{
-			DirectX::XMMATRIX WorldMatrix;
+			DirectX::SimpleMath::Matrix WorldMatrix;
 			//DirectX::XMMATRIX ModelMatrix;
 			//DirectX::XMMATRIX ModelViewMatrix;
 			//DirectX::XMMATRIX InverseTransposeModelViewMatrix;
@@ -99,19 +101,19 @@ namespace Blainn
 		enum RootParameters
 		{
 			// Vertex shader parameter
-			PerObjectDataCB,  // ConstantBuffer<PerObjectData> PerObjectCB : register(b0);
+			PerObjectDataCB = 0,  // ConstantBuffer<PerObjectData> PerObjectCB : register(b0);
 
-			PerPassDataCB,	// ConstantBuffer<PerPassData> PerPassCB : register(b1)
+			PerPassDataCB = 1,	// ConstantBuffer<PerPassData> PerPassCB : register(b1)
 
 			// Pixel shader parameters
-			MaterialCB,         // ConstantBuffer<Material> MaterialCB : register( b0, space1 );
-			LightPropertiesCB,  // ConstantBuffer<LightProperties> LightPropertiesCB : register( b2 );
+			MaterialCB = 2,         // ConstantBuffer<Material> MaterialCB : register( b0, space1 );
+			LightPropertiesCB = 3,  // ConstantBuffer<LightProperties> LightPropertiesCB : register( b2 );
 
-			PointLights,        // StructuredBuffer<PointLight> PointLights : register( t0 );
-			SpotLights,         // StructuredBuffer<SpotLight> SpotLights : register( t1 );
-			DirectionalLights,  // StructuredBuffer<DirectionalLight> DirectionalLights : register( t2 )
+			PointLights = 4,        // StructuredBuffer<PointLight> PointLights : register( t0 );
+			SpotLights = 5,         // StructuredBuffer<SpotLight> SpotLights : register( t1 );
+			DirectionalLights = 6,  // StructuredBuffer<DirectionalLight> DirectionalLights : register( t2 )
 
-			Textures,  // Texture2D AmbientTexture       : register( t3 );
+			Textures = 7,  // Texture2D AmbientTexture       : register( t3 );
 			// Texture2D EmissiveTexture : register( t4 );
 			// Texture2D DiffuseTexture : register( t5 );
 			// Texture2D SpecularTexture : register( t6 );
@@ -119,6 +121,12 @@ namespace Blainn
 			// Texture2D NormalTexture : register( t8 );
 			// Texture2D BumpTexture : register( t9 );
 			// Texture2D OpacityTexture : register( t10 );
+
+			ShadowMaps = 8, //Texture2D ShadowMap1           : register(t11);
+			//Texture2D ShadowMap2           : register(t12);
+			//Texture2D ShadowMap3           : register(t13);
+			//Texture2D ShadowMap4           : register(t14);
+
 			NumRootParameters
 		};
 
@@ -171,15 +179,25 @@ namespace Blainn
 			m_DirtyFlags |= DF_Material;
 		}
 
+		const std::shared_ptr<CascadeShadowMaps>& GetShadowMap() const
+		{
+			return m_ShadowMap;
+		}
+		void SetShadowMap(const std::shared_ptr<CascadeShadowMaps>& shadowMap)
+		{
+			m_ShadowMap = shadowMap;
+			m_DirtyFlags |= DF_ShadowMaps;
+		}
+
 		// Set matrices.
 		void XM_CALLCONV SetWorldMatrix(DirectX::FXMMATRIX worldMatrix)
 		{
-			m_pAlignedMVP->World = worldMatrix;
+			m_ObjectData.WorldMatrix = worldMatrix;
 			m_DirtyFlags |= DF_PerObjectData;
 		}
-		DirectX::XMMATRIX GetWorldMatrix() const
+		DirectX::SimpleMath::Matrix GetWorldMatrix() const
 		{
-			return m_pAlignedMVP->World;
+			return m_ObjectData.WorldMatrix;
 		}
 
 		//void XM_CALLCONV SetViewMatrix(DirectX::FXMMATRIX viewMatrix)
@@ -207,7 +225,7 @@ namespace Blainn
 			m_PassData = data;
 			m_DirtyFlags |= DF_PerPassData;
 		}
-		PerPassData GetPerPassData()
+		PerPassData& GetPerPassData()
 		{
 			return m_PassData;
 		}
@@ -225,16 +243,21 @@ namespace Blainn
 			DF_Material = (1 << 3),
 			DF_PerObjectData = (1 << 4),
 			DF_PerPassData = (1 << 5),
-			DF_All = DF_PointLights | DF_SpotLights | DF_DirectionalLights | DF_Material | DF_PerObjectData | DF_PerPassData
-		};
-
-		struct alignas(16) MVP
-		{
-			DirectX::XMMATRIX World;
+			DF_ShadowMaps = (1 << 6),
+			DF_All = DF_PointLights
+				| DF_SpotLights
+				| DF_DirectionalLights
+				| DF_Material
+				| DF_PerObjectData
+				| DF_PerPassData
+				| DF_ShadowMaps
 		};
 
 		// Helper function to bind a texture to the rendering pipeline.
-		inline void BindTexture(dx12lib::CommandList& commandList, uint32_t offset,
+		inline void BindTexture(dx12lib::CommandList& commandList, RootParameters rootParameter,
+			uint32_t offset, const std::shared_ptr<dx12lib::Texture>& texture);
+
+		inline void BindShadowMap(dx12lib::CommandList& commandList, uint32_t offset,
 			const std::shared_ptr<dx12lib::Texture>& texture);
 
 		static std::array<const CD3DX12_STATIC_SAMPLER_DESC, 6> GetStaticSamplers();
@@ -249,12 +272,16 @@ namespace Blainn
 
 		// The material to apply during rendering.
 		std::shared_ptr<dx12lib::Material> m_Material;
+		std::shared_ptr<CascadeShadowMaps> m_ShadowMap;
 
 		// An SRV used pad unused texture slots.
 		std::shared_ptr<dx12lib::ShaderResourceView> m_DefaultSRV;
+		std::shared_ptr<dx12lib::ShaderResourceView> m_ShadowMapSRV;
 
 		// Matrices
-		MVP* m_pAlignedMVP;
+		PerObjectData m_ObjectData;
+		PerPassData m_PassData;
+
 		// If the command list changes, all parameters need to be rebound.
 		dx12lib::CommandList* m_pPreviousCommandList;
 
@@ -265,8 +292,6 @@ namespace Blainn
 		bool m_EnableDecal;
 
 		D3D12_PRIMITIVE_TOPOLOGY_TYPE m_PrimitiveTopologyType;
-
-		PerPassData m_PassData;
 	};
 
 }

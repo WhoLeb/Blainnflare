@@ -35,7 +35,7 @@ void Blainn::StaticMeshComponent::OnAttach()
 	Blainn::CBIndexManager::Get().AssignCBIdx(GetOwner()->GetUUID());
 }
 
-void Blainn::StaticMeshComponent::OnRender(SceneVisitor& sceneVisitor)
+void Blainn::StaticMeshComponent::OnRender(dx12lib::Visitor& sceneVisitor)
 {
 	m_Model->Render(sceneVisitor);
 }

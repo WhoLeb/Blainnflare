@@ -162,6 +162,7 @@
     <ClInclude Include="src\Components\ActorComponents\CharacterComponents\InputComponent.h" />
     <ClInclude Include="src\Components\ActorComponents\CharacterComponents\OrbitalCameraController.h" />
     <ClInclude Include="src\Components\ActorComponents\CharacterComponents\PlayerInputComponent.h" />
+    <ClInclude Include="src\Components\ActorComponents\DirectionalLightComponent.h" />
     <ClInclude Include="src\Components\ActorComponents\PhysicsComponents\CollisionComponent.h" />
     <ClInclude Include="src\Components\ActorComponents\PhysicsComponents\SphereCollisionComponent.h" />
     <ClInclude Include="src\Components\ActorComponents\PointLightComponent.h" />
@@ -177,6 +178,7 @@
     <ClInclude Include="src\Core\Input.h" />
     <ClInclude Include="src\Core\CBIndexManager.h" />
     <ClInclude Include="src\Core\MaterialIndexManager.h" />
+    <ClInclude Include="src\DX12\CascadeShadowMaps.h" />
     <ClInclude Include="src\DX12\D3D12MemAlloc.h" />
     <ClInclude Include="src\DX12\DXModel.h" />
     <ClInclude Include="src\DX12\DXSceneVisitor.h" />
@@ -219,6 +221,7 @@
     <ClCompile Include="src\Core\Layer.cpp" />
     <ClCompile Include="src\Core\LayerStack.cpp" />
     <ClCompile Include="src\Core\UUID.cpp" />
+    <ClCompile Include="src\DX12\CascadeShadowMaps.cpp" />
     <ClCompile Include="src\DX12\D3D12MemAlloc.cpp" />
     <ClCompile Include="src\DX12\DXModel.cpp" />
     <ClCompile Include="src\DX12\DXSceneVisitor.cpp" />

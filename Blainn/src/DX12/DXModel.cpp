@@ -4,9 +4,7 @@
 #include "Core/Application.h"
 #include "Core/MaterialIndexManager.h"
 #include "DX12/DXRenderingContext.h"
-#include "DXMaterial.h"
 #include "DXSceneVisitor.h"
-#include "DXStaticMesh.h"
 
 #include <assimp/Importer.hpp>
 #include <assimp/postprocess.h>
@@ -41,7 +39,7 @@ namespace Blainn
 	//	m_SubMeshes.push_back({ staticMesh, materials });
 	//}
 
-	void Blainn::DXModel::Render(SceneVisitor& sceneVisitor)
+	void Blainn::DXModel::Render(dx12lib::Visitor& sceneVisitor)
 	{
 		m_Scene->Accept(sceneVisitor);
 	}

@@ -153,6 +153,12 @@
     <ClInclude Include="src\Components\ActorComponents\PointLightComponent.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\DX12\CascadeShadowMaps.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Components\ActorComponents\DirectionalLightComponent.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\pch.cpp">
@@ -237,6 +243,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Components\ActorComponents\PointLightComponent.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\DX12\CascadeShadowMaps.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

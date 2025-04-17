@@ -11,8 +11,13 @@ namespace Blainn
 	public:
 		PointLightComponent();
 
-		PointLight GetPointLight() { return m_PointLight; }
+		void MarkDirty() { m_bIsDirty = true; }
+		bool IsDirty() const { return m_bIsDirty; }
+
+		PointLight& GetPointLight() { return m_PointLight; }
 	private:
 		PointLight m_PointLight;
+
+		bool m_bIsDirty = true;
 	};
 }

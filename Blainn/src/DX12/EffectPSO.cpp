@@ -1,6 +1,8 @@
 #include "pch.h"
 #include "EffectPSO.h"
 
+#include "DX12/CascadeShadowMaps.h"
+
 #include "SimpleMath.h"
 
 #include <dx12lib/CommandList.h>
@@ -34,7 +36,7 @@ EffectPSO::EffectPSO(
     , m_EnableDecal(enableDecal)
     , m_PrimitiveTopologyType(primitiveTopologyType)
 {
-    m_pAlignedMVP = (MVP*)_aligned_malloc(sizeof(MVP), 16);
+    //m_pAlignedMVP = (MVP*)_aligned_malloc(sizeof(MVP), 16);
 
     // Create a root signature.
     // Allow input layout and deny unnecessary access to certain pipeline stages.
@@ -45,18 +47,20 @@ EffectPSO::EffectPSO(
         D3D12_ROOT_SIGNATURE_FLAG_DENY_GEOMETRY_SHADER_ROOT_ACCESS;
 
     // Descriptor range for the textures.
-    CD3DX12_DESCRIPTOR_RANGE1 descriptorRage(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 8, 3);
+    CD3DX12_DESCRIPTOR_RANGE1 descriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 8, 3);
+    CD3DX12_DESCRIPTOR_RANGE1 shadowDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 4, 11);
 
     // clang-format off
     CD3DX12_ROOT_PARAMETER1 rootParameters[RootParameters::NumRootParameters];
-    rootParameters[RootParameters::PerObjectDataCB].InitAsConstantBufferView(0, 0, D3D12_ROOT_DESCRIPTOR_FLAG_NONE, D3D12_SHADER_VISIBILITY_VERTEX);
-    rootParameters[RootParameters::MaterialCB].InitAsConstantBufferView(0, 1, D3D12_ROOT_DESCRIPTOR_FLAG_NONE, D3D12_SHADER_VISIBILITY_PIXEL);
-    rootParameters[RootParameters::PerPassDataCB].InitAsConstantBufferView(1, 0, D3D12_ROOT_DESCRIPTOR_FLAG_NONE);
+    rootParameters[RootParameters::PerObjectDataCB  ].InitAsConstantBufferView(0, 0, D3D12_ROOT_DESCRIPTOR_FLAG_NONE, D3D12_SHADER_VISIBILITY_VERTEX);
+    rootParameters[RootParameters::MaterialCB       ].InitAsConstantBufferView(0, 1, D3D12_ROOT_DESCRIPTOR_FLAG_NONE, D3D12_SHADER_VISIBILITY_PIXEL);
+    rootParameters[RootParameters::PerPassDataCB    ].InitAsConstantBufferView(1, 0, D3D12_ROOT_DESCRIPTOR_FLAG_NONE);
     rootParameters[RootParameters::LightPropertiesCB].InitAsConstants(sizeof(LightProperties) / 4, 2, 0, D3D12_SHADER_VISIBILITY_PIXEL);
-    rootParameters[RootParameters::PointLights].InitAsShaderResourceView(0, 0, D3D12_ROOT_DESCRIPTOR_FLAG_NONE, D3D12_SHADER_VISIBILITY_PIXEL);
-    rootParameters[RootParameters::SpotLights].InitAsShaderResourceView(1, 0, D3D12_ROOT_DESCRIPTOR_FLAG_NONE, D3D12_SHADER_VISIBILITY_PIXEL);
+    rootParameters[RootParameters::PointLights      ].InitAsShaderResourceView(0, 0, D3D12_ROOT_DESCRIPTOR_FLAG_NONE, D3D12_SHADER_VISIBILITY_PIXEL);
+    rootParameters[RootParameters::SpotLights       ].InitAsShaderResourceView(1, 0, D3D12_ROOT_DESCRIPTOR_FLAG_NONE, D3D12_SHADER_VISIBILITY_PIXEL);
     rootParameters[RootParameters::DirectionalLights].InitAsShaderResourceView(2, 0, D3D12_ROOT_DESCRIPTOR_FLAG_NONE, D3D12_SHADER_VISIBILITY_PIXEL);
-    rootParameters[RootParameters::Textures].InitAsDescriptorTable(1, &descriptorRage, D3D12_SHADER_VISIBILITY_PIXEL);
+    rootParameters[RootParameters::Textures         ].InitAsDescriptorTable(1, &descriptorRange, D3D12_SHADER_VISIBILITY_PIXEL);
+    rootParameters[RootParameters::ShadowMaps       ].InitAsDescriptorTable(1, &shadowDescriptorRange, D3D12_SHADER_VISIBILITY_PIXEL);
 
     auto staticSamplers = GetStaticSamplers();
 
@@ -126,11 +130,23 @@ EffectPSO::EffectPSO(
     defaultSRV.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 
     m_DefaultSRV = m_Device->CreateShaderResourceView(nullptr, &defaultSRV);
+
+    // Create an SRV that can be used to pad unused texture slots.
+    D3D12_SHADER_RESOURCE_VIEW_DESC shadowSRV;
+    shadowSRV.Format = DXGI_FORMAT_R32_FLOAT;
+    shadowSRV.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+    shadowSRV.Texture2D.MostDetailedMip = 0;
+    shadowSRV.Texture2D.MipLevels = 1;
+    shadowSRV.Texture2D.PlaneSlice = 0;
+    shadowSRV.Texture2D.ResourceMinLODClamp = 0;
+    shadowSRV.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+
+    m_ShadowMapSRV = m_Device->CreateShaderResourceView(nullptr, &shadowSRV);
 }
 
 EffectPSO::~EffectPSO()
 {
-    _aligned_free(m_pAlignedMVP);
+    //_aligned_free(m_pAlignedMVP);
 }
 
 void EffectPSO::Apply(dx12lib::CommandList& commandList)
@@ -141,7 +157,7 @@ void EffectPSO::Apply(dx12lib::CommandList& commandList)
     if (m_DirtyFlags & DF_PerObjectData)
     {
         PerObjectData m;
-        m.WorldMatrix = m_pAlignedMVP->World;
+        m.WorldMatrix = m_ObjectData.WorldMatrix;
 
         commandList.SetGraphicsDynamicConstantBuffer(RootParameters::PerObjectDataCB, m);
     }
@@ -161,14 +177,25 @@ void EffectPSO::Apply(dx12lib::CommandList& commandList)
 
             using TextureType = Material::TextureType;
 
-            BindTexture(commandList, 0, m_Material->GetTexture(TextureType::Ambient));
-            BindTexture(commandList, 1, m_Material->GetTexture(TextureType::Emissive));
-            BindTexture(commandList, 2, m_Material->GetTexture(TextureType::Diffuse));
-            BindTexture(commandList, 3, m_Material->GetTexture(TextureType::Specular));
-            BindTexture(commandList, 4, m_Material->GetTexture(TextureType::SpecularPower));
-            BindTexture(commandList, 5, m_Material->GetTexture(TextureType::Normal));
-            BindTexture(commandList, 6, m_Material->GetTexture(TextureType::Bump));
-            BindTexture(commandList, 7, m_Material->GetTexture(TextureType::Opacity));
+            BindTexture(commandList, RootParameters::Textures, 0, m_Material->GetTexture(TextureType::Ambient));
+            BindTexture(commandList, RootParameters::Textures, 1, m_Material->GetTexture(TextureType::Emissive));
+            BindTexture(commandList, RootParameters::Textures, 2, m_Material->GetTexture(TextureType::Diffuse));
+            BindTexture(commandList, RootParameters::Textures, 3, m_Material->GetTexture(TextureType::Specular));
+            BindTexture(commandList, RootParameters::Textures, 4, m_Material->GetTexture(TextureType::SpecularPower));
+            BindTexture(commandList, RootParameters::Textures, 5, m_Material->GetTexture(TextureType::Normal));
+            BindTexture(commandList, RootParameters::Textures, 6, m_Material->GetTexture(TextureType::Bump));
+            BindTexture(commandList, RootParameters::Textures, 7, m_Material->GetTexture(TextureType::Opacity));
+        }
+    }
+
+    if (m_DirtyFlags & DF_ShadowMaps)
+    {
+        if (m_ShadowMap)
+        {
+            BindTexture(commandList, RootParameters::ShadowMaps, 0, m_ShadowMap->GetSlice(CascadeSlice::Slice0));
+            BindTexture(commandList, RootParameters::ShadowMaps, 1, m_ShadowMap->GetSlice(CascadeSlice::Slice1));
+            BindTexture(commandList, RootParameters::ShadowMaps, 2, m_ShadowMap->GetSlice(CascadeSlice::Slice2));
+            BindTexture(commandList, RootParameters::ShadowMaps, 3, m_ShadowMap->GetSlice(CascadeSlice::Slice3));
         }
     }
 
@@ -201,16 +228,30 @@ void EffectPSO::Apply(dx12lib::CommandList& commandList)
     m_DirtyFlags = DF_None;
 }
 
-void EffectPSO::BindTexture(dx12lib::CommandList& commandList, uint32_t offset, const std::shared_ptr<dx12lib::Texture>& texture)
+void EffectPSO::BindTexture(dx12lib::CommandList& commandList, RootParameters rootParameter, uint32_t offset, const std::shared_ptr<dx12lib::Texture>& texture)
 {
     if (texture)
     {
-        commandList.SetShaderResourceView(RootParameters::Textures, offset, texture,
+        commandList.SetShaderResourceView(rootParameter, offset, texture,
             D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
     }
     else
     {
-        commandList.SetShaderResourceView(RootParameters::Textures, offset, m_DefaultSRV,
+        commandList.SetShaderResourceView(rootParameter, offset, m_DefaultSRV,
+            D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+    }
+}
+
+void EffectPSO::BindShadowMap(dx12lib::CommandList& commandList, uint32_t offset, const std::shared_ptr<dx12lib::Texture>& texture)
+{
+    if (texture)
+    {
+        commandList.SetShaderResourceView(RootParameters::ShadowMaps, offset, texture,
+            D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+    }
+    else
+    {
+        commandList.SetShaderResourceView(RootParameters::ShadowMaps, offset, m_ShadowMapSRV,
             D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
     }
 }

@@ -2,6 +2,7 @@
 #include "DXSceneVisitor.h"
 
 #include "Core/Camera.h"
+#include "DX12/CascadeShadowMaps.h"
 #include "EffectPSO.h"
 
 #include <dx12lib/CommandList.h>
@@ -40,4 +41,28 @@ void Blainn::SceneVisitor::Visit(dx12lib::Mesh& mesh)
 		m_LightingPSO.Apply(m_CommandList);
 		mesh.Draw(m_CommandList);
 	}
+}
+
+ShadowVisitor::ShadowVisitor(dx12lib::CommandList& commandList, ShadowMapPSO& shadowPSO)
+	: m_CommandList(commandList)
+	, m_ShadowPSO(shadowPSO)
+{
+}
+
+void ShadowVisitor::Visit(dx12lib::Scene& scene)
+{
+}
+
+void ShadowVisitor::Visit(dx12lib::SceneNode& sceneNode)
+{
+	DirectX::SimpleMath::Matrix world = sceneNode.GetWorldTransform();
+	world = world.Transpose();
+
+	m_ShadowPSO.SetWorldMatrix(world);
+}
+
+void ShadowVisitor::Visit(dx12lib::Mesh& mesh)
+{
+	m_ShadowPSO.Apply(m_CommandList);
+	mesh.Draw(m_CommandList);
 }

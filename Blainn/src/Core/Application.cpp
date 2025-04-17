@@ -4,7 +4,6 @@
 
 #include "Components/ActorComponents/CharacterComponents/CameraComponent.h"
 #include "DX12/DXRenderingContext.h"
-#include "DX12/DXResourceManager.h"
 #include "Input.h"
 #include "Util/ComboboxSelector.h"
 
