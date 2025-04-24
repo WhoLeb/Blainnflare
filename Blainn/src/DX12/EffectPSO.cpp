@@ -60,6 +60,7 @@ EffectPSO::EffectPSO(
     rootParameters[RootParameters::SpotLights       ].InitAsShaderResourceView(1, 0, D3D12_ROOT_DESCRIPTOR_FLAG_NONE, D3D12_SHADER_VISIBILITY_PIXEL);
     rootParameters[RootParameters::DirectionalLights].InitAsShaderResourceView(2, 0, D3D12_ROOT_DESCRIPTOR_FLAG_NONE, D3D12_SHADER_VISIBILITY_PIXEL);
     rootParameters[RootParameters::Textures         ].InitAsDescriptorTable(1, &descriptorRange, D3D12_SHADER_VISIBILITY_PIXEL);
+    rootParameters[RootParameters::CascadeDataCB    ].InitAsConstantBufferView(3, 0, D3D12_ROOT_DESCRIPTOR_FLAG_NONE, D3D12_SHADER_VISIBILITY_PIXEL);
     rootParameters[RootParameters::ShadowMaps       ].InitAsDescriptorTable(1, &shadowDescriptorRange, D3D12_SHADER_VISIBILITY_PIXEL);
 
     auto staticSamplers = GetStaticSamplers();
@@ -146,7 +147,6 @@ EffectPSO::EffectPSO(
 
 EffectPSO::~EffectPSO()
 {
-    //_aligned_free(m_pAlignedMVP);
 }
 
 void EffectPSO::Apply(dx12lib::CommandList& commandList)
@@ -165,6 +165,11 @@ void EffectPSO::Apply(dx12lib::CommandList& commandList)
     if (m_DirtyFlags & DF_PerPassData)
     {
         commandList.SetGraphicsDynamicConstantBuffer(RootParameters::PerPassDataCB, m_PassData);
+    }
+
+    if (m_DirtyFlags & DF_CascadeData)
+    {
+        commandList.SetGraphicsDynamicConstantBuffer(RootParameters::CascadeDataCB, m_CascadeData);
     }
 
     if (m_DirtyFlags & DF_Material)
@@ -192,10 +197,10 @@ void EffectPSO::Apply(dx12lib::CommandList& commandList)
     {
         if (m_ShadowMap)
         {
-            BindTexture(commandList, RootParameters::ShadowMaps, 0, m_ShadowMap->GetSlice(CascadeSlice::Slice0));
-            BindTexture(commandList, RootParameters::ShadowMaps, 1, m_ShadowMap->GetSlice(CascadeSlice::Slice1));
-            BindTexture(commandList, RootParameters::ShadowMaps, 2, m_ShadowMap->GetSlice(CascadeSlice::Slice2));
-            BindTexture(commandList, RootParameters::ShadowMaps, 3, m_ShadowMap->GetSlice(CascadeSlice::Slice3));
+            for (int i = 0; i < CASCADE_COUNT; i++)
+            {
+                BindTexture(commandList, RootParameters::ShadowMaps, i, m_ShadowMap->GetSlice(CascadeSlice(i)));
+            }
         }
     }
 
@@ -238,20 +243,6 @@ void EffectPSO::BindTexture(dx12lib::CommandList& commandList, RootParameters ro
     else
     {
         commandList.SetShaderResourceView(rootParameter, offset, m_DefaultSRV,
-            D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-    }
-}
-
-void EffectPSO::BindShadowMap(dx12lib::CommandList& commandList, uint32_t offset, const std::shared_ptr<dx12lib::Texture>& texture)
-{
-    if (texture)
-    {
-        commandList.SetShaderResourceView(RootParameters::ShadowMaps, offset, texture,
-            D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-    }
-    else
-    {
-        commandList.SetShaderResourceView(RootParameters::ShadowMaps, offset, m_ShadowMapSRV,
             D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
     }
 }

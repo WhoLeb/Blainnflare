@@ -41,6 +41,10 @@
 
 #include <wrl.h>
 
+
+#define CASCADE_COUNT 4
+
+
 namespace dx12lib
 {
 	class CommandList;
@@ -75,6 +79,12 @@ namespace Blainn
 			//DirectX::XMMATRIX ModelViewMatrix;
 			//DirectX::XMMATRIX InverseTransposeModelViewMatrix;
 			//DirectX::XMMATRIX ModelViewProjectionMatrix;
+		};
+
+		struct alignas(16) CascadeData
+		{
+			DirectX::SimpleMath::Matrix viewProjMats[CASCADE_COUNT];
+			float distances[CASCADE_COUNT];
 		};
 
 		struct alignas(16) PerPassData
@@ -122,7 +132,8 @@ namespace Blainn
 			// Texture2D BumpTexture : register( t9 );
 			// Texture2D OpacityTexture : register( t10 );
 
-			ShadowMaps = 8, //Texture2D ShadowMap1           : register(t11);
+			CascadeDataCB = 8, 
+			ShadowMaps = 9, //Texture2D ShadowMap1           : register(t11);
 			//Texture2D ShadowMap2           : register(t12);
 			//Texture2D ShadowMap3           : register(t13);
 			//Texture2D ShadowMap4           : register(t14);
@@ -200,34 +211,24 @@ namespace Blainn
 			return m_ObjectData.WorldMatrix;
 		}
 
-		//void XM_CALLCONV SetViewMatrix(DirectX::FXMMATRIX viewMatrix)
-		//{
-		//	m_pAlignedMVP->View = viewMatrix;
-		//	m_DirtyFlags |= DF_PerPassData;
-		//}
-		//DirectX::XMMATRIX GetViewMatrix() const
-		//{
-		//	return m_pAlignedMVP->View;
-		//}
-
-		//void XM_CALLCONV SetProjectionMatrix(DirectX::FXMMATRIX projectionMatrix)
-		//{
-		//	m_pAlignedMVP->Projection = projectionMatrix;
-		//	m_DirtyFlags |= DF_PerPassData;
-		//}
-		//DirectX::XMMATRIX GetProjectionMatrix() const
-		//{
-		//	return m_pAlignedMVP->Projection;
-		//}
-
+		PerPassData& GetPerPassData()
+		{
+			return m_PassData;
+		}
 		void SetPerPassData(PerPassData& data)
 		{
 			m_PassData = data;
 			m_DirtyFlags |= DF_PerPassData;
 		}
-		PerPassData& GetPerPassData()
+
+		CascadeData& GetCascadeData()
 		{
-			return m_PassData;
+			return m_CascadeData;
+		}
+		void SetCascadeData(CascadeData& data)
+		{
+			m_CascadeData = data;
+			m_DirtyFlags |= DF_CascadeData;
 		}
 
 		// Apply this effect to the rendering pipeline.
@@ -243,13 +244,15 @@ namespace Blainn
 			DF_Material = (1 << 3),
 			DF_PerObjectData = (1 << 4),
 			DF_PerPassData = (1 << 5),
-			DF_ShadowMaps = (1 << 6),
+			DF_CascadeData = (1 << 6),
+			DF_ShadowMaps = (1 << 7),
 			DF_All = DF_PointLights
 				| DF_SpotLights
 				| DF_DirectionalLights
 				| DF_Material
 				| DF_PerObjectData
 				| DF_PerPassData
+				| DF_CascadeData
 				| DF_ShadowMaps
 		};
 
@@ -281,6 +284,7 @@ namespace Blainn
 		// Matrices
 		PerObjectData m_ObjectData;
 		PerPassData m_PassData;
+		CascadeData m_CascadeData;
 
 		// If the command list changes, all parameters need to be rebound.
 		dx12lib::CommandList* m_pPreviousCommandList;

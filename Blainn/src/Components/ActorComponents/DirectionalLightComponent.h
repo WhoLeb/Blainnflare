@@ -9,7 +9,13 @@ namespace Blainn
 	{
 		using Super = Component<DirectionalLightComponent>;
 	public:
-		DirectionalLightComponent() : Super(), m_DirLight() {}
+		DirectionalLightComponent(DirectionalLight* dirLight = nullptr) : Super()
+		{
+			if (dirLight)
+				m_DirLight = *dirLight;
+			else
+				m_DirLight = DirectionalLight();
+		}
 
 		DirectionalLight& GetDirectionalLight() { return m_DirLight; }
 	private:

@@ -103,7 +103,7 @@ struct DirectionalLight
         : DirectionWS(0.0f, 0.0f, 1.0f, 0.0f)
         , DirectionVS(0.0f, 0.0f, 1.0f, 0.0f)
         , Color(1.0f, 1.0f, 1.0f, 1.0f)
-        , Ambient(0.01f)
+        , Ambient(0.1f)
     {
     }
 

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "EffectPSO.h"
+
 #include <cstdint>
 #include <memory>
 #include <vector>
@@ -27,6 +29,8 @@ enum CascadeSlice
 	NumSlices
 };
 
+#define CASCADE_COUNT 4
+
 namespace Blainn
 {
 	class CascadeShadowMaps
@@ -37,28 +41,33 @@ namespace Blainn
 
 		void AttachShadowMap(CascadeSlice slice, std::shared_ptr<dx12lib::Texture> texture);
 
-		std::shared_ptr<dx12lib::Texture> GetSlice(CascadeSlice slice) const;
-		const std::vector<std::shared_ptr<dx12lib::Texture>>& GetSlices() const;
+		std::shared_ptr<dx12lib::Texture>& GetSlice(CascadeSlice slice);
+		const std::shared_ptr<dx12lib::Texture>& GetSlice(CascadeSlice slice) const;
 
-		const dx12lib::RenderTarget& GetRenderTarget(CascadeSlice slice) const;
-		dx12lib::RenderTarget& GetRenderTarget(CascadeSlice slice);
-		const std::vector<dx12lib::RenderTarget>& GetRenderTargets() const;
-
-		void TransitionTo(std::shared_ptr<dx12lib::CommandList> commandList, D3D12_RESOURCE_STATES state = D3D12_RESOURCE_STATE_GENERIC_READ);
+		std::shared_ptr<dx12lib::RenderTarget>& GetRenderTarget(CascadeSlice slice);
+		const std::shared_ptr<dx12lib::RenderTarget>& GetRenderTarget(CascadeSlice slice) const;
+		const std::vector<std::shared_ptr<dx12lib::RenderTarget>>& GetRenderTargets() const;
 
 		DirectX::XMUINT2 GetSize(CascadeSlice slice);
+		D3D12_VIEWPORT GetViewport(CascadeSlice slice);
+
+		void UpdateCascadeData(DirectX::SimpleMath::Matrix& invViewProj,
+			DirectX::SimpleMath::Vector3 lightDirection);
+
+		EffectPSO::CascadeData& GetCascadeData();
 
 		std::vector<DXGI_FORMAT> GetShadowMapFormats() const;
 
 		void Reset();
 
 	private:
-		using ShadowMapList = std::vector<std::shared_ptr<dx12lib::Texture>>;
-		ShadowMapList m_Slices;
-		using RenderTargetList = std::vector<dx12lib::RenderTarget>;
+		using RenderTargetList = std::vector<std::shared_ptr<dx12lib::RenderTarget>>;
 		RenderTargetList m_RenderTargets;
 
 		std::vector<DirectX::XMUINT2> m_Sizes;
+		std::vector<D3D12_VIEWPORT> m_Viewports;
+
+		EffectPSO::CascadeData m_CascadeData;
 	};
 
 	class ShadowMapPSO

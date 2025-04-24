@@ -3,6 +3,7 @@
 #include "Core/Application.h"
 #include "Components/ActorComponents/CharacterComponents/CameraComponent.h"
 #include "Components/ActorComponents/CharacterComponents/PlayerInputComponent.h"
+#include "Components/ActorComponents/DirectionalLightComponent.h"
 #include "Components/ActorComponents/PhysicsComponents/SphereCollisionComponent.h"
 #include "Components/ActorComponents/PointLightComponent.h"
 #include "Components/ActorComponents/StaticMeshComponent.h"
@@ -56,7 +57,8 @@ void KatamariLayer::OnAttach()
 
 	auto light = std::make_shared<Blainn::GameObject>();
 	m_Scene->QueueGameObject(light);
-	light->AddComponent<Blainn::TransformComponent>()->SetWorldPosition({ -10.f, 2.f, 2.f });
+	light->AddComponent<Blainn::TransformComponent>()->SetWorldPosition({ -10.f, 1.f, 2.f });
+	light->AddComponent<Blainn::SphereCollisionComponent>(1.f);
 	light->AddComponent<Blainn::StaticMeshComponent>("../../Resources/Models/CoolTexturedCube.fbx");
 	light->GetComponent<TransformComponent>()->SetWorldScale({ 0.3f, 0.3f, 0.3f });
 	auto& pl = light->AddComponent<Blainn::PointLightComponent>()->GetPointLight();
@@ -70,6 +72,13 @@ void KatamariLayer::OnAttach()
 	light2->AddComponent<Blainn::StaticMeshComponent>("../../Resources/Models/CoolTexturedCube.fbx");
 	light2->GetComponent<TransformComponent>()->SetWorldScale({ 0.3f, 0.3f, 0.3f });
 	light2->AddComponent<Blainn::PointLightComponent>();
+
+	auto dirLight = std::make_shared<Blainn::GameObject>();
+	m_Scene->QueueGameObject(dirLight);
+	DirectionalLight dl;
+	dl.Color = { 0.3f, 0.3f, 0.3f };
+	dirLight->AddComponent<Blainn::TransformComponent>()->SetWorldYawPitchRoll({ 45.f, 5.f, 45.f });
+	dirLight->AddComponent<Blainn::DirectionalLightComponent>(&dl);
 
 	//auto coolCubeModel = std::make_shared<Blainn::DXModel>("../../Resources/Models/CoolTexturedCube.fbx");
 	//auto coolCubeModel = std::make_shared<Blainn::DXModel>("../../Resources/Models/dragonkin/scene.gltf");

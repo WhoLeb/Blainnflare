@@ -40,4 +40,12 @@
     <None Include="src\Shaders\BasePS.hlsli" />
     <None Include="src\Shaders\Matrix.hlsli" />
   </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="src\Shaders\BasicVS.hlsl" />
+    <FxCompile Include="src\Shaders\color.hlsl" />
+    <FxCompile Include="src\Shaders\LightingUtil.hlsl" />
+    <FxCompile Include="src\Shaders\LitPS.hlsl" />
+    <FxCompile Include="src\Shaders\ShadowMap.hlsl" />
+    <FxCompile Include="src\Shaders\UnlitPS.hlsl" />
+  </ItemGroup>
 </Project>

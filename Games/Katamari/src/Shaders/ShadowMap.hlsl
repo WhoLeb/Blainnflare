@@ -27,9 +27,9 @@ float4 main(VertexPositionNormalTangentBitangentTexture IN) : SV_POSITION
 {
 	float4 posW = mul(float4(IN.Position, 1), ObjectCB.WorldMatrix);
 	float4 posV = mul(posW, PassCB.ViewProj);
-	return 0.f;
+	return posV;
 }
 
-void mainPS(float4 IN : SV_POSITION)
+void mainPS()
 {
 }

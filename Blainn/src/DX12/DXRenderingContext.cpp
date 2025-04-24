@@ -2,6 +2,7 @@
 #include "DXRenderingContext.h"
 
 #include "CascadeShadowMaps.h"
+#include "Components/ActorComponents/DirectionalLightComponent.h"
 #include "Components/ActorComponents/PointLightComponent.h"
 #include "Components/ActorComponents/StaticMeshComponent.h"
 #include "Components/ActorComponents/TransformComponent.h"
@@ -179,7 +180,7 @@ namespace Blainn
 		passCB.TotalTime = gt.TotalTime();
 		passCB.DeltaTime = gt.DeltaTime();
 
-		auto pointLightComponents = ComponentManager::Get().GetComponents<PointLightComponent>();
+		auto& pointLightComponents = ComponentManager::Get().GetComponents<PointLightComponent>();
 		std::vector<PointLight> pointLights;
 		pointLights.reserve(pointLightComponents.size());
 		for (auto& pl : pointLightComponents)
@@ -187,6 +188,7 @@ namespace Blainn
 			auto owner = pl->GetOwner();
 			if (!owner)
 				continue;
+
 			auto transform = owner->GetComponent<TransformComponent>();
 			if (!transform)
 				continue;
@@ -198,12 +200,32 @@ namespace Blainn
 			pointLights.push_back(l);
 		}
 
+		auto& dirLightComponents = ComponentManager::Get().GetComponents<DirectionalLightComponent>();
+		std::vector<DirectionalLight> dirLights;
+		dirLights.reserve(dirLightComponents.size());
+		for (auto& dl : dirLightComponents)
+		{
+			auto owner = dl->GetOwner();
+			if (!owner)
+				continue;
+
+			auto transform = owner->GetComponent<TransformComponent>();
+			if (!transform)
+				continue;
+
+			auto& d = dl->GetDirectionalLight();
+			d.DirectionWS = SimpleMath::Vector4(transform->GetWorldForwardVector());
+
+			dirLights.push_back(d);
+		}
+
 		for (auto& pso : m_PSOs)
 		{
 			pso.second->SetPerPassData(passCB);
 			pso.second->SetShadowMap(m_CascadeShadowMaps);
 
 			pso.second->SetPointLights(pointLights);
+			pso.second->SetDirectionalLights(dirLights);
 		}
 	}
 
@@ -216,8 +238,9 @@ namespace Blainn
 
 		auto& commandQueue = m_Device->GetCommandQueue(D3D12_COMMAND_LIST_TYPE_DIRECT);
 
-		std::vector<std::shared_ptr<dx12lib::CommandList>> shadowCommandLists(m_CascadeShadowMaps->GetSlices().size());
-		for(int32_t i = 0; i < shadowCommandLists.size(); ++i)
+		std::vector<std::shared_ptr<dx12lib::CommandList>> shadowCommandLists(CASCADE_COUNT);
+
+		for(int32_t i = 0; i < CASCADE_COUNT; ++i)
 		{
 			auto commandList = commandQueue.GetCommandList();
 			shadowCommandLists[i] = commandList;
@@ -231,14 +254,16 @@ namespace Blainn
 			smPassData.ViewProj = mpPD.ViewProj;
 
 			m_SMPSO->SetPerPassData(smPassData);
+			commandList->SetViewport(m_CascadeShadowMaps->GetViewport(CascadeSlice(i)));
+			commandList->SetScissorRect(m_ScissorRect);
 
 			auto& rt = m_CascadeShadowMaps->GetRenderTarget(CascadeSlice(i));
 
 			commandList->ClearDepthStencilTexture(
-				m_RenderTarget.GetTexture(dx12lib::AttachmentPoint::DepthStencil),
+				rt->GetTexture(dx12lib::AttachmentPoint::DepthStencil),
 				D3D12_CLEAR_FLAG_DEPTH);
 
-			commandList->SetRenderTarget(rt);
+			commandList->SetRenderTarget(*rt);
 
 			for (auto& it : meshes)
 			{
@@ -256,7 +281,6 @@ namespace Blainn
 				it->OnRender(shadowPass);
 			}
 		}
-
 
 		commandQueue.ExecuteCommandLists(shadowCommandLists);
 
@@ -279,8 +303,6 @@ namespace Blainn
 
 		SceneVisitor opaquePass(*commandList, *m_PSOs["Opaque"], false);
 		SceneVisitor unlitPass(*commandList, *m_PSOs["Unlit"], false);
-
-		m_CascadeShadowMaps->TransitionTo(commandList, D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE);
 
 		for (auto& it : meshes)
 		{

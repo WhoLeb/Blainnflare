@@ -31,43 +31,47 @@ ConstantBuffer<PerPassData> PassCB : register(b1);
 
 struct VertexPositionNormalTangentBitangentTexture
 {
-    float3 Position : POSITION;
-    float3 Normal : NORMAL;
-    float3 Tangent : TANGENT;
+    float3 Position  : POSITION;
+    float3 Normal    : NORMAL;
+    float3 Tangent   : TANGENT;
     float3 Bitangent : BITANGENT;
-    float3 TexCoord : TEXCOORD;
+    float3 TexCoord  : TEXCOORD;
 };
 
 struct VertexShaderOutput
 {
-    float4 PositionVS : POSITION0;
-    float4 PositionW : POSITION1;
-    float3 NormalVS : NORMAL;
-    float3 TangentVS : TANGENT;
-    float3 BitangentVS : BITANGENT;
-    float2 TexCoord : TEXCOORD;
-    float4 Position : SV_Position;
+    float4 PositionH  : SV_Position;
+    float3 PositionW  : POSITION;
+    float3 NormalW    : NORMAL;
+    float3 TangentW   : TANGENT;
+    float3 BitangentW : BITANGENT;
+    float2 TexCoord   : TEXCOORD;
 };
 
 VertexShaderOutput main(VertexPositionNormalTangentBitangentTexture IN)
 {
     VertexShaderOutput OUT;
 
-    float4x4 ModelViewMatrix = mul(ObjectCB.WorldMatrix, PassCB.View);
-    float4x4 ModelViewProjMatrix = mul(ObjectCB.WorldMatrix, PassCB.ViewProj);
+    float4 posW = mul(float4(IN.Position, 1.0f), ObjectCB.WorldMatrix);
 
-    OUT.PositionW = mul(float4(IN.Position, 1.0f), ObjectCB.WorldMatrix);
+    OUT.PositionW = posW.xyz;
 
-    float4x4 MV = ModelViewMatrix;
-    float4x4 invMV = inverse(MV);
-    float4x4 InverseTransposeMV = (invMV);
+    //float4x4 MV = ModelViewMatrix;
+    //float4x4 invMV = inverse(MV);
+    //float4x4 InverseTransposeMV = (invMV);
 
-    OUT.PositionVS = mul(float4(IN.Position, 1.0f), ModelViewMatrix);
-    OUT.Position = mul(OUT.PositionW, PassCB.ViewProj);
+    OUT.PositionH = mul(posW, PassCB.ViewProj);
 
-    OUT.NormalVS = mul(InverseTransposeMV, IN.Normal);
-    OUT.TangentVS = mul(InverseTransposeMV, IN.Tangent);
-    OUT.BitangentVS = mul(InverseTransposeMV, IN.Bitangent);
+    float3x3 world3x3 = (float3x3)ObjectCB.WorldMatrix;
+    float3x3 invTransWorld3x3 = transpose(Inverse3x3(world3x3));
+
+    OUT.NormalW = mul(invTransWorld3x3, IN.Normal);
+    OUT.TangentW = mul(invTransWorld3x3, IN.Tangent);
+    OUT.BitangentW = mul(invTransWorld3x3, IN.Bitangent);
+
+    //OUT.NormalVS = mul(InverseTransposeMV, IN.Normal);
+    //OUT.TangentVS = mul(InverseTransposeMV, IN.Tangent);
+    //OUT.BitangentVS = mul(InverseTransposeMV, IN.Bitangent);
     
     //OUT.NormalVS = mul(MV3x3, IN.Normal);
     //OUT.TangentVS = mul(MV3x3, IN.Tangent);
