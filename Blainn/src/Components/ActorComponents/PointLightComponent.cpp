@@ -1,9 +1,11 @@
 #include "pch.h"
 #include "PointLightComponent.h"
 
-Blainn::PointLightComponent::PointLightComponent()
+Blainn::PointLightComponent::PointLightComponent(PointLight* pl)
 	: Super()
-	, m_PointLight()
 {
-
+	if (pl)
+		m_PointLight = *pl;
+	else
+		m_PointLight = PointLight();
 }

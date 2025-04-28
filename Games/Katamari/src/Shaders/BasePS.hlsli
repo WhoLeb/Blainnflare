@@ -2,7 +2,11 @@
 struct PixelShaderInput
 {
     float4 PositionH  : SV_Position;
-    float3 PositionW  : POSITION;
+    float3 PositionW  : POSITION0;
+    float4 ShadowPos0 : POSITION1;
+    float4 ShadowPos1 : POSITION2;
+    float4 ShadowPos2 : POSITION3;
+    float4 ShadowPos3 : POSITION4;
     float3 NormalW    : NORMAL;
     float3 TangentW   : TANGENT;
     float3 BitangentW : BITANGENT;
@@ -114,19 +118,7 @@ StructuredBuffer<PointLight> PointLights : register( t0 );
 StructuredBuffer<SpotLight> SpotLights : register( t1 );
 StructuredBuffer<DirectionalLight> DirectionalLights : register( t2 );
 
-#define CASCADE_COUNT 4
 
-struct CascadeData
-{
-    float4x4 viewProjMats[CASCADE_COUNT];
-    float distances[CASCADE_COUNT];
-};
-ConstantBuffer<CascadeData> CascadeDataCB : register(b3);
-
-Texture2D ShadowMap1           : register(t11);
-Texture2D ShadowMap2           : register(t12);
-Texture2D ShadowMap3           : register(t13);
-Texture2D ShadowMap4           : register(t14);
 
 #endif // ENABLE_LIGHTING
 
@@ -162,6 +154,20 @@ Texture2D SpecularPowerTexture : register(t7);
 Texture2D NormalTexture        : register(t8);
 Texture2D BumpTexture          : register(t9);
 Texture2D OpacityTexture       : register(t10);
+
+#define CASCADE_COUNT 4
+
+struct CascadeData
+{
+    float4x4 viewProjMats[CASCADE_COUNT];
+    float distances[CASCADE_COUNT];
+};
+ConstantBuffer<CascadeData> CascadeDataCB : register(b3);
+
+Texture2D ShadowMap1 : register(t11);
+Texture2D ShadowMap2 : register(t12);
+Texture2D ShadowMap3 : register(t13);
+Texture2D ShadowMap4 : register(t14);
 
 SamplerState PointWrapSamp     : register(s0);
 SamplerState PointClampSamp    : register(s1);
@@ -521,5 +527,5 @@ float4 main(PixelShaderInput IN) : SV_Target
 #endif // ENABLE_LIGHTING
 
     //return float4(N * 0.5 + 0.5, 1.0);
-    return float4(LinearToSRGB((emissive + ambient + diffuse + specular).rgb * shadow), alpha * material.Opacity);
+    return float4((emissive + ambient + diffuse + specular).rgb * shadow, alpha * material.Opacity);
 }

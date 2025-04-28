@@ -28,7 +28,7 @@ public:
 		auto cameraInput = m_Camera->AddComponent<KatamariCameraInput>();
 
 		m_StaticMesh = AddChild<Blainn::Actor>();
-		m_StaticMeshComponent = m_StaticMesh->AddComponent<Blainn::StaticMeshComponent>("../../Resources/Models/CoolTexturedCube.fbx");
+		m_StaticMeshComponent = m_StaticMesh->AddComponent<Blainn::StaticMeshComponent>("../../Resources/Models/PlainCube.fbx");
 		m_StaticMesh->AddComponent<KatamariCubeInput>();
 		m_CollisionComponent = m_StaticMesh->AddComponent<Blainn::SphereCollisionComponent>(.5f);
 

@@ -23,7 +23,7 @@ struct VertexPositionNormalTangentBitangentTexture
     float3 TexCoord : TEXCOORD;
 };
 
-float4 main(VertexPositionNormalTangentBitangentTexture IN) : SV_POSITION
+float4 main(VertexPositionNormalTangentBitangentTexture IN) : SV_Position
 {
 	float4 posW = mul(float4(IN.Position, 1), ObjectCB.WorldMatrix);
 	float4 posV = mul(posW, PassCB.ViewProj);
@@ -31,5 +31,6 @@ float4 main(VertexPositionNormalTangentBitangentTexture IN) : SV_POSITION
 }
 
 void mainPS()
+
 {
 }

@@ -9,7 +9,7 @@ namespace Blainn
 	{
 		using Super = Component<PointLightComponent>;
 	public:
-		PointLightComponent();
+		PointLightComponent(PointLight* pl = nullptr);
 
 		void MarkDirty() { m_bIsDirty = true; }
 		bool IsDirty() const { return m_bIsDirty; }

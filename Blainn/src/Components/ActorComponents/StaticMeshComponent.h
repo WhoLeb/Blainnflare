@@ -28,9 +28,10 @@ namespace Blainn
 
 		void OnAttach() override;
 
-		void OnRender(dx12lib::Visitor& frameInfo);;
+		void OnRender(dx12lib::Visitor& frameInfo);
 
 		std::shared_ptr<DXModel> GetModel() const;
+		
 	private:
 		std::shared_ptr<DXModel> m_Model;
 	};
