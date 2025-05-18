@@ -26,10 +26,12 @@ void Blainn::SceneVisitor::Visit(dx12lib::Scene& scene)
 
 void Blainn::SceneVisitor::Visit(dx12lib::SceneNode& sceneNode)
 {
-	DirectX::SimpleMath::Matrix world = sceneNode.GetWorldTransform();
-	world = world.Transpose();
+	//DirectX::SimpleMath::Matrix world = sceneNode.GetWorldTransform();
+	//world = world.Transpose();
+	//std::vector<DirectX::SimpleMath::Matrix> mats;
+	//mats.push_back(world);
 
-	m_LightingPSO.SetWorldMatrix(world);
+	//m_LightingPSO.SetWorldMatrices(mats);
 }
 
 void Blainn::SceneVisitor::Visit(dx12lib::Mesh& mesh)
@@ -39,7 +41,7 @@ void Blainn::SceneVisitor::Visit(dx12lib::Mesh& mesh)
 	{
 		m_LightingPSO.SetMaterial(material);
 		m_LightingPSO.Apply(m_CommandList);
-		mesh.Draw(m_CommandList);
+		mesh.Draw(m_CommandList, m_LightingPSO.GetInstanceCount());
 	}
 }
 
@@ -55,14 +57,14 @@ void ShadowVisitor::Visit(dx12lib::Scene& scene)
 
 void ShadowVisitor::Visit(dx12lib::SceneNode& sceneNode)
 {
-	DirectX::SimpleMath::Matrix world = sceneNode.GetWorldTransform();
-	world = world.Transpose();
-
-	m_ShadowPSO.SetWorldMatrix(world);
 }
 
 void ShadowVisitor::Visit(dx12lib::Mesh& mesh)
 {
-	m_ShadowPSO.Apply(m_CommandList);
-	mesh.Draw(m_CommandList);
+	auto material = mesh.GetMaterial();
+	if(material->IsTransparent() == false)
+	{
+		m_ShadowPSO.Apply(m_CommandList);
+		mesh.Draw(m_CommandList, m_ShadowPSO.GetInstanceCount());
+	}
 }

@@ -75,10 +75,6 @@ namespace Blainn
 		struct alignas(16) PerObjectData
 		{
 			DirectX::SimpleMath::Matrix WorldMatrix;
-			//DirectX::XMMATRIX ModelMatrix;
-			//DirectX::XMMATRIX ModelViewMatrix;
-			//DirectX::XMMATRIX InverseTransposeModelViewMatrix;
-			//DirectX::XMMATRIX ModelViewProjectionMatrix;
 		};
 
 		struct alignas(16) CascadeData
@@ -111,7 +107,7 @@ namespace Blainn
 		enum RootParameters
 		{
 			// Vertex shader parameter
-			PerObjectDataCB = 0,  // ConstantBuffer<PerObjectData> PerObjectCB : register(b0);
+			PerObjectDataSB = 0,  // StructuredData<PerObjectData> PerObjectSB : register(t0);
 
 			PerPassDataCB = 1,	// ConstantBuffer<PerPassData> PerPassCB : register(b1)
 
@@ -201,14 +197,25 @@ namespace Blainn
 		}
 
 		// Set matrices.
-		void XM_CALLCONV SetWorldMatrix(DirectX::FXMMATRIX worldMatrix)
+		void XM_CALLCONV SetWorldMatrices(const std::vector<DirectX::SimpleMath::Matrix>& instanceData)
 		{
-			m_ObjectData.WorldMatrix = worldMatrix;
+			m_ObjectData.clear();
+			m_ObjectData.resize(instanceData.size());
+			for(int32_t i = 0; i < instanceData.size(); ++i)
+				m_ObjectData[i].WorldMatrix = instanceData[i];
+
 			m_DirtyFlags |= DF_PerObjectData;
 		}
-		DirectX::SimpleMath::Matrix GetWorldMatrix() const
+		std::vector<DirectX::SimpleMath::Matrix> GetWorldMatrices() const
 		{
-			return m_ObjectData.WorldMatrix;
+			std::vector<DirectX::SimpleMath::Matrix> matrices(m_ObjectData.size());
+			for (auto& it : m_ObjectData)
+				matrices.push_back(it.WorldMatrix);
+			return matrices;
+		}
+		uint32_t GetInstanceCount() const
+		{
+			return m_ObjectData.size();
 		}
 
 		PerPassData& GetPerPassData()
@@ -282,7 +289,7 @@ namespace Blainn
 		std::shared_ptr<dx12lib::ShaderResourceView> m_ShadowMapSRV;
 
 		// Matrices
-		PerObjectData m_ObjectData;
+		std::vector<PerObjectData> m_ObjectData;
 		PerPassData m_PassData;
 		CascadeData m_CascadeData;
 

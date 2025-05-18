@@ -9,7 +9,8 @@ namespace Blainn
 	{
 		using Super = Component<DirectionalLightComponent>;
 	public:
-		DirectionalLightComponent(DirectionalLight* dirLight = nullptr) : Super()
+		DirectionalLightComponent(std::shared_ptr<GameObject> owner, DirectionalLight* dirLight = nullptr)
+			: Super(owner)
 		{
 			if (dirLight)
 				m_DirLight = *dirLight;

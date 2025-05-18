@@ -10,10 +10,12 @@
 
 #include <algorithm>
 
+
 class KatamariCubeInput : public Blainn::InputComponent
 {
 public:
-	KatamariCubeInput() = default;
+	KatamariCubeInput(std::shared_ptr <Blainn::GameObject> owner)
+		: Blainn::InputComponent(owner) {}
 
 	void HandleInput(const Blainn::GameTimer& gt) override
 	{

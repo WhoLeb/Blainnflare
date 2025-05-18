@@ -80,10 +80,9 @@ namespace Blainn
 			false, false);
 
 		vertexShader = DXShader(L"src\\Shaders\\ShadowMap.hlsl", true, nullptr, "main", "vs_5_1");
-		pixelShader = DXShader(L"src\\Shaders\\ShadowMap.hlsl", true, nullptr, "mainPS", "ps_5_1");
 		m_SMPSO = std::make_shared<ShadowMapPSO>(
 			m_Device,
-			vertexShader.GetByteCode(), pixelShader.GetByteCode()
+			vertexShader.GetByteCode()
 		);
 
 		DXGI_SAMPLE_DESC sampleDesc = m_Device->GetMultisampleQualityLevels(m_BackBufferFormat);
@@ -118,23 +117,7 @@ namespace Blainn
 
 		width = 4096, height = 4096;
 
-		m_CascadeShadowMaps = std::make_shared<CascadeShadowMaps>();
-
-		depthClearValue.Format = DXGI_FORMAT_D32_FLOAT;
-		depthClearValue.DepthStencil = { 1.0f, 0 };
-
-		for (int i = CascadeSlice::Slice0; i < CascadeSlice::NumSlices; ++i)
-		{
-			depthDesc = CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_R32_TYPELESS, width, height, 1, 1,
-				1, 0, D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL);
-			width = height = width / 2;
-
-			auto cascadeTexture = m_Device->CreateTexture(depthDesc, &depthClearValue);
-			std::wstring name = L"Cascade " + std::to_wstring(i) + L" texture";
-			cascadeTexture->SetName(name);
-
-			m_CascadeShadowMaps->AttachShadowMap(CascadeSlice(i), cascadeTexture);
-		}
+		m_CascadeShadowMaps = std::make_shared<Blainn::CascadeShadowMaps>(m_Device, DirectX::XMUINT2{ width, height });
 	}
 
 
@@ -219,9 +202,15 @@ namespace Blainn
 			dirLights.push_back(d);
 		}
 
+		if(!dirLights.empty())
+			m_CascadeShadowMaps->UpdateCascadeData(invViewProj, DirectX::SimpleMath::Vector3(dirLights[0].DirectionWS));
+
+		auto cascadeData = m_CascadeShadowMaps->GetCascadeData();
+
 		for (auto& pso : m_PSOs)
 		{
 			pso.second->SetPerPassData(passCB);
+			pso.second->SetCascadeData(cascadeData);
 			pso.second->SetShadowMap(m_CascadeShadowMaps);
 
 			pso.second->SetPointLights(pointLights);
@@ -248,36 +237,42 @@ namespace Blainn
 			ShadowVisitor shadowPass(*commandList, *m_SMPSO);
 
 			auto mpPD = m_PSOs["Opaque"]->GetPerPassData();
+			auto sliceData = m_CascadeShadowMaps->GetCascadeData();
 			ShadowMapPSO::PerPassData smPassData;
-			smPassData.View = mpPD.View;
-			smPassData.Proj = mpPD.Proj;
-			smPassData.ViewProj = mpPD.ViewProj;
+			smPassData.ViewProj = sliceData.viewProjMats[i];
 
 			m_SMPSO->SetPerPassData(smPassData);
-			commandList->SetViewport(m_CascadeShadowMaps->GetViewport(CascadeSlice(i)));
+			commandList->SetViewport(m_CascadeShadowMaps->GetViewport());
 			commandList->SetScissorRect(m_ScissorRect);
 
 			auto& rt = m_CascadeShadowMaps->GetRenderTarget(CascadeSlice(i));
 
 			commandList->ClearDepthStencilTexture(
-				rt->GetTexture(dx12lib::AttachmentPoint::DepthStencil),
+				rt.GetTexture(dx12lib::AttachmentPoint::DepthStencil),
 				D3D12_CLEAR_FLAG_DEPTH);
 
-			commandList->SetRenderTarget(*rt);
+			commandList->SetRenderTarget(rt);
 
 			for (auto& it : meshes)
 			{
-				auto owner = it->GetOwner();
-				if (!owner)
+				auto owners = it->GetOwners();
+				if (owners.empty())
 					continue;
 
-				auto transform = owner->GetComponent<TransformComponent>();
-				if (!transform)
-					continue;
+				std::vector<DirectX::SimpleMath::Matrix> worldMats;
+				worldMats.reserve(owners.size());
+				for (auto weakOwner : owners)
+				{
+					auto owner = weakOwner.lock();
+					auto transform = owner->GetComponent<TransformComponent>();
+					if (!transform)
+						continue;
 
-				auto wm = transform->GetWorldMatrix();
-				it->GetModel()->GetScene()->GetRootNode()->SetLocalTransform(wm);
+					auto ttr = transform->GetWorldMatrix().Transpose();
+					worldMats.push_back(ttr);
+				}
 
+				m_SMPSO->SetWorldMatrices(worldMats);
 				it->OnRender(shadowPass);
 			}
 		}
@@ -306,17 +301,24 @@ namespace Blainn
 
 		for (auto& it : meshes)
 		{
-			auto owner = it->GetOwner();
-			if (!owner)
+			auto owners = it->GetOwners();
+			if (owners.empty())
 				continue;
 
-			auto transform = owner->GetComponent<TransformComponent>();
-			if (!transform)
-				continue;
+			std::vector<DirectX::SimpleMath::Matrix> worldMats;
+			worldMats.reserve(owners.size());
+			for (auto weakOwner : owners)
+			{
+				auto owner = weakOwner.lock();
+				auto transform = owner->GetComponent<TransformComponent>();
+				if (!transform)
+					continue;
 
-			auto wm = transform->GetWorldMatrix();
-			it->GetModel()->GetScene()->GetRootNode()->SetLocalTransform(wm);
+				auto ttr = transform->GetWorldMatrix().Transpose();
+				worldMats.push_back(ttr);
+			}
 
+			m_PSOs["Opaque"]->SetWorldMatrices(worldMats);
 			it->OnRender(opaquePass);
 		}
 

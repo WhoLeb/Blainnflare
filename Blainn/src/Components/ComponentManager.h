@@ -2,12 +2,23 @@
 
 #include <memory>
 #include <typeindex>
+#include <type_traits>
 #include <unordered_map>
 #include <unordered_set>
+
+// has_static_Create
+// returns true if there is at least one static member function called Create
+// otherwise retuns false
+template<typename, typename = std::void_t<>>
+struct has_static_Create : std::false_type {};
+
+template<typename T>
+struct has_static_Create<T, std::void_t<decltype(&T::Create)>> : std::true_type {};
 
 namespace Blainn
 {
 	class ComponentBase;
+	class GameObject;
 
 	class ComponentSetBase {
 	public:
@@ -27,6 +38,18 @@ namespace Blainn
 		{
 			static ComponentManager instance;
 			return instance;
+		}
+		
+		template<typename T, typename... Args>
+		std::shared_ptr<T> MakeComponent(std::shared_ptr<GameObject> owner, Args&&... args)
+		{
+			if constexpr (has_static_Create<T>::value)
+			{
+				return T::Create(owner, std::forward<Args>(args)...);
+			}
+			else {
+				return std::make_shared<T>(owner, std::forward<Args>(args)...);
+			}
 		}
 
 		template<typename T>

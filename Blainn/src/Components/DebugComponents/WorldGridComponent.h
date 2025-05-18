@@ -9,7 +9,7 @@ namespace Blainn
 	class WorldGridComponent : public Component<WorldGridComponent>
 	{
 	public:
-		WorldGridComponent();
+		WorldGridComponent(std::shared_ptr<GameObject> owner);
 
 		~WorldGridComponent();
 

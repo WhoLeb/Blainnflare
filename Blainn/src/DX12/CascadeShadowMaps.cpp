@@ -1,6 +1,8 @@
 #include "pch.h"
 #include "CascadeShadowMaps.h"
 
+#include "ShadowMap.h"
+
 #include <dx12lib/CommandList.h>
 #include <dx12lib/Device.h>
 #include <dx12lib/RenderTarget.h>
@@ -12,71 +14,45 @@
 using namespace dx12lib;
 using namespace Blainn;
 
-CascadeShadowMaps::CascadeShadowMaps()
-	: m_RenderTargets(CascadeSlice::NumSlices)
-	, m_Sizes(CascadeSlice::NumSlices, {0, 0})
-	, m_Viewports(CascadeSlice::NumSlices)
+CascadeShadowMaps::CascadeShadowMaps(std::shared_ptr<dx12lib::Device> device, DirectX::XMUINT2 size)
+	: m_ShadowMaps(CascadeSlice::NumSlices)
+	, m_Size(size)
 {
-	for (auto& rt : m_RenderTargets)
+	m_Viewport = { 0.f, 0.f, float(size.x), float(size.y), 0.f, 1.f };
+	for (auto& rt : m_ShadowMaps)
 	{
-		rt = std::make_shared<dx12lib::RenderTarget>();
-	}
-}
-
-Blainn::CascadeShadowMaps::CascadeShadowMaps(CascadeShadowMaps& copy)
-	: m_RenderTargets(copy.m_RenderTargets)
-{}
-
-void CascadeShadowMaps::AttachShadowMap(CascadeSlice slice, std::shared_ptr<dx12lib::Texture> texture)
-{
-	m_RenderTargets[slice]->AttachTexture(dx12lib::AttachmentPoint::DepthStencil, texture);
-
-	if (texture && texture->GetD3D12Resource())
-	{
-		auto desc = texture->GetD3D12ResourceDesc();
-
-		m_Sizes[slice].x = static_cast<uint32_t>(desc.Width);
-		m_Sizes[slice].y = static_cast<uint32_t>(desc.Height);
-		m_Viewports[slice] = CD3DX12_VIEWPORT(0.f, 0.f, float(desc.Width), float(desc.Height));
+		rt = std::make_shared<ShadowMap>(device, size.x, size.y);
 	}
 }
 
 std::shared_ptr<dx12lib::Texture>& CascadeShadowMaps::GetSlice(CascadeSlice slice)
 {
-	return m_RenderTargets[slice]->GetTexture(dx12lib::AttachmentPoint::DepthStencil);
+	return m_ShadowMaps[slice]->GetTexture();
 }
 
 const std::shared_ptr<dx12lib::Texture>& CascadeShadowMaps::GetSlice(CascadeSlice slice) const
 {
-	return m_RenderTargets[slice]->GetTexture(dx12lib::AttachmentPoint::DepthStencil);
+	return m_ShadowMaps[slice]->GetTexture();
 }
 
-const std::shared_ptr<dx12lib::RenderTarget>& Blainn::CascadeShadowMaps::GetRenderTarget(CascadeSlice slice) const
+const dx12lib::RenderTarget& Blainn::CascadeShadowMaps::GetRenderTarget(CascadeSlice slice) const
 {
-	return m_RenderTargets[slice];
+	return m_ShadowMaps[slice]->GetRenderTarget();
 }
 
-std::shared_ptr<dx12lib::RenderTarget>& Blainn::CascadeShadowMaps::GetRenderTarget(CascadeSlice slice)
+dx12lib::RenderTarget& Blainn::CascadeShadowMaps::GetRenderTarget(CascadeSlice slice)
 {
-	return m_RenderTargets[slice];
+	return m_ShadowMaps[slice]->GetRenderTarget();
 }
 
-const std::vector<std::shared_ptr<dx12lib::RenderTarget>>& Blainn::CascadeShadowMaps::GetRenderTargets() const
+DirectX::XMUINT2 CascadeShadowMaps::GetSize() const
 {
-	return m_RenderTargets;
+	return m_Size;
 }
 
-DirectX::XMUINT2 CascadeShadowMaps::GetSize(CascadeSlice slice)
+D3D12_VIEWPORT Blainn::CascadeShadowMaps::GetViewport() const
 {
-	if (slice < CascadeSlice::NumSlices)
-		return m_Sizes[slice];
-	else
-		return { 0, 0 };
-}
-
-D3D12_VIEWPORT Blainn::CascadeShadowMaps::GetViewport(CascadeSlice slice)
-{
-	return m_Viewports[slice];
+	return m_Viewport;
 }
 
 void CascadeShadowMaps::UpdateCascadeData(DirectX::SimpleMath::Matrix& invViewProj,
@@ -85,11 +61,11 @@ void CascadeShadowMaps::UpdateCascadeData(DirectX::SimpleMath::Matrix& invViewPr
 	using namespace DirectX::SimpleMath;
 	std::vector<Vector4> frustumCorners;
 	frustumCorners.reserve(8);
-	for (uint32_t x = 0; x < 2; ++x)
+	for (uint32_t z = 0; z < 2; ++z)
 	{
 		for (uint32_t y = 0; y < 2; ++y)
 		{
-			for (uint32_t z = 0; z < 2; ++z)
+			for (uint32_t x = 0; x < 2; ++x)
 			{
 				const Vector4 pt =
 					Vector4::Transform(
@@ -103,44 +79,70 @@ void CascadeShadowMaps::UpdateCascadeData(DirectX::SimpleMath::Matrix& invViewPr
 		}
 	}
 
-	Vector3 center = Vector3::Zero;
-	for (const auto& v : frustumCorners)
+	std::vector<Vector4> frustumEdges =
 	{
-		center += Vector3(v);
-	}
-	center /= frustumCorners.size();
+		frustumCorners[4] - frustumCorners[0],
+		frustumCorners[5] - frustumCorners[1],
+		frustumCorners[6] - frustumCorners[2],
+		frustumCorners[7] - frustumCorners[3]
+	};
 
-	const auto lightView = Matrix::CreateLookAt(
-		center,
-		center + lightDirection,
-		Vector3::Up
-	);
-
-	float minX = FLT_MAX;
-	float minY = FLT_MAX;
-	float minZ = FLT_MAX;
-	float maxX = FLT_MIN;
-	float maxY = FLT_MIN;
-	float maxZ = FLT_MIN;
-
-	for (const auto& v : frustumCorners)
+	for (int32_t cascade = 0; cascade < CASCADE_COUNT; ++cascade)
 	{
-		const auto trf = Vector4::Transform(v, lightView);
-		minX = std::min<float>(minX, trf.x);
-		minY = std::min<float>(minY, trf.y);
-		minZ = std::min<float>(minZ, trf.z);
-		maxX = std::max<float>(maxX, trf.x);
-		maxY = std::max<float>(maxY, trf.y);
-		maxZ = std::max<float>(maxZ, trf.z);
+		std::vector<Vector4> cascadeCorners;
+		float dNear = m_CascadeViewWindows[cascade].first;
+		float dFar = m_CascadeViewWindows[cascade].second;
+		for (int8_t i = 0; i < 4; ++i)
+		{
+			//cascadeCorners.push_back(frustumCorners[i] + cascade * frustumEdges[i] / CASCADE_COUNT); // * m_CascadeViewWindows[cascade].first);
+			cascadeCorners.push_back(frustumCorners[i] + frustumEdges[i] * dNear);
+		}
+
+		for (int8_t i = 0; i < 4; ++i)
+		{
+			//cascadeCorners.push_back(frustumCorners[i] + (cascade + 1) * frustumEdges[i] / CASCADE_COUNT); // * m_CascadeViewWindows[cascade].second);
+			cascadeCorners.push_back(frustumCorners[i] + frustumEdges[i] * dFar);
+		}
+
+		Vector3 center = Vector3::Zero;
+		for (const auto& v : cascadeCorners)
+		{
+			center += Vector3(v);
+		}
+		center /= cascadeCorners.size();
+
+		const auto lightView = Matrix::CreateLookAt(
+			center - lightDirection,
+			center,
+			Vector3::Up
+		);
+	
+		float minX = FLT_MAX;
+		float minY = FLT_MAX;
+		float minZ = FLT_MAX;
+		float maxX = FLT_MIN;
+		float maxY = FLT_MIN;
+		float maxZ = FLT_MIN;
+
+		for (const auto& v : cascadeCorners)
+		{
+			const auto trf = Vector4::Transform(v, lightView);
+			minX = std::min<float>(minX, trf.x);
+			minY = std::min<float>(minY, trf.y);
+			minZ = std::min<float>(minZ, trf.z);
+			maxX = std::max<float>(maxX, trf.x);
+			maxY = std::max<float>(maxY, trf.y);
+			maxZ = std::max<float>(maxZ, trf.z);
+		}
+
+		constexpr float zMult = 10.f;
+		minZ = (minZ < 0) ? minZ * zMult : minZ / zMult;
+		maxZ = (maxZ < 0) ? maxZ / zMult : maxZ * zMult;
+
+		auto lightProjection = Matrix::CreateOrthographicOffCenter(minX, maxX, minY, maxY, minZ, maxZ);
+		m_CascadeData.viewProjMats[cascade] = (lightView * lightProjection).Transpose();
+		m_CascadeData.distances[cascade] = 100 * dFar;
 	}
-
-	constexpr float zMult = 10.f;
-	minZ = (minZ < 0) ? minZ * zMult : minZ / zMult;
-	maxZ = (maxZ < 0) ? maxZ / zMult : maxZ * zMult;
-
-	auto lightProjection = Matrix::CreateOrthographicOffCenter(minX, maxX, minY, maxY, minZ, maxZ);
-
-
 }
 
 EffectPSO::CascadeData& CascadeShadowMaps::GetCascadeData()
@@ -153,7 +155,7 @@ std::vector<DXGI_FORMAT> CascadeShadowMaps::GetShadowMapFormats() const
 	std::vector<DXGI_FORMAT> smFormats(CascadeSlice::NumSlices);
 	for (int i = CascadeSlice::Slice0; i < CascadeSlice::NumSlices; ++i)
 	{
-		auto texture = m_RenderTargets[i]->GetTexture(dx12lib::AttachmentPoint::DepthStencil);
+		auto texture = m_ShadowMaps[i]->GetTexture();
 		if (texture)
 			smFormats[i] = texture->GetD3D12ResourceDesc().Format;
 	}
@@ -163,13 +165,12 @@ std::vector<DXGI_FORMAT> CascadeShadowMaps::GetShadowMapFormats() const
 
 void CascadeShadowMaps::Reset()
 {
-	m_RenderTargets = RenderTargetList(CascadeSlice::NumSlices);
+	m_ShadowMaps = ShadowMapList(CascadeSlice::NumSlices);
 }
 
 ShadowMapPSO::ShadowMapPSO(
 	std::shared_ptr<dx12lib::Device> device,
 	Microsoft::WRL::ComPtr<ID3DBlob> vertexShaderBlob,
-	Microsoft::WRL::ComPtr<ID3DBlob> pixelShaderBlob,
 	D3D12_PRIMITIVE_TOPOLOGY_TYPE primitiveTopologyType
 )
 	: m_Device(device)
@@ -177,8 +178,8 @@ ShadowMapPSO::ShadowMapPSO(
 	, m_PrimitiveTopologyType(primitiveTopologyType)
 {
 	CD3DX12_ROOT_PARAMETER1 rootParameters[RootParameters::NumRootParameters];
-	rootParameters[RootParameters::PerObjectDataCB	].InitAsConstantBufferView(0, 0, D3D12_ROOT_DESCRIPTOR_FLAG_NONE, D3D12_SHADER_VISIBILITY_VERTEX);
-	rootParameters[RootParameters::PerPassDataCB	].InitAsConstantBufferView(1, 0, D3D12_ROOT_DESCRIPTOR_FLAG_NONE, D3D12_SHADER_VISIBILITY_VERTEX);
+	rootParameters[RootParameters::PerObjectDataSB	].InitAsShaderResourceView(0, 0, D3D12_ROOT_DESCRIPTOR_FLAG_NONE, D3D12_SHADER_VISIBILITY_VERTEX);
+	rootParameters[RootParameters::PerPassDataCB	].InitAsConstantBufferView(0, 0, D3D12_ROOT_DESCRIPTOR_FLAG_NONE, D3D12_SHADER_VISIBILITY_VERTEX);
 
     CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC rootSignatureDescription;
     rootSignatureDescription.Init_1_1(
@@ -195,7 +196,6 @@ ShadowMapPSO::ShadowMapPSO(
     {
         CD3DX12_PIPELINE_STATE_STREAM_ROOT_SIGNATURE        pRootSignature;
         CD3DX12_PIPELINE_STATE_STREAM_VS                    VS;
-        CD3DX12_PIPELINE_STATE_STREAM_PS                    PS;
         CD3DX12_PIPELINE_STATE_STREAM_RASTERIZER            RasterizerState;
         CD3DX12_PIPELINE_STATE_STREAM_INPUT_LAYOUT          InputLayout;
         CD3DX12_PIPELINE_STATE_STREAM_PRIMITIVE_TOPOLOGY    PrimitiveTopologyType;
@@ -213,7 +213,6 @@ ShadowMapPSO::ShadowMapPSO(
 
     pipelineStateStream.pRootSignature = m_RootSignature->GetD3D12RootSignature().Get();
     pipelineStateStream.VS = CD3DX12_SHADER_BYTECODE(vertexShaderBlob.Get());
-    pipelineStateStream.PS = CD3DX12_SHADER_BYTECODE(pixelShaderBlob.Get());
     pipelineStateStream.RasterizerState = rasterizerState;
     pipelineStateStream.InputLayout = VertexPositionNormalTangentBitangentTexture::InputLayout;
     pipelineStateStream.PrimitiveTopologyType = primitiveTopologyType;
@@ -231,10 +230,7 @@ void ShadowMapPSO::Apply(dx12lib::CommandList& commandList)
 
     if (m_DirtyFlags & DF_PerObjectData)
     {
-        PerObjectData m;
-        m.WorldMatrix = m_ObjectData.WorldMatrix;
-
-        commandList.SetGraphicsDynamicConstantBuffer(RootParameters::PerObjectDataCB, m);
+        commandList.SetGraphicsDynamicStructuredBuffer(RootParameters::PerObjectDataSB, m_ObjectData);
     }
 
     if (m_DirtyFlags & DF_PerPassData)

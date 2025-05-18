@@ -2,8 +2,10 @@
 
 #include "EffectPSO.h"
 
+#include <array>
 #include <cstdint>
 #include <memory>
+//#include <pair>
 #include <vector>
 
 #include <d3d12.h>
@@ -36,20 +38,16 @@ namespace Blainn
 	class CascadeShadowMaps
 	{
 	public:
-		CascadeShadowMaps();
-		CascadeShadowMaps(CascadeShadowMaps& copy);
-
-		void AttachShadowMap(CascadeSlice slice, std::shared_ptr<dx12lib::Texture> texture);
+		CascadeShadowMaps(std::shared_ptr<dx12lib::Device> device, DirectX::XMUINT2 size);
 
 		std::shared_ptr<dx12lib::Texture>& GetSlice(CascadeSlice slice);
 		const std::shared_ptr<dx12lib::Texture>& GetSlice(CascadeSlice slice) const;
 
-		std::shared_ptr<dx12lib::RenderTarget>& GetRenderTarget(CascadeSlice slice);
-		const std::shared_ptr<dx12lib::RenderTarget>& GetRenderTarget(CascadeSlice slice) const;
-		const std::vector<std::shared_ptr<dx12lib::RenderTarget>>& GetRenderTargets() const;
+		dx12lib::RenderTarget& GetRenderTarget(CascadeSlice slice);
+		const dx12lib::RenderTarget& GetRenderTarget(CascadeSlice slice) const;
 
-		DirectX::XMUINT2 GetSize(CascadeSlice slice);
-		D3D12_VIEWPORT GetViewport(CascadeSlice slice);
+		DirectX::XMUINT2 GetSize() const;
+		D3D12_VIEWPORT GetViewport() const;
 
 		void UpdateCascadeData(DirectX::SimpleMath::Matrix& invViewProj,
 			DirectX::SimpleMath::Vector3 lightDirection);
@@ -61,13 +59,15 @@ namespace Blainn
 		void Reset();
 
 	private:
-		using RenderTargetList = std::vector<std::shared_ptr<dx12lib::RenderTarget>>;
-		RenderTargetList m_RenderTargets;
+		using ShadowMapList = std::vector<std::shared_ptr<class ShadowMap>>;
+		ShadowMapList m_ShadowMaps;
 
-		std::vector<DirectX::XMUINT2> m_Sizes;
-		std::vector<D3D12_VIEWPORT> m_Viewports;
+		DirectX::XMUINT2 m_Size;
+		D3D12_VIEWPORT m_Viewport;
 
 		EffectPSO::CascadeData m_CascadeData;
+
+		std::vector<std::pair<float, float>> m_CascadeViewWindows{ {0.f, 0.15f}, {0.14f, 0.35f}, {0.34f, 0.66f}, {0.65f, 1.1f} };
 	};
 
 	class ShadowMapPSO
@@ -80,32 +80,41 @@ namespace Blainn
 
 		struct alignas(16) PerPassData
 		{
-			DirectX::SimpleMath::Matrix View = DirectX::SimpleMath::Matrix::Identity;
-			DirectX::SimpleMath::Matrix Proj = DirectX::SimpleMath::Matrix::Identity;
 			DirectX::SimpleMath::Matrix ViewProj = DirectX::SimpleMath::Matrix::Identity;
 		};
 
 		enum RootParameters
 		{
-			PerObjectDataCB = 0,
+			PerObjectDataSB = 0,
 			PerPassDataCB = 1,
 			NumRootParameters,
 		};
 
 		ShadowMapPSO(
 			std::shared_ptr<dx12lib::Device> device,
-			Microsoft::WRL::ComPtr<ID3DBlob> vertexShaderBlob, Microsoft::WRL::ComPtr<ID3DBlob> pixelShaderBlob,
+			Microsoft::WRL::ComPtr<ID3DBlob> vertexShaderBlob,
 			D3D12_PRIMITIVE_TOPOLOGY_TYPE primitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE
 		);
 
-		void SetWorldMatrix(DirectX::SimpleMath::Matrix& worldMatrix)
+		void XM_CALLCONV SetWorldMatrices(const std::vector<DirectX::SimpleMath::Matrix>& instanceData)
 		{
-			m_ObjectData.WorldMatrix = worldMatrix;
+			m_ObjectData.clear();
+			m_ObjectData.resize(instanceData.size());
+			for(int32_t i = 0; i < instanceData.size(); ++i)
+				m_ObjectData[i].WorldMatrix = instanceData[i];
+
 			m_DirtyFlags |= DF_PerObjectData;
 		}
-		PerObjectData GetPerObjectData()
+		std::vector<DirectX::SimpleMath::Matrix> GetWorldMatrices() const
 		{
-			m_ObjectData;
+			std::vector<DirectX::SimpleMath::Matrix> matrices(m_ObjectData.size());
+			for (auto& it : m_ObjectData)
+				matrices.push_back(it.WorldMatrix);
+			return matrices;
+		}
+		uint32_t GetInstanceCount() const
+		{
+			return m_ObjectData.size();
 		}
 
 		void SetPerPassData(PerPassData& data)
@@ -134,7 +143,7 @@ namespace Blainn
 		std::shared_ptr<dx12lib::RootSignature>       m_RootSignature;
 		std::shared_ptr<dx12lib::PipelineStateObject> m_PipelineStateObject;
 
-		PerObjectData m_ObjectData;
+		std::vector<PerObjectData> m_ObjectData;
 		PerPassData m_PassData;
 
 		uint32_t m_DirtyFlags;

@@ -14,8 +14,12 @@ namespace Blainn
 	{
 		using Super = InputComponent;
 	public:
-		PlayerInputComponent(float speed = 5.f, float lowSpeed = 5.f, float highSpeed = 10.f, float sensitivity = .1f)
-			: Super(), m_Speed(speed), m_LowSpeed(lowSpeed), m_HighSpeed(highSpeed), m_Sensitivity(sensitivity)
+		PlayerInputComponent(std::shared_ptr<GameObject> owner, float speed = 5.f, float lowSpeed = 5.f, float highSpeed = 10.f, float sensitivity = .1f)
+			: Super(owner)
+			, m_Speed(speed)
+			, m_LowSpeed(lowSpeed)
+			, m_HighSpeed(highSpeed)
+			, m_Sensitivity(sensitivity)
 		{
 		}
 

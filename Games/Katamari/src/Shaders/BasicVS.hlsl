@@ -7,7 +7,7 @@ struct PerObjectData
     float4x4 WorldMatrix;
 };
 
-ConstantBuffer<PerObjectData> ObjectCB : register(b0);
+StructuredBuffer<PerObjectData> ObjectSB : register(t0);
 
 struct PerPassData
 {
@@ -27,7 +27,7 @@ struct PerPassData
     float DeltaTime;
 };
 
-ConstantBuffer<PerPassData> PassCB : register(b1);
+ConstantBuffer<PerPassData> PassCB : register(b0);
 
 struct VertexPositionNormalTangentBitangentTexture
 {
@@ -36,12 +36,13 @@ struct VertexPositionNormalTangentBitangentTexture
     float3 Tangent   : TANGENT;
     float3 Bitangent : BITANGENT;
     float3 TexCoord  : TEXCOORD;
+    uint InstanceID   : SV_INSTANCEID;
 };
 
 struct VertexShaderOutput
 {
     float4 PositionH  : SV_Position;
-    float3 PositionW  : POSITION;
+    float3 PositionW  : POSITION0;
     float3 NormalW    : NORMAL;
     float3 TangentW   : TANGENT;
     float3 BitangentW : BITANGENT;
@@ -52,7 +53,7 @@ VertexShaderOutput main(VertexPositionNormalTangentBitangentTexture IN)
 {
     VertexShaderOutput OUT;
 
-    float4 posW = mul(float4(IN.Position, 1.0f), ObjectCB.WorldMatrix);
+    float4 posW = mul(float4(IN.Position, 1.0f), ObjectSB[IN.InstanceID].WorldMatrix);
 
     OUT.PositionW = posW.xyz;
 
@@ -62,12 +63,12 @@ VertexShaderOutput main(VertexPositionNormalTangentBitangentTexture IN)
 
     OUT.PositionH = mul(posW, PassCB.ViewProj);
 
-    float3x3 world3x3 = (float3x3)ObjectCB.WorldMatrix;
+    float3x3 world3x3 = (float3x3)ObjectSB[IN.InstanceID].WorldMatrix;
     float3x3 invTransWorld3x3 = transpose(Inverse3x3(world3x3));
 
-    OUT.NormalW = mul(invTransWorld3x3, IN.Normal);
-    OUT.TangentW = mul(invTransWorld3x3, IN.Tangent);
-    OUT.BitangentW = mul(invTransWorld3x3, IN.Bitangent);
+    OUT.NormalW = mul(IN.Normal, ObjectSB[IN.InstanceID].WorldMatrix);
+    OUT.TangentW = mul(IN.Tangent, ObjectSB[IN.InstanceID].WorldMatrix);
+    OUT.BitangentW = mul(IN.Bitangent, ObjectSB[IN.InstanceID].WorldMatrix);
 
     //OUT.NormalVS = mul(InverseTransposeMV, IN.Normal);
     //OUT.TangentVS = mul(InverseTransposeMV, IN.Tangent);

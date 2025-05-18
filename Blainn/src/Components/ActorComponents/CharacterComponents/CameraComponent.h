@@ -12,18 +12,20 @@ namespace Blainn
 		using Super = Component;
 	public:
 		explicit CameraComponent(
+			std::shared_ptr<GameObject> owner,
 			float fov = 60.f,
 			float aspect = 16.f / 9.f,
 			float nearPlane = 0.1f,
 			float farPlane = 1000.f
-		) : Super(), m_Camera(fov, aspect, nearPlane, farPlane)
+		) : Super(owner), m_Camera(fov, aspect, nearPlane, farPlane)
 		{}
 		explicit CameraComponent(
+			std::shared_ptr<GameObject> owner,
 			int width, int height,
 			float fov = 60.f,
 			float nearPlane = 0.1f,
 			float farPlane = 1000.f
-		) : Super(), m_Camera(fov, width, height, nearPlane, farPlane)
+		) : Super(owner), m_Camera(fov, width, height, nearPlane, farPlane)
 		{}
 
 		void OnUpdate(const GameTimer& gt) override

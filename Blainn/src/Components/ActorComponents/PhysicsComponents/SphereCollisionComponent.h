@@ -12,7 +12,8 @@ namespace Blainn
 	{
 		using Super = CollisionComponent;
 	public:
-		SphereCollisionComponent(float radius)
+		SphereCollisionComponent(std::shared_ptr<GameObject> owner, float radius)
+			: Super(owner)
 		{
 			m_BoundingSphere.Radius = radius;
 		}

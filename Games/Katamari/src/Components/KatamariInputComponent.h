@@ -15,7 +15,8 @@ typedef long LONG;
 class KatamariCameraInput : public Blainn::InputComponent
 {
 public:
-	KatamariCameraInput()
+	KatamariCameraInput(std::shared_ptr<Blainn::GameObject> owner)
+		: Blainn::InputComponent(owner)
 	{
 		m_MouseMovedHandle = Blainn::Input::OnMouseMovedDelegate.AddRaw(this, &KatamariCameraInput::OnMouseMoved);
 		m_MouseButtonPressedHandle = Blainn::Input::OnMouseButtonPressedDelegate.AddRaw(this, &KatamariCameraInput::OnMousePressed);

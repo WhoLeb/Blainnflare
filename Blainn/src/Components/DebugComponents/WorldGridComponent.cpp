@@ -1,10 +1,10 @@
 #include "pch.h"
-#include "WorldGridComponent.h"
-
-#include "Components/ComponentManager.h"
-#include "Core/Application.h"
-#include "Core/CBIndexManager.h"
-#include "Core/GameObject.h"
+////#include "WorldGridComponent.h"
+//
+//#include "Components/ComponentManager.h"
+//#include "Core/Application.h"
+//#include "Core/CBIndexManager.h"
+//#include "Core/GameObject.h"
 //#include "DX12/DXStaticMesh.h"
 //#include "DX12/DXResourceManager.h"
 //

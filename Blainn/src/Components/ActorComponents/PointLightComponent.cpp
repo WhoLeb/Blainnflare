@@ -1,8 +1,8 @@
 #include "pch.h"
 #include "PointLightComponent.h"
 
-Blainn::PointLightComponent::PointLightComponent(PointLight* pl)
-	: Super()
+Blainn::PointLightComponent::PointLightComponent(std::shared_ptr<GameObject> owner, PointLight* pl)
+	: Super(owner)
 {
 	if (pl)
 		m_PointLight = *pl;

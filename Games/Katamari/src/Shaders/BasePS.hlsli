@@ -3,10 +3,6 @@ struct PixelShaderInput
 {
     float4 PositionH  : SV_Position;
     float3 PositionW  : POSITION0;
-    float4 ShadowPos0 : POSITION1;
-    float4 ShadowPos1 : POSITION2;
-    float4 ShadowPos2 : POSITION3;
-    float4 ShadowPos3 : POSITION4;
     float3 NormalW    : NORMAL;
     float3 TangentW   : TANGENT;
     float3 BitangentW : BITANGENT;
@@ -43,6 +39,8 @@ struct Material
     //------------------------------------ ( 16 bytes )
     // Total:                              ( 16 * 8 = 128 bytes )
 };
+
+//#define ENABLE_LIGHTING 1
 
 #if ENABLE_LIGHTING
 struct PointLight
@@ -112,9 +110,9 @@ struct LightResult
     float4 Ambient;
 };
 
-ConstantBuffer<LightProperties> LightPropertiesCB : register( b2 );
+ConstantBuffer<LightProperties> LightPropertiesCB : register( b2, space1 );
 
-StructuredBuffer<PointLight> PointLights : register( t0 );
+StructuredBuffer<PointLight> PointLights : register( t0, space1 );
 StructuredBuffer<SpotLight> SpotLights : register( t1 );
 StructuredBuffer<DirectionalLight> DirectionalLights : register( t2 );
 
@@ -125,56 +123,57 @@ StructuredBuffer<DirectionalLight> DirectionalLights : register( t2 );
 
 struct PerPassData
 {
-    float4x4 gView;
-    float4x4 gInvView;
-    float4x4 gProj;
-    float4x4 gInvProj;
-    float4x4 gViewProj;
-    float4x4 gInvViewProj;
-    float3 gEyePos;
+    float4x4 View;
+    float4x4 InvView;
+    float4x4 Proj;
+    float4x4 InvProj;
+    float4x4 ViewProj;
+    float4x4 InvViewProj;
+    float3 EyePos;
     float padding;
-    float2 gRenderTargetSize;
-    float2 gInvRenderTargetSize;
-    float gNearZ;
-    float gFarZ;
-    float gTotalTime;
-    float gDeltaTime;
+    float2 RenderTargetSize;
+    float2 InvRenderTargetSize;
+    float NearZ;
+    float FarZ;
+    float TotalTime;
+    float DeltaTime;
 };
 
-ConstantBuffer<Material> MaterialCB : register(b0, space1);
+ConstantBuffer<PerPassData> PassCB : register( b0 );
 
-ConstantBuffer<PerPassData> PassCB : register(b1);
+ConstantBuffer<Material> MaterialCB : register( b1 );
+
 
 // Textures
-Texture2D AmbientTexture       : register(t3);
-Texture2D EmissiveTexture      : register(t4);
-Texture2D DiffuseTexture       : register(t5);
-Texture2D SpecularTexture      : register(t6);
-Texture2D SpecularPowerTexture : register(t7);
-Texture2D NormalTexture        : register(t8);
-Texture2D BumpTexture          : register(t9);
-Texture2D OpacityTexture       : register(t10);
+Texture2D AmbientTexture       : register( t3 );
+Texture2D EmissiveTexture      : register( t4 );
+Texture2D DiffuseTexture       : register( t5 );
+Texture2D SpecularTexture      : register( t6 );
+Texture2D SpecularPowerTexture : register( t7 );
+Texture2D NormalTexture        : register( t8 );
+Texture2D BumpTexture          : register( t9 );
+Texture2D OpacityTexture       : register( t10 );
 
 #define CASCADE_COUNT 4
 
 struct CascadeData
 {
     float4x4 viewProjMats[CASCADE_COUNT];
-    float distances[CASCADE_COUNT];
+    float4 distances;
 };
-ConstantBuffer<CascadeData> CascadeDataCB : register(b3);
+ConstantBuffer<CascadeData> CascadeDataCB : register( b3 );
 
-Texture2D ShadowMap1 : register(t11);
-Texture2D ShadowMap2 : register(t12);
-Texture2D ShadowMap3 : register(t13);
-Texture2D ShadowMap4 : register(t14);
+Texture2D ShadowMap1 : register( t11 );
+Texture2D ShadowMap2 : register( t12 );
+Texture2D ShadowMap3 : register( t13 );
+Texture2D ShadowMap4 : register( t14 );
 
-SamplerState PointWrapSamp     : register(s0);
-SamplerState PointClampSamp    : register(s1);
-SamplerState LinWrapSamp       : register(s2);
-SamplerState LinClampSamp      : register(s3);
-SamplerState AniWrapSamp       : register(s4);
-SamplerState AniClampSamp      : register(s5);
+SamplerState PointWrapSamp     : register( s0 );
+SamplerState PointClampSamp    : register( s1 );
+SamplerState LinWrapSamp       : register( s2 );
+SamplerState LinClampSamp      : register( s3 );
+SamplerState AniWrapSamp       : register( s4 );
+SamplerState AniClampSamp      : register( s5 );
 
 float3 LinearToSRGB(float3 x)
 {
@@ -336,9 +335,19 @@ LightResult DoLighting( float3 P, float3 N, Material mat )
 
     // Lighting is performed in view space.
     //float3 V = normalize( -P );
-    float3 V = normalize(PassCB.gEyePos - P);
+    float3 V = normalize(PassCB.EyePos - P);
 
     LightResult totalResult = (LightResult)0;
+
+    // Iterate directinal lights
+    for (i = 0; i < LightPropertiesCB.NumDirectionalLights; ++i)
+    {
+        LightResult result = DoDirectionalLight( DirectionalLights[i], V, P, N, mat );
+
+        totalResult.Diffuse += result.Diffuse;
+        totalResult.Specular += result.Specular;
+        totalResult.Ambient += result.Ambient;
+    }
 
     // Iterate point lights.
     for ( i = 0; i < LightPropertiesCB.NumPointLights; ++i )
@@ -360,22 +369,103 @@ LightResult DoLighting( float3 P, float3 N, Material mat )
         totalResult.Ambient += result.Ambient;
     }
 
-    // Iterate directinal lights
-    for (i = 0; i < LightPropertiesCB.NumDirectionalLights; ++i)
-    {
-        LightResult result = DoDirectionalLight( DirectionalLights[i], V, P, N, mat );
-
-        totalResult.Diffuse += result.Diffuse;
-        totalResult.Specular += result.Specular;
-        totalResult.Ambient += result.Ambient;
-    }
-
     totalResult.Diffuse = saturate( totalResult.Diffuse );
     totalResult.Specular = saturate( totalResult.Specular );
     totalResult.Ambient = saturate( totalResult.Ambient );
 
     return totalResult;
 }
+
+float DoShadowCascade(float4 ShadowPos, Texture2D ShadowMapTex)
+{
+    float3 projCoords = ShadowPos.xyz / ShadowPos.w;
+    projCoords.y = -projCoords.y;
+    projCoords.xy = 0.5 * projCoords.xy + 0.5;
+    
+    uint width, height, numMips;
+    ShadowMapTex.GetDimensions(0, width, height, numMips);
+
+    float dx = 1.0f / (float)width;
+
+    const float2 offsets[9] =
+    {
+        float2(-dx, -dx), float2(0.0f, -dx), float2(dx, -dx),
+        float2(-dx, 0.0f), float2(0.0f, 0.0f), float2(dx, 0.0f),
+        float2(-dx, +dx), float2(0.0f, +dx), float2(dx, +dx)
+    };
+    
+    float shadow = 0.0;
+
+    [unroll]
+    for (int i = 0; i < 9; ++i)
+    {
+        float depth = ShadowMapTex.Sample(PointClampSamp, projCoords.xy + offsets[i]).r;
+        
+        if (depth + 0.0001 < projCoords.z)
+        {
+            shadow += 0.0;
+        }
+        else
+        {
+            shadow += 1.0;
+        }
+    }
+    
+    return shadow / 9.0f;
+}
+
+float DoShadow(float3 Position, float Distance)
+{
+    int chosenCascade=0;
+
+    if(Distance < CascadeDataCB.distances.x)
+        chosenCascade=0;
+    else if(Distance < CascadeDataCB.distances.y)
+        chosenCascade=1;
+    else if(Distance < CascadeDataCB.distances.z)
+        chosenCascade=2;
+    else if(Distance < CascadeDataCB.distances.w)
+        chosenCascade=3;
+
+    switch(chosenCascade)
+    {
+    case 0:
+        return DoShadowCascade(mul(CascadeDataCB.viewProjMats[chosenCascade], float4(Position, 1.0)), ShadowMap1);
+    case 1:
+        return DoShadowCascade(mul(CascadeDataCB.viewProjMats[chosenCascade], float4(Position, 1.0)), ShadowMap2);
+    case 2:
+        return DoShadowCascade(mul(CascadeDataCB.viewProjMats[chosenCascade], float4(Position, 1.0)), ShadowMap3);
+    case 3:
+        return DoShadowCascade(mul(CascadeDataCB.viewProjMats[chosenCascade], float4(Position, 1.0)), ShadowMap4);
+    }
+
+}
+float4 DoDebugShadow(float3 Position, float Distance)
+{
+    int chosenCascade=0;
+
+    if(Distance < CascadeDataCB.distances.x)
+        chosenCascade=0;
+    else if(Distance < CascadeDataCB.distances.y)
+        chosenCascade=1;
+    else if(Distance < CascadeDataCB.distances.z)
+        chosenCascade=2;
+    else if(Distance < CascadeDataCB.distances.w)
+        chosenCascade=3;
+
+    switch(chosenCascade)
+    {
+    case 0:
+        return float4(1, 0, 0, 1);
+    case 1:
+        return float4(0, 1, 0, 1);
+    case 2:
+        return float4(0, 0, 1, 1);
+    case 3:
+        return float4(1, 1, 1, 1);
+    }
+}
+
 #endif // ENABLE_LIGHTING
 
 float3 ExpandNormal(float3 n)
@@ -524,8 +614,13 @@ float4 main(PixelShaderInput IN) : SV_Target
         }
         specular *= lit.Specular;
     }
+
+    float dist = distance(PassCB.EyePos, IN.PositionW.xyz);
+    
+    //return(DoDebugShadow(IN.PositionW.xyz, dist));
+    shadow = DoShadow(IN.PositionW.xyz, dist);
 #endif // ENABLE_LIGHTING
 
     //return float4(N * 0.5 + 0.5, 1.0);
-    return float4((emissive + ambient + diffuse + specular).rgb * shadow, alpha * material.Opacity);
+    return float4(((emissive + ambient + diffuse + specular).rgb * shadow), alpha * material.Opacity);
 }

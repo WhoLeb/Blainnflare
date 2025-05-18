@@ -41,6 +41,8 @@ namespace Blainn
 		auto GetScene() { return m_Scene; }
 		auto GetScene() const { return m_Scene; }
 
+		const std::filesystem::path GetPath() const { return m_ModelFilepath; }
+
 	private:
 		std::filesystem::path m_ModelFilepath;
 

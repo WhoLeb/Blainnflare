@@ -45,7 +45,7 @@ namespace Blainn
 		std::vector<std::shared_ptr<T>> GetComponents() const
 		{
 			static_assert(std::is_base_of<ComponentBase, T>::value, "Component must be derived from component");
-			std::vector<T*> foundComponents;
+			std::vector<std::shared_ptr<T>> foundComponents;
 
 			for (const auto& comp : m_Components)
 				if (std::shared_ptr<T> castedComp = std::dynamic_pointer_cast<T>(comp))
@@ -70,8 +70,7 @@ namespace Blainn
 		std::shared_ptr<T> AddComponent(Args&&... args)
 		{
 			static_assert(std::is_base_of<ComponentBase, T>::value, "T must be a component");
-			auto component = std::make_shared<T>(std::forward<Args>(args)...);
-			component->m_OwningObject = shared_from_this();
+			auto component = ComponentManager::Get().MakeComponent<T>(shared_from_this(), std::forward<Args>(args)...);
 			component->OnAttach();
 			m_Components.push_back(component);
 			return component;

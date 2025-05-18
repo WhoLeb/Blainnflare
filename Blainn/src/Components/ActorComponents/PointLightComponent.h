@@ -9,7 +9,7 @@ namespace Blainn
 	{
 		using Super = Component<PointLightComponent>;
 	public:
-		PointLightComponent(PointLight* pl = nullptr);
+		PointLightComponent(std::shared_ptr<GameObject> owner, PointLight* pl = nullptr);
 
 		void MarkDirty() { m_bIsDirty = true; }
 		bool IsDirty() const { return m_bIsDirty; }

@@ -9,6 +9,11 @@ extern const int g_NumFrameResources;
 
 namespace Blainn
 {
+	TransformComponent::TransformComponent(std::shared_ptr<GameObject> owner)
+		: Super(owner)
+	{
+	}
+
 	void TransformComponent::OnAttach()
 	{
 		Super::OnAttach();

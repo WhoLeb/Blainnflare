@@ -13,16 +13,36 @@
 
 using namespace Blainn;
 
-Blainn::StaticMeshComponent::StaticMeshComponent(std::filesystem::path filepath)
-	: Blainn::Component<StaticMeshComponent>()
+Blainn::StaticMeshComponent::StaticMeshComponent(std::shared_ptr<GameObject> owner, const std::filesystem::path& filepath)
+	: Super(owner)
 {
 	m_Model = (std::make_shared<DXModel>(filepath));
+	m_Owners.push_back(owner);
 }
 
-//Blainn::StaticMeshComponent::StaticMeshComponent(std::shared_ptr<DXModel> model)
-//	: m_Model(model)
-//{
-//}
+std::shared_ptr<StaticMeshComponent> Blainn::StaticMeshComponent::Create(std::shared_ptr<GameObject> owner, const std::filesystem::path& filepath)
+{
+	auto& allSMs = ComponentManager::Get().GetComponents<StaticMeshComponent>();
+	auto it = std::find_if(allSMs.begin(), allSMs.end(),
+			[&filepath](std::shared_ptr<StaticMeshComponent> comp)->bool
+			{
+				return comp->GetModel()->GetPath() == filepath;
+			});
+
+	if (it != allSMs.end())
+	{
+		(*it)->m_Owners.push_back(owner);
+		return *it;
+	}
+
+	struct Enabler : StaticMeshComponent {
+		Enabler(std::shared_ptr<GameObject> o, const std::filesystem::path& p)
+			: StaticMeshComponent(std::move(o), p) { }
+	};
+
+	auto newComp = std::make_shared<Enabler>(owner, filepath);
+	return newComp;
+}
 
 Blainn::StaticMeshComponent::~StaticMeshComponent()
 {

@@ -189,6 +189,7 @@
     <ClInclude Include="src\DX12\DXRenderingContext.h" />
     <ClInclude Include="src\DX12\DXShader.h" />
     <ClInclude Include="src\DX12\EffectPSO.h" />
+    <ClInclude Include="src\DX12\ShadowMap.h" />
     <ClInclude Include="src\EntryPoint.h" />
     <ClInclude Include="src\ImGui\ImGuiLayer.h" />
     <ClInclude Include="src\pch.h" />
@@ -228,6 +229,7 @@
     <ClCompile Include="src\DX12\DXRenderingContext.cpp" />
     <ClCompile Include="src\DX12\DXShader.cpp" />
     <ClCompile Include="src\DX12\EffectPSO.cpp" />
+    <ClCompile Include="src\DX12\ShadowMap.cpp" />
     <ClCompile Include="src\ImGui\ImGuiLayer.cpp" />
     <ClCompile Include="src\pch.cpp" />
     <ClCompile Include="src\Core\Application.cpp" />

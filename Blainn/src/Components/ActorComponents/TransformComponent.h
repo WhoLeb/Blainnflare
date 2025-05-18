@@ -21,6 +21,7 @@ namespace Blainn
 	{
 		using Super = Component<TransformComponent>;
 	public:
+		TransformComponent(std::shared_ptr<GameObject> owner);
 		~TransformComponent() = default;
 
 		void OnAttach() override;

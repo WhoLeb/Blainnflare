@@ -52,16 +52,16 @@ EffectPSO::EffectPSO(
 
     // clang-format off
     CD3DX12_ROOT_PARAMETER1 rootParameters[RootParameters::NumRootParameters];
-    rootParameters[RootParameters::PerObjectDataCB  ].InitAsConstantBufferView(0, 0, D3D12_ROOT_DESCRIPTOR_FLAG_NONE, D3D12_SHADER_VISIBILITY_VERTEX);
-    rootParameters[RootParameters::MaterialCB       ].InitAsConstantBufferView(0, 1, D3D12_ROOT_DESCRIPTOR_FLAG_NONE, D3D12_SHADER_VISIBILITY_PIXEL);
-    rootParameters[RootParameters::PerPassDataCB    ].InitAsConstantBufferView(1, 0, D3D12_ROOT_DESCRIPTOR_FLAG_NONE);
-    rootParameters[RootParameters::LightPropertiesCB].InitAsConstants(sizeof(LightProperties) / 4, 2, 0, D3D12_SHADER_VISIBILITY_PIXEL);
-    rootParameters[RootParameters::PointLights      ].InitAsShaderResourceView(0, 0, D3D12_ROOT_DESCRIPTOR_FLAG_NONE, D3D12_SHADER_VISIBILITY_PIXEL);
+    rootParameters[RootParameters::PerPassDataCB    ].InitAsConstantBufferView(0, 0, D3D12_ROOT_DESCRIPTOR_FLAG_NONE);
+    rootParameters[RootParameters::MaterialCB       ].InitAsConstantBufferView(1, 0, D3D12_ROOT_DESCRIPTOR_FLAG_NONE, D3D12_SHADER_VISIBILITY_PIXEL);
+    rootParameters[RootParameters::LightPropertiesCB].InitAsConstants         (sizeof(LightProperties) / 4, 2, 1, D3D12_SHADER_VISIBILITY_PIXEL);
+    rootParameters[RootParameters::CascadeDataCB    ].InitAsConstantBufferView(3, 0, D3D12_ROOT_DESCRIPTOR_FLAG_NONE, D3D12_SHADER_VISIBILITY_PIXEL);
+    rootParameters[RootParameters::PerObjectDataSB  ].InitAsShaderResourceView(0, 0, D3D12_ROOT_DESCRIPTOR_FLAG_NONE, D3D12_SHADER_VISIBILITY_VERTEX);
+    rootParameters[RootParameters::PointLights      ].InitAsShaderResourceView(0, 1, D3D12_ROOT_DESCRIPTOR_FLAG_NONE, D3D12_SHADER_VISIBILITY_PIXEL);
     rootParameters[RootParameters::SpotLights       ].InitAsShaderResourceView(1, 0, D3D12_ROOT_DESCRIPTOR_FLAG_NONE, D3D12_SHADER_VISIBILITY_PIXEL);
     rootParameters[RootParameters::DirectionalLights].InitAsShaderResourceView(2, 0, D3D12_ROOT_DESCRIPTOR_FLAG_NONE, D3D12_SHADER_VISIBILITY_PIXEL);
-    rootParameters[RootParameters::Textures         ].InitAsDescriptorTable(1, &descriptorRange, D3D12_SHADER_VISIBILITY_PIXEL);
-    rootParameters[RootParameters::CascadeDataCB    ].InitAsConstantBufferView(3, 0, D3D12_ROOT_DESCRIPTOR_FLAG_NONE, D3D12_SHADER_VISIBILITY_PIXEL);
-    rootParameters[RootParameters::ShadowMaps       ].InitAsDescriptorTable(1, &shadowDescriptorRange, D3D12_SHADER_VISIBILITY_PIXEL);
+    rootParameters[RootParameters::Textures         ].InitAsDescriptorTable   (1, &descriptorRange, D3D12_SHADER_VISIBILITY_PIXEL);
+    rootParameters[RootParameters::ShadowMaps       ].InitAsDescriptorTable   (1, &shadowDescriptorRange, D3D12_SHADER_VISIBILITY_PIXEL);
 
     auto staticSamplers = GetStaticSamplers();
 
@@ -106,7 +106,6 @@ EffectPSO::EffectPSO(
         // Disable backface culling on decal geometry.
         rasterizerState.CullMode = D3D12_CULL_MODE_NONE;
     }
-    //rasterizerState.CullMode = D3D12_CULL_MODE_NONE;
 
     pipelineStateStream.pRootSignature = m_RootSignature->GetD3D12RootSignature().Get();
     pipelineStateStream.VS = CD3DX12_SHADER_BYTECODE(vertexShaderBlob.Get());
@@ -156,10 +155,7 @@ void EffectPSO::Apply(dx12lib::CommandList& commandList)
 
     if (m_DirtyFlags & DF_PerObjectData)
     {
-        PerObjectData m;
-        m.WorldMatrix = m_ObjectData.WorldMatrix;
-
-        commandList.SetGraphicsDynamicConstantBuffer(RootParameters::PerObjectDataCB, m);
+        commandList.SetGraphicsDynamicStructuredBuffer(RootParameters::PerObjectDataSB, m_ObjectData);
     }
 
     if (m_DirtyFlags & DF_PerPassData)
