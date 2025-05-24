@@ -379,8 +379,8 @@ LightResult DoLighting( float3 P, float3 N, Material mat )
 float DoShadowCascade(float4 ShadowPos, Texture2D ShadowMapTex)
 {
     float3 projCoords = ShadowPos.xyz / ShadowPos.w;
-    projCoords.y = -projCoords.y;
     projCoords.xy = 0.5 * projCoords.xy + 0.5;
+    projCoords.y = 1.0f - projCoords.y;
     
     uint width, height, numMips;
     ShadowMapTex.GetDimensions(0, width, height, numMips);
@@ -401,7 +401,7 @@ float DoShadowCascade(float4 ShadowPos, Texture2D ShadowMapTex)
     {
         float depth = ShadowMapTex.Sample(PointClampSamp, projCoords.xy + offsets[i]).r;
         
-        if (depth + 0.0001 < projCoords.z)
+        if (depth + 0.0005 < projCoords.z)
         {
             shadow += 0.0;
         }
@@ -416,7 +416,7 @@ float DoShadowCascade(float4 ShadowPos, Texture2D ShadowMapTex)
 
 float DoShadow(float3 Position, float Distance)
 {
-    int chosenCascade=0;
+    int chosenCascade=3;
 
     if(Distance < CascadeDataCB.distances.x)
         chosenCascade=0;
@@ -427,16 +427,19 @@ float DoShadow(float3 Position, float Distance)
     else if(Distance < CascadeDataCB.distances.w)
         chosenCascade=3;
 
+    float4 pos4 = float4(Position, 1.0);
+    float4 lightViewPos = mul(pos4, CascadeDataCB.viewProjMats[chosenCascade]);
+
     switch(chosenCascade)
     {
     case 0:
-        return DoShadowCascade(mul(CascadeDataCB.viewProjMats[chosenCascade], float4(Position, 1.0)), ShadowMap1);
+        return DoShadowCascade(lightViewPos, ShadowMap1);
     case 1:
-        return DoShadowCascade(mul(CascadeDataCB.viewProjMats[chosenCascade], float4(Position, 1.0)), ShadowMap2);
+        return DoShadowCascade(lightViewPos, ShadowMap2);
     case 2:
-        return DoShadowCascade(mul(CascadeDataCB.viewProjMats[chosenCascade], float4(Position, 1.0)), ShadowMap3);
+        return DoShadowCascade(lightViewPos, ShadowMap3);
     case 3:
-        return DoShadowCascade(mul(CascadeDataCB.viewProjMats[chosenCascade], float4(Position, 1.0)), ShadowMap4);
+        return DoShadowCascade(lightViewPos, ShadowMap4);
     }
 
 }
@@ -618,7 +621,7 @@ float4 main(PixelShaderInput IN) : SV_Target
     float dist = distance(PassCB.EyePos, IN.PositionW.xyz);
     
     //return(DoDebugShadow(IN.PositionW.xyz, dist));
-    shadow = DoShadow(IN.PositionW.xyz, dist);
+    shadow = saturate(0.1f + DoShadow(IN.PositionW.xyz, dist));
 #endif // ENABLE_LIGHTING
 
     //return float4(N * 0.5 + 0.5, 1.0);

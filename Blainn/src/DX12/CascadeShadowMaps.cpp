@@ -135,9 +135,9 @@ void CascadeShadowMaps::UpdateCascadeData(DirectX::SimpleMath::Matrix& invViewPr
 			maxZ = std::max<float>(maxZ, trf.z);
 		}
 
-		constexpr float zMult = 10.f;
-		minZ = (minZ < 0) ? minZ * zMult : minZ / zMult;
-		maxZ = (maxZ < 0) ? maxZ / zMult : maxZ * zMult;
+		// constexpr float zMult = 10.f;
+		// minZ = (minZ < 0) ? minZ * zMult : minZ / zMult;
+		// maxZ = (maxZ < 0) ? maxZ / zMult : maxZ * zMult;
 
 		auto lightProjection = Matrix::CreateOrthographicOffCenter(minX, maxX, minY, maxY, minZ, maxZ);
 		m_CascadeData.viewProjMats[cascade] = (lightView * lightProjection).Transpose();
