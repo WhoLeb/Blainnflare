@@ -24,7 +24,7 @@ public:
 		//Super::OnAttach();
 
 		m_Camera = AddChild<Blainn::Actor>();
-		m_CameraComponent = m_Camera->AddComponent<Blainn::CameraComponent>(1600, 800, 90.f, 0.1f, 100.f);
+		m_CameraComponent = m_Camera->AddComponent<Blainn::CameraComponent>(1600, 800, 90.f, 0.1f, 1000.f);
 		auto cameraInput = m_Camera->AddComponent<KatamariCameraInput>();
 
 		m_StaticMesh = AddChild<Blainn::Actor>();

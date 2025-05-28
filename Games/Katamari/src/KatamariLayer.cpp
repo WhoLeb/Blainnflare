@@ -77,13 +77,20 @@ void KatamariLayer::OnAttach()
 	point.Color = { 1.f, 0.f, 1.f };
 	light2->AddComponent<Blainn::PointLightComponent>(&point);
 
-	auto dirLight = std::make_shared<Blainn::GameObject>();
-	m_Scene->QueueGameObject(dirLight);
+	m_DirLight = std::make_shared<Blainn::GameObject>();
+	m_Scene->QueueGameObject(m_DirLight);
 	DirectionalLight dl;
 	dl.Color = { 1.0f, 1.0f, 1.0f };
 	dl.Ambient = { 0.1f };
-	dirLight->AddComponent<Blainn::TransformComponent>()->SetWorldYawPitchRoll({ -0.f, 45.f, -45.f });
-	dirLight->AddComponent<Blainn::DirectionalLightComponent>(&dl);
+	m_DirLight->AddComponent<Blainn::TransformComponent>()->SetWorldYawPitchRoll({ -45.f, 60.f, -45.f });
+	m_DirLight->AddComponent<Blainn::DirectionalLightComponent>(&dl);
+	
+	auto secondLight = std::make_shared<Blainn::GameObject>();
+	m_Scene->QueueGameObject(m_DirLight);
+	dl.Color = { 5.f, 5.f, 5.f };
+	dl.Ambient = { 0.05f };
+	secondLight->AddComponent<Blainn::TransformComponent>()->SetWorldYawPitchRoll({ -45.f, 60.f, -45.f });
+	secondLight->AddComponent<Blainn::DirectionalLightComponent>(&dl);
 
 	//auto coolCubeModel = std::make_shared<Blainn::DXModel>("../../Resources/Models/CoolTexturedCube.fbx");
 	//auto coolCubeModel = std::make_shared<Blainn::DXModel>("../../Resources/Models/dragonkin/scene.gltf");
@@ -116,4 +123,13 @@ void KatamariLayer::OnAttach()
 	guy->GetComponent<TransformComponent>()->SetWorldPosition({ 10.f, 0.0f, 10.f });
 	guy->GetComponent<TransformComponent>()->SetWorldScale({ 0.01f, 0.01f, 0.01f });
 	guy->AddComponent<SphereCollisionComponent>(2.f);
+}
+
+void KatamariLayer::OnUpdate(const Blainn::GameTimer& gt)
+{
+	Layer::OnUpdate(gt);
+	auto lightTransform = m_DirLight->GetComponent<TransformComponent>();
+	auto lightRot = lightTransform->GetWorldQuat();
+	lightRot *= DirectX::SimpleMath::Quaternion::CreateFromYawPitchRoll(3.f * gt.DeltaTime(), 0.f, 0.f);
+	lightTransform->SetWorldQuat(lightRot);
 }

@@ -385,29 +385,26 @@ float DoShadowCascade(float4 ShadowPos, Texture2D ShadowMapTex)
     uint width, height, numMips;
     ShadowMapTex.GetDimensions(0, width, height, numMips);
 
-    float dx = 1.0f / (float)width;
-
-    const float2 offsets[9] =
-    {
-        float2(-dx, -dx), float2(0.0f, -dx), float2(dx, -dx),
-        float2(-dx, 0.0f), float2(0.0f, 0.0f), float2(dx, 0.0f),
-        float2(-dx, +dx), float2(0.0f, +dx), float2(dx, +dx)
-    };
+    float texelSize = 1.0f / (float)width;
     
     float shadow = 0.0;
 
-    [unroll]
-    for (int i = 0; i < 9; ++i)
+    const float bias = 0.0003;
+	[unroll]
+    for (int x = -1; x <= 1; ++x)
     {
-        float depth = ShadowMapTex.Sample(PointClampSamp, projCoords.xy + offsets[i]).r;
-        
-        if (depth + 0.0005 < projCoords.z)
+    	[unroll]
+        for (int y = -1; y <= 1; ++y)
         {
-            shadow += 0.0;
-        }
-        else
-        {
-            shadow += 1.0;
+            float depth = ShadowMapTex.Sample(AniClampSamp, projCoords.xy + float2(x, y) * texelSize).r;
+            if (depth + bias < projCoords.z)
+            {
+                shadow += 0.0; // In shadow
+            }
+            else
+            {
+                shadow += 1.0; // Not in shadow
+            }
         }
     }
     
@@ -570,13 +567,13 @@ float4 main(PixelShaderInput IN) : SV_Target
     }
 
     float3 N;
+    float3 tangent = normalize(IN.TangentW);
+    float3 bitangent = normalize(IN.BitangentW);
+    float3 normal = normalize(IN.NormalW);
+
     // Normal mapping
     if (material.HasNormalTexture)
     {
-        float3 tangent = normalize(IN.TangentW);
-        float3 bitangent = normalize(IN.BitangentW);
-        float3 normal = normalize(IN.NormalW);
-
         float3x3 TBN = float3x3(tangent,
                                  bitangent,
                                  normal);
@@ -585,10 +582,6 @@ float4 main(PixelShaderInput IN) : SV_Target
     }
     else if (material.HasBumpTexture)
     {
-        float3 tangent = normalize(IN.TangentW);
-        float3 bitangent = normalize(IN.BitangentW);
-        float3 normal = normalize(IN.NormalW);
-
         float3x3 TBN = float3x3(tangent,
                                  -bitangent,
                                  normal);
@@ -618,12 +611,13 @@ float4 main(PixelShaderInput IN) : SV_Target
         specular *= lit.Specular;
     }
 
+    //float dist = IN.PositionW.z - PassCB.EyePos.z;//distance(PassCB.EyePos, IN.PositionW.xyz);
     float dist = distance(PassCB.EyePos, IN.PositionW.xyz);
     
     //return(DoDebugShadow(IN.PositionW.xyz, dist));
-    shadow = saturate(0.1f + DoShadow(IN.PositionW.xyz, dist));
+    shadow = DoShadow(IN.PositionW.xyz, dist);
 #endif // ENABLE_LIGHTING
 
     //return float4(N * 0.5 + 0.5, 1.0);
-    return float4(((emissive + ambient + diffuse + specular).rgb * shadow), alpha * material.Opacity);
+    return float4(((emissive + ambient).rgb + (diffuse + specular).rgb * shadow), alpha * material.Opacity);
 }

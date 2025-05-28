@@ -166,6 +166,7 @@
     <ClInclude Include="src\Components\ActorComponents\PhysicsComponents\CollisionComponent.h" />
     <ClInclude Include="src\Components\ActorComponents\PhysicsComponents\SphereCollisionComponent.h" />
     <ClInclude Include="src\Components\ActorComponents\PointLightComponent.h" />
+    <ClInclude Include="src\Components\ActorComponents\SpotLightComponent.h" />
     <ClInclude Include="src\Components\ActorComponents\StaticMeshComponent.h" />
     <ClInclude Include="src\Components\ActorComponents\CharacterComponents\CameraComponent.h" />
     <ClInclude Include="src\Components\ActorComponents\TransformComponent.h" />
@@ -180,6 +181,7 @@
     <ClInclude Include="src\Core\MaterialIndexManager.h" />
     <ClInclude Include="src\DX12\CascadeShadowMaps.h" />
     <ClInclude Include="src\DX12\D3D12MemAlloc.h" />
+    <ClInclude Include="src\DX12\DeferredLightingPSO.h" />
     <ClInclude Include="src\DX12\DXModel.h" />
     <ClInclude Include="src\DX12\DXSceneVisitor.h" />
     <ClInclude Include="src\Core\Layer.h" />
@@ -189,6 +191,9 @@
     <ClInclude Include="src\DX12\DXRenderingContext.h" />
     <ClInclude Include="src\DX12\DXShader.h" />
     <ClInclude Include="src\DX12\EffectPSO.h" />
+    <ClInclude Include="src\DX12\GBuffer.h" />
+    <ClInclude Include="src\DX12\GPassPSO.h" />
+    <ClInclude Include="src\DX12\ShaderTypes.h" />
     <ClInclude Include="src\DX12\ShadowMap.h" />
     <ClInclude Include="src\EntryPoint.h" />
     <ClInclude Include="src\ImGui\ImGuiLayer.h" />
@@ -212,6 +217,7 @@
   <ItemGroup>
     <ClCompile Include="src\Components\ActorComponents\CharacterComponents\OrbitalCameraController.cpp" />
     <ClCompile Include="src\Components\ActorComponents\PointLightComponent.cpp" />
+    <ClCompile Include="src\Components\ActorComponents\SpotLightComponent.cpp" />
     <ClCompile Include="src\Components\ActorComponents\StaticMeshComponent.cpp" />
     <ClCompile Include="src\Components\ActorComponents\TransformComponent.cpp" />
     <ClCompile Include="src\Components\DebugComponents\WorldGridComponent.cpp" />
@@ -224,11 +230,14 @@
     <ClCompile Include="src\Core\UUID.cpp" />
     <ClCompile Include="src\DX12\CascadeShadowMaps.cpp" />
     <ClCompile Include="src\DX12\D3D12MemAlloc.cpp" />
+    <ClCompile Include="src\DX12\DeferredLightingPSO.cpp" />
     <ClCompile Include="src\DX12\DXModel.cpp" />
     <ClCompile Include="src\DX12\DXSceneVisitor.cpp" />
     <ClCompile Include="src\DX12\DXRenderingContext.cpp" />
     <ClCompile Include="src\DX12\DXShader.cpp" />
     <ClCompile Include="src\DX12\EffectPSO.cpp" />
+    <ClCompile Include="src\DX12\GBuffer.cpp" />
+    <ClCompile Include="src\DX12\GPassPSO.cpp" />
     <ClCompile Include="src\DX12\ShadowMap.cpp" />
     <ClCompile Include="src\ImGui\ImGuiLayer.cpp" />
     <ClCompile Include="src\pch.cpp" />

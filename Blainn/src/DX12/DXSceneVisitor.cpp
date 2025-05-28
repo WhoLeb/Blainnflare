@@ -4,6 +4,7 @@
 #include "Core/Camera.h"
 #include "DX12/CascadeShadowMaps.h"
 #include "EffectPSO.h"
+#include "GPassPSO.h"
 
 #include <dx12lib/CommandList.h>
 #include <dx12lib/Material.h>
@@ -67,4 +68,26 @@ void ShadowVisitor::Visit(dx12lib::Mesh& mesh)
 		m_ShadowPSO.Apply(m_CommandList);
 		mesh.Draw(m_CommandList, m_ShadowPSO.GetInstanceCount());
 	}
+}
+
+GeometryVisitor::GeometryVisitor(dx12lib::CommandList& commandList, GPassPSO& gPassPSO)
+	: m_CommandList(commandList)
+	, m_GPassPSO(gPassPSO)
+{
+}
+
+void GeometryVisitor::Visit(dx12lib::Scene& scene)
+{
+}
+
+void GeometryVisitor::Visit(dx12lib::SceneNode& sceneNode)
+{
+}
+
+void GeometryVisitor::Visit(dx12lib::Mesh& mesh)
+{
+	auto material = mesh.GetMaterial();
+	m_GPassPSO.SetMaterial(material);
+	m_GPassPSO.Apply(m_CommandList);
+	mesh.Draw(m_CommandList, m_GPassPSO.GetInstanceCount());
 }

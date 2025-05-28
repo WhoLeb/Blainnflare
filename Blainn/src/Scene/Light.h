@@ -43,6 +43,7 @@ struct PointLight
         , ConstantAttenuation(1.0f)
         , LinearAttenuation(0.0f)
         , QuadraticAttenuation(0.0f)
+        , Radius(10.0f)
     {
     }
 
@@ -57,7 +58,10 @@ struct PointLight
     float LinearAttenuation;
     float QuadraticAttenuation;
     //----------------------------------- (16 byte boundary)
-    // Total:                              16 * 4 = 64 bytes
+    float Radius;
+    float Padding[3];
+    //----------------------------------- (16 byte boundary)
+    // Total:                              16 * 5 = 80 bytes
 };
 
 struct SpotLight
@@ -73,6 +77,7 @@ struct SpotLight
         , ConstantAttenuation(1.0f)
         , LinearAttenuation(0.0f)
         , QuadraticAttenuation(0.0f)
+        , Radius(10.0f)
     {
     }
 
@@ -92,7 +97,8 @@ struct SpotLight
     float LinearAttenuation;
     //----------------------------------- (16 byte boundary)
     float QuadraticAttenuation;
-    float Padding[3];
+    float Radius;
+    float Padding[2];
     //----------------------------------- (16 byte boundary)
     // Total:                              16 * 7 = 112 bytes
 };

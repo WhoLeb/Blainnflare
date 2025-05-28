@@ -11,6 +11,8 @@
 
 #include <limits>
 
+#include "Core/Camera.h"
+
 using namespace dx12lib;
 using namespace Blainn;
 
@@ -23,11 +25,6 @@ CascadeShadowMaps::CascadeShadowMaps(std::shared_ptr<dx12lib::Device> device, Di
 	{
 		rt = std::make_shared<ShadowMap>(device, size.x, size.y);
 	}
-}
-
-std::shared_ptr<dx12lib::Texture>& CascadeShadowMaps::GetSlice(CascadeSlice slice)
-{
-	return m_ShadowMaps[slice]->GetTexture();
 }
 
 const std::shared_ptr<dx12lib::Texture>& CascadeShadowMaps::GetSlice(CascadeSlice slice) const
@@ -78,7 +75,7 @@ void CascadeShadowMaps::UpdateCascadeData(DirectX::SimpleMath::Matrix& invViewPr
 			}
 		}
 	}
-
+	
 	std::vector<Vector4> frustumEdges =
 	{
 		frustumCorners[4] - frustumCorners[0],
@@ -89,15 +86,17 @@ void CascadeShadowMaps::UpdateCascadeData(DirectX::SimpleMath::Matrix& invViewPr
 
 	for (int32_t cascade = 0; cascade < CASCADE_COUNT; ++cascade)
 	{
-		std::vector<Vector4> cascadeCorners;
 		float dNear = m_CascadeViewWindows[cascade].first;
 		float dFar = m_CascadeViewWindows[cascade].second;
+
+		
+		std::vector<Vector4> cascadeCorners;
 		for (int8_t i = 0; i < 4; ++i)
 		{
 			//cascadeCorners.push_back(frustumCorners[i] + cascade * frustumEdges[i] / CASCADE_COUNT); // * m_CascadeViewWindows[cascade].first);
 			cascadeCorners.push_back(frustumCorners[i] + frustumEdges[i] * dNear);
 		}
-
+		
 		for (int8_t i = 0; i < 4; ++i)
 		{
 			//cascadeCorners.push_back(frustumCorners[i] + (cascade + 1) * frustumEdges[i] / CASCADE_COUNT); // * m_CascadeViewWindows[cascade].second);
@@ -135,9 +134,9 @@ void CascadeShadowMaps::UpdateCascadeData(DirectX::SimpleMath::Matrix& invViewPr
 			maxZ = std::max<float>(maxZ, trf.z);
 		}
 
-		// constexpr float zMult = 10.f;
-		// minZ = (minZ < 0) ? minZ * zMult : minZ / zMult;
-		// maxZ = (maxZ < 0) ? maxZ / zMult : maxZ * zMult;
+		constexpr float zMult = 10.f;
+		minZ = (minZ < 0) ? minZ * zMult : minZ / zMult;
+		maxZ = (maxZ < 0) ? maxZ / zMult : maxZ * zMult;
 
 		auto lightProjection = Matrix::CreateOrthographicOffCenter(minX, maxX, minY, maxY, minZ, maxZ);
 		m_CascadeData.viewProjMats[cascade] = (lightView * lightProjection).Transpose();
@@ -145,7 +144,104 @@ void CascadeShadowMaps::UpdateCascadeData(DirectX::SimpleMath::Matrix& invViewPr
 	}
 }
 
-EffectPSO::CascadeData& CascadeShadowMaps::GetCascadeData()
+void CascadeShadowMaps::UpdateCascadeMatrices(const Blainn::Camera& camera, const DirectX::SimpleMath::Vector3& lightDirection)
+{
+	using namespace DirectX;
+	using namespace DirectX::SimpleMath;
+	
+	bool hasDistances = false;
+	for (auto& i : m_CascadeData.distances)
+		hasDistances |= i > FLT_EPSILON;
+	if (!hasDistances)
+	{
+		m_CascadeData.distances[0] = camera.GetFarPlane() * 0.1f;
+		m_CascadeData.distances[1] = camera.GetFarPlane() * 0.3f;
+		m_CascadeData.distances[2] = camera.GetFarPlane() * 0.5f;
+		m_CascadeData.distances[3] = camera.GetFarPlane();
+	}
+	
+	if (m_CascadeData.distances)
+	for (int32_t cascade = 0; cascade < CASCADE_COUNT; ++cascade)
+	{
+		float nearPlane = cascade == 0 ? camera.GetNearPlane() : m_CascadeData.distances[cascade - 1];
+		float farPlane = m_CascadeData.distances[cascade];
+
+		auto projMat = Matrix::CreatePerspectiveFieldOfView(
+				camera.GetFieldOfView(),
+				camera.GetAspectRatio(),
+				nearPlane, farPlane
+			);
+
+		auto viewProj = camera.GetViewMatrix() * projMat;
+		auto invViewProj = viewProj.Invert();
+
+		std::vector<Vector4> frustumCorners;
+		frustumCorners.reserve(8);
+		for (int32_t z = 0; z < 2; ++z)
+		{
+			for (int32_t y = 0; y < 2; ++y)
+			{
+				for (int32_t x = 0; x < 2; ++x)
+				{
+					const Vector4 pt =
+						Vector4::Transform(
+							Vector4(
+								2.f * x - 1.f,
+								2.f * y - 1.f,
+								z, 1.f),
+							invViewProj);
+					frustumCorners.push_back(pt / pt.w);
+				}
+			}
+		}
+
+		Vector3 center = Vector3::Zero;
+		for (const auto& v : frustumCorners)
+		{
+			center += Vector3(v);
+		}
+		center /= frustumCorners.size();
+
+		const auto lightView = Matrix::CreateLookAt(
+			center - lightDirection,
+			center,
+			Vector3::Up
+		);
+	
+		float minX = FLT_MAX;
+		float minY = FLT_MAX;
+		float minZ = FLT_MAX;
+		float maxX = FLT_MIN;
+		float maxY = FLT_MIN;
+		float maxZ = FLT_MIN;
+
+		for (const auto& v : frustumCorners)
+		{
+			const auto trf = Vector4::Transform(v, lightView);
+			minX = std::min<float>(minX, trf.x);
+			minY = std::min<float>(minY, trf.y);
+			minZ = std::min<float>(minZ, trf.z);
+			maxX = std::max<float>(maxX, trf.x);
+			maxY = std::max<float>(maxY, trf.y);
+			maxZ = std::max<float>(maxZ, trf.z);
+		}
+
+		constexpr float zMult = 10.f;
+		minZ = (minZ < 0) ? minZ * zMult : minZ / zMult;
+		maxZ = (maxZ < 0) ? maxZ / zMult : maxZ * zMult;
+
+		auto lightProjection = Matrix::CreateOrthographicOffCenter(minX, maxX, minY, maxY, minZ, maxZ);
+		m_CascadeData.viewProjMats[cascade] = (lightView * lightProjection).Transpose();
+	}
+}
+
+void CascadeShadowMaps::UpdateCascadeDistances(const std::vector<float>& distances)
+{
+	for (int i = 0; i < distances.size() && i < CASCADE_COUNT; ++i)
+		m_CascadeData.distances[i] = distances[i];
+}
+
+CascadeData& CascadeShadowMaps::GetCascadeData()
 {
 	return m_CascadeData;
 }

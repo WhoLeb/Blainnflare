@@ -43,19 +43,19 @@ ShadowMap::ShadowMap(
 
 	m_ShadowMapTex = Device->CreateTexture(texDesc, &optClear);
 
-	D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc = {};
-	dsvDesc.Format = m_dsvFormat;
-	dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
-	dsvDesc.Flags = D3D12_DSV_FLAG_NONE;
-	m_ShadowMapTex->CreateDepthStencilView(&dsvDesc);
+	auto dsvDesc = std::make_shared<D3D12_DEPTH_STENCIL_VIEW_DESC>();
+	dsvDesc->Format = m_dsvFormat;
+	dsvDesc->ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
+	dsvDesc->Flags = D3D12_DSV_FLAG_NONE;
+	m_ShadowMapTex->CreateDepthStencilView(dsvDesc);
 
-	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-	srvDesc.Format = m_rtvFormat;
-	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-	srvDesc.Texture2D.MipLevels = 1;
+	auto srvDesc = std::make_shared<D3D12_SHADER_RESOURCE_VIEW_DESC>();
+	srvDesc->Format = m_rtvFormat;
+	srvDesc->ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+	srvDesc->Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+	srvDesc->Texture2D.MipLevels = 1;
 
-	m_ShadowMapTex->CreateShaderResourceView(&srvDesc);
+	m_ShadowMapTex->CreateShaderResourceView(srvDesc);
 
 	m_ShadowMapRT.AttachTexture(dx12lib::AttachmentPoint::DepthStencil, m_ShadowMapTex);
 }

@@ -2,6 +2,11 @@
 
 #include <dx12lib/Visitor.h>
 
+namespace Blainn
+{
+	class GPassPSO;
+}
+
 namespace dx12lib
 {
 	class CommandList;
@@ -46,5 +51,21 @@ namespace Blainn
 	private:
 		dx12lib::CommandList&	m_CommandList;
 		ShadowMapPSO&			m_ShadowPSO;
+	};
+
+	class GeometryVisitor : public dx12lib::Visitor
+	{
+
+	public:
+		GeometryVisitor(
+			dx12lib::CommandList& commandList,
+			GPassPSO& gPassPSO);
+		
+		void Visit(dx12lib::Scene& scene) override;
+		void Visit(dx12lib::SceneNode& sceneNode) override;
+		void Visit(dx12lib::Mesh& mesh) override;
+	private:
+		dx12lib::CommandList&	m_CommandList;
+		GPassPSO&				m_GPassPSO;
 	};
 }

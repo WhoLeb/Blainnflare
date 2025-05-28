@@ -66,9 +66,9 @@ VertexShaderOutput main(VertexPositionNormalTangentBitangentTexture IN)
     float3x3 world3x3 = (float3x3)ObjectSB[IN.InstanceID].WorldMatrix;
     float3x3 invTransWorld3x3 = transpose(Inverse3x3(world3x3));
 
-    OUT.NormalW = mul(IN.Normal, ObjectSB[IN.InstanceID].WorldMatrix);
-    OUT.TangentW = mul(IN.Tangent, ObjectSB[IN.InstanceID].WorldMatrix);
-    OUT.BitangentW = mul(IN.Bitangent, ObjectSB[IN.InstanceID].WorldMatrix);
+    OUT.NormalW = mul(IN.Normal, world3x3);
+    OUT.TangentW = mul(IN.Tangent, world3x3);
+    OUT.BitangentW = mul(IN.Bitangent, world3x3);
 
     //OUT.NormalVS = mul(InverseTransposeMV, IN.Normal);
     //OUT.TangentVS = mul(InverseTransposeMV, IN.Tangent);

@@ -7,9 +7,31 @@
 #include <memory>
 #include <unordered_set>
 #include <wrl.h>
+
 #include "Util/d3dx12.h"
 
 #include "dx12lib/RenderTarget.h"
+
+namespace dx12lib
+{
+	class Mesh;
+	class VertexBuffer;
+}
+
+namespace Blainn
+{
+	class SpotLightsPSO;
+}
+
+namespace Blainn
+{
+	class PointLightsPSO;
+}
+
+namespace Blainn
+{
+	class DirectLightsPSO;
+}
 
 extern const int g_NumFrameResources;
 extern const UINT32 g_NumObjects;
@@ -27,6 +49,7 @@ namespace dx12lib
 
 namespace Blainn
 {
+	class GBuffer;
 	class CascadeShadowMaps;
 	class Camera;
 	class DXDevice;
@@ -64,6 +87,16 @@ namespace Blainn
 		bool IsInitialized() const { return m_bIsInitialized; }
 
 		std::shared_ptr<dx12lib::Device> GetDevice() const { return m_Device; }
+		
+	protected:
+		void CascadeShadowMapsPass(const std::unordered_set<std::shared_ptr<StaticMeshComponent>>& meshes);
+		void GeometryPass(const std::unordered_set<std::shared_ptr<StaticMeshComponent>>& meshes);
+		void DeferredLightingPass();
+
+		void DirectionalLightsPass();
+		void PointLightsPass();
+		void SpotLightsPass();
+		
 
 	private:
 		Microsoft::WRL::ComPtr<IDXGIFactory4> m_DXGIFactory;
@@ -76,8 +109,17 @@ namespace Blainn
 
 		std::shared_ptr<dx12lib::RootSignature> m_RootSignature;
 
+		std::shared_ptr<GBuffer> m_GBuffer;
+
 		std::unordered_map<std::string, std::shared_ptr<EffectPSO>> m_PSOs;
 		std::shared_ptr<ShadowMapPSO> m_SMPSO;
+		
+		std::shared_ptr<DirectLightsPSO> m_DirLightPSO;
+		std::shared_ptr<PointLightsPSO> m_PointLightPSO;
+		std::shared_ptr<SpotLightsPSO> m_SpotLighPSO;
+
+		std::shared_ptr<dx12lib::VertexBuffer> m_FullQuadVertexBuffer;
+		std::shared_ptr<dx12lib::Mesh> m_SphereLightVolumeMesh;
 
 		D3D12_VIEWPORT m_ScreenViewport;
 		D3D12_RECT m_ScissorRect;

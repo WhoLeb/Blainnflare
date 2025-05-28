@@ -12,6 +12,11 @@
 
 #include "SimpleMath.h"
 
+namespace Blainn
+{
+	class Camera;
+}
+
 namespace dx12lib
 {
 	class CommandList;
@@ -40,7 +45,6 @@ namespace Blainn
 	public:
 		CascadeShadowMaps(std::shared_ptr<dx12lib::Device> device, DirectX::XMUINT2 size);
 
-		std::shared_ptr<dx12lib::Texture>& GetSlice(CascadeSlice slice);
 		const std::shared_ptr<dx12lib::Texture>& GetSlice(CascadeSlice slice) const;
 
 		dx12lib::RenderTarget& GetRenderTarget(CascadeSlice slice);
@@ -51,8 +55,10 @@ namespace Blainn
 
 		void UpdateCascadeData(DirectX::SimpleMath::Matrix& invViewProj,
 			DirectX::SimpleMath::Vector3 lightDirection);
+		void UpdateCascadeMatrices(const Blainn::Camera& camera, const DirectX::SimpleMath::Vector3& lightDirection);
+		void UpdateCascadeDistances(const std::vector<float>& distances);
 
-		EffectPSO::CascadeData& GetCascadeData();
+		CascadeData& GetCascadeData();
 
 		std::vector<DXGI_FORMAT> GetShadowMapFormats() const;
 
@@ -65,7 +71,8 @@ namespace Blainn
 		DirectX::XMUINT2 m_Size;
 		D3D12_VIEWPORT m_Viewport;
 
-		EffectPSO::CascadeData m_CascadeData;
+		CascadeData m_CascadeData;
+		DirectX::SimpleMath::Vector3 m_LightDirection;
 
 		std::vector<std::pair<float, float>> m_CascadeViewWindows{ {0.f, 0.15f}, {0.14f, 0.35f}, {0.34f, 0.66f}, {0.65f, 1.1f} };
 	};
@@ -73,11 +80,6 @@ namespace Blainn
 	class ShadowMapPSO
 	{
 	public:
-		struct alignas(16) PerObjectData
-		{
-			DirectX::SimpleMath::Matrix WorldMatrix;
-		};
-
 		struct alignas(16) PerPassData
 		{
 			DirectX::SimpleMath::Matrix ViewProj = DirectX::SimpleMath::Matrix::Identity;
@@ -122,9 +124,9 @@ namespace Blainn
 			m_PassData = data;
 			m_DirtyFlags |= DF_PerPassData;
 		}
-		PerPassData GetPerPassData()
+		ShadowMapPSO::PerPassData GetPerPassData()
 		{
-			m_PassData;
+			return m_PassData;
 		}
 
 		void Apply(dx12lib::CommandList& commandList);
@@ -144,7 +146,7 @@ namespace Blainn
 		std::shared_ptr<dx12lib::PipelineStateObject> m_PipelineStateObject;
 
 		std::vector<PerObjectData> m_ObjectData;
-		PerPassData m_PassData;
+		ShadowMapPSO::PerPassData m_PassData;
 
 		uint32_t m_DirtyFlags;
 

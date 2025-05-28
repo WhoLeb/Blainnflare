@@ -1,6 +1,8 @@
 #include "pch.h"
 #include "DXRenderingContext.h"
 
+#include <comdef.h>
+
 #include "CascadeShadowMaps.h"
 #include "Components/ActorComponents/DirectionalLightComponent.h"
 #include "Components/ActorComponents/PointLightComponent.h"
@@ -17,6 +19,7 @@
 #include "DXModel.h"
 #include "EffectPSO.h"
 #include "Scene/Scene.h"
+#include "ShaderTypes.h"
 
 #include <unordered_set>
 
@@ -35,12 +38,96 @@
 #include <dx12lib/Texture.h>
 
 #include "D3D12MemAlloc.h"
+#include "DeferredLightingPSO.h"
+#include "GBuffer.h"
+#include "GPassPSO.h"
+#include "VertexTypes.h"
+#include "assimp/Vertex.h"
 
 using Microsoft::WRL::ComPtr;
 using namespace DirectX;
 
 extern const int g_NumFrameResources = 3;
 extern const UINT32 g_NumObjects = 10000;
+
+inline void GenerateCubeMesh(std::vector<dx12lib::VertexPosition>& vertices, std::vector<UINT>& indices)
+{
+	using namespace dx12lib;
+	
+	vertices.push_back(dx12lib::VertexPosition(DirectX::XMFLOAT3(-1.0f, -1.0f, -1.0f))); // 0: Bottom-left-front
+	vertices.push_back(dx12lib::VertexPosition(DirectX::XMFLOAT3( 1.0f, -1.0f, -1.0f))); // 1: Bottom-right-front
+	vertices.push_back(dx12lib::VertexPosition(DirectX::XMFLOAT3( 1.0f,  1.0f, -1.0f))); // 2: Top-right-front
+	vertices.push_back(dx12lib::VertexPosition(DirectX::XMFLOAT3(-1.0f,  1.0f, -1.0f))); // 3: Top-left-front
+	vertices.push_back(dx12lib::VertexPosition(DirectX::XMFLOAT3(-1.0f, -1.0f,  1.0f))); // 4: Bottom-left-back
+	vertices.push_back(dx12lib::VertexPosition(DirectX::XMFLOAT3( 1.0f, -1.0f,  1.0f))); // 5: Bottom-right-back
+	vertices.push_back(dx12lib::VertexPosition(DirectX::XMFLOAT3( 1.0f,  1.0f,  1.0f))); // 6: Top-right-back
+	vertices.push_back(dx12lib::VertexPosition(DirectX::XMFLOAT3(-1.0f,  1.0f,  1.0f))); // 7: Top-left-back
+	
+	// Define indices for 12 triangles (2 per face), counter-clockwise when viewed from outside
+	indices = {
+		// Front face (z = -1)
+		0, 3, 1,
+		1, 3, 2,
+
+		// Back face (z = 1)
+		5, 6, 4,
+		4, 6, 7,
+
+		// Left face (x = -1)
+		4, 7, 0,
+		0, 7, 3,
+
+		// Right face (x = 1)
+		1, 2, 5,
+		5, 2, 6,
+
+		// Top face (y = 1)
+		3, 7, 2,
+		2, 7, 6,
+
+		// Bottom face (y = -1)
+		0, 1, 4,
+		4, 1, 5 
+	};	
+}
+
+static void GenerateSphereMesh(std::vector<dx12lib::VertexPosition>& vertices, std::vector<UINT>& indices) {
+	int segments = 16;
+	float pi = 3.1415926535f;
+
+	// Generate vertices
+	for (int i = 0; i <= segments; ++i) {
+		float theta = (float)i / segments * pi;
+		for (int j = 0; j <= segments; ++j) {
+			float phi = (float)j / segments * 2.0f * pi;
+			dx12lib::VertexPosition v;
+			v.Position.x = sin(theta) * cos(phi);
+			v.Position.y = sin(theta) * sin(phi);
+			v.Position.z = cos(theta);
+			vertices.push_back(v);
+		}
+	}
+
+	// Generate indices
+	for (int i = 0; i < segments; ++i) {
+		for (int j = 0; j < segments; ++j) {
+			int idx0 = i * (segments + 1) + j;
+			int idx1 = idx0 + 1;
+			int idx2 = (i + 1) * (segments + 1) + j;
+			int idx3 = idx2 + 1;
+
+			// First triangle
+			indices.push_back(idx0);
+			indices.push_back(idx1);
+			indices.push_back(idx2);
+
+			// Second triangle
+			indices.push_back(idx1);
+			indices.push_back(idx3);
+			indices.push_back(idx2);
+		}
+	}
+}
 
 namespace Blainn
 {
@@ -56,6 +143,7 @@ namespace Blainn
 
 		m_Device = dx12lib::Device::Create();
 		m_SwapChain = m_Device->CreateSwapChain(wnd->GetNativeWindow(), m_BackBufferFormat);
+		//m_SwapChain->SetVSync(false);
 
 		m_ScreenViewport = CD3DX12_VIEWPORT(0.f, 0.f, float(wnd->GetWidth()), float(wnd->GetHeight()));
 		m_ScissorRect = { 0, 0, LONG_MAX, LONG_MAX };
@@ -66,58 +154,80 @@ namespace Blainn
 
 	void DXRenderingContext::CreateResources()
 	{
-		auto vertexShader = DXShader(L"src\\Shaders\\BasicVS.hlsl", true, nullptr, "main", "vs_5_1");
-		auto pixelShader = DXShader(L"src\\Shaders\\LitPS.hlsl", true, nullptr, "main", "ps_5_1");
-
-		m_PSOs["Opaque"] = std::make_shared<EffectPSO>(
-			m_Device,
-			vertexShader.GetByteCode(), pixelShader.GetByteCode(),
-			true, false);
-		pixelShader = DXShader(L"src\\Shaders\\UnlitPS.hlsl", true, nullptr, "main", "ps_5_1");
-		m_PSOs["Unlit"] = std::make_shared<EffectPSO>(
-			m_Device,
-			vertexShader.GetByteCode(), pixelShader.GetByteCode(),
-			false, false);
-
-		vertexShader = DXShader(L"src\\Shaders\\ShadowMap.hlsl", true, nullptr, "main", "vs_5_1");
+		auto vertexShader = DXShader(L"src\\Shaders\\ShadowMap.hlsl", true, nullptr, "main", "vs_5_1");
 		m_SMPSO = std::make_shared<ShadowMapPSO>(
 			m_Device,
 			vertexShader.GetByteCode()
 		);
 
+		UINT width = 4096, height = 4096;
+
+		m_CascadeShadowMaps = std::make_shared<Blainn::CascadeShadowMaps>(m_Device, DirectX::XMUINT2{ width, height });
+		m_CascadeShadowMaps->UpdateCascadeDistances({20.f, 50.f, 100.f, 1000.f});
+		
+		m_GBuffer = std::make_shared<GBuffer>(m_Device, width, height);
+
+		vertexShader = DXShader(L"src\\Shaders\\DeferredShading\\VS_FullScreenQuad.hlsl", true, nullptr, "VS_FullScreenQuad", "vs_5_1");
+		auto pixelShader = DXShader(L"src\\Shaders\\DeferredShading\\PS_DirectionalLight.hlsl", true, nullptr, "PS_DirectionalLight", "ps_5_1");
+		m_DirLightPSO = std::make_shared<DirectLightsPSO>(m_Device, vertexShader.GetByteCode(), pixelShader.GetByteCode());
+		m_DirLightPSO->SetGBuffer(m_GBuffer);
+		m_DirLightPSO->SetShadowMap(m_CascadeShadowMaps);
+
+		vertexShader = DXShader(L"src\\Shaders\\DeferredShading\\VS_LightVolumes.hlsl", true, nullptr, "VS_LightVolume", "vs_5_1");
+		pixelShader = DXShader(L"src\\Shaders\\DeferredShading\\PS_PointLight.hlsl", true, nullptr, "PS_PointLight", "ps_5_1");
+		m_PointLightPSO = std::make_shared<PointLightsPSO>(m_Device, vertexShader.GetByteCode(), pixelShader.GetByteCode());
+		m_PointLightPSO->SetGBuffer(m_GBuffer);
+
+		// creating necessary meshes
+		{
+			auto& queue = m_Device->GetCommandQueue(D3D12_COMMAND_LIST_TYPE_COPY);
+			auto commandList = queue.GetCommandList();
+		
+			dx12lib::VertexPosition pos(DirectX::SimpleMath::Vector3{ 0.0f, 0.0f, 0.0f });
+			std::vector<dx12lib::VertexPosition> positions(4, pos);
+			m_FullQuadVertexBuffer = commandList->CopyVertexBuffer(positions);
+
+			m_SphereLightVolumeMesh = std::make_shared<dx12lib::Mesh>();
+			std::vector<dx12lib::VertexPosition> sphereVertices;
+			std::vector<UINT> sphereIndices;
+			GenerateSphereMesh(sphereVertices, sphereIndices);
+			auto sphereVertexBuffer = commandList->CopyVertexBuffer(sphereVertices);
+			auto sphereIndexBuffer = commandList->CopyIndexBuffer(sphereIndices);
+		
+			m_SphereLightVolumeMesh->SetVertexBuffer(0, sphereVertexBuffer);
+			m_SphereLightVolumeMesh->SetIndexBuffer(sphereIndexBuffer);
+		
+			queue.ExecuteCommandList(commandList);
+		}
+
 		DXGI_SAMPLE_DESC sampleDesc = m_Device->GetMultisampleQualityLevels(m_BackBufferFormat);
-
-		UINT width = UINT(m_ScreenViewport.Width);
-		UINT height = UINT(m_ScreenViewport.Height);
+		width = UINT(m_ScreenViewport.Width);
+		height = UINT(m_ScreenViewport.Height);
 		auto colorDesc = CD3DX12_RESOURCE_DESC::Tex2D(m_BackBufferFormat, width, height, 1, 1,
-			sampleDesc.Count, sampleDesc.Quality, D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET);
-
+													sampleDesc.Count, sampleDesc.Quality, D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET);
+		
 		D3D12_CLEAR_VALUE colorClearValue;
 		colorClearValue.Format = colorDesc.Format;
-		colorClearValue.Color[0] = 0.274509817f;
-		colorClearValue.Color[1] = 0.509803951f;
-		colorClearValue.Color[2] = 0.705882370f;
+		colorClearValue.Color[0] = 0.0;
+		colorClearValue.Color[1] = 0.0;
+		colorClearValue.Color[2] = 0.0;
 		colorClearValue.Color[3] = 1.f;
-
+		
 		auto colorTexture = m_Device->CreateTexture(colorDesc, &colorClearValue);
 		colorTexture->SetName(L"Color Render Target");
-
+		
 		auto depthDesc = CD3DX12_RESOURCE_DESC::Tex2D(m_DepthStencilFormat, width, height, 1, 1,
-			sampleDesc.Count, sampleDesc.Quality, D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL);
-
+													sampleDesc.Count, sampleDesc.Quality, D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL);
+		
 		D3D12_CLEAR_VALUE depthClearValue;
 		depthClearValue.Format = depthDesc.Format;
 		depthClearValue.DepthStencil = { 1.0f, 0 };
-
+		
 		auto depthTexture = m_Device->CreateTexture(depthDesc, &depthClearValue);
 		depthTexture->SetName(L"Depth Render Target");
-
+		
 		m_RenderTarget.AttachTexture(dx12lib::AttachmentPoint::Color0, colorTexture);
 		m_RenderTarget.AttachTexture(dx12lib::AttachmentPoint::DepthStencil, depthTexture);
-
-		width = 4096, height = 4096;
-
-		m_CascadeShadowMaps = std::make_shared<Blainn::CascadeShadowMaps>(m_Device, DirectX::XMUINT2{ width, height });
 	}
 
 
@@ -139,7 +249,7 @@ namespace Blainn
 	void DXRenderingContext::UpdateMainPassConstantBuffers(const GameTimer& gt, const Camera& camera)
 	{
 		using namespace DirectX;
-		EffectPSO::PerPassData passCB;
+		PerPassData passCB;
 
 		DirectX::SimpleMath::Matrix view = camera.GetViewMatrix();
 		DirectX::SimpleMath::Matrix proj = camera.GetProjectionMatrix();
@@ -163,26 +273,6 @@ namespace Blainn
 		passCB.TotalTime = gt.TotalTime();
 		passCB.DeltaTime = gt.DeltaTime();
 
-		auto& pointLightComponents = ComponentManager::Get().GetComponents<PointLightComponent>();
-		std::vector<PointLight> pointLights;
-		pointLights.reserve(pointLightComponents.size());
-		for (auto& pl : pointLightComponents)
-		{
-			auto owner = pl->GetOwner();
-			if (!owner)
-				continue;
-
-			auto transform = owner->GetComponent<TransformComponent>();
-			if (!transform)
-				continue;
-
-			auto l = pl->GetPointLight();
-			l.PositionWS = SimpleMath::Vector4(transform->GetWorldPosition());
-			l.PositionVS = SimpleMath::Vector4::Transform(l.PositionWS, view);
-
-			pointLights.push_back(l);
-		}
-
 		auto& dirLightComponents = ComponentManager::Get().GetComponents<DirectionalLightComponent>();
 		std::vector<DirectionalLight> dirLights;
 		dirLights.reserve(dirLightComponents.size());
@@ -191,31 +281,39 @@ namespace Blainn
 			auto owner = dl->GetOwner();
 			if (!owner)
 				continue;
-
+		
 			auto transform = owner->GetComponent<TransformComponent>();
 			if (!transform)
 				continue;
-
+		
 			auto& d = dl->GetDirectionalLight();
 			d.DirectionWS = SimpleMath::Vector4(transform->GetWorldForwardVector());
 
-			dirLights.push_back(d);
+			m_CascadeShadowMaps->UpdateCascadeMatrices(camera, DirectX::SimpleMath::Vector3(d.DirectionWS));
+			break;
 		}
+		//
+		//
+		// 	// m_CascadeShadowMaps->UpdateCascadeData(invViewProj, DirectX::SimpleMath::Vector3(dirLights[0].DirectionWS));
+		//
+		// auto cascadeData = m_CascadeShadowMaps->GetCascadeData();
+		//
+		// for (auto& pso : m_PSOs)
+		// {
+		// 	pso.second->SetPerPassData(passCB);
+		// 	pso.second->SetCascadeData(cascadeData);
+		// 	pso.second->SetShadowMap(m_CascadeShadowMaps);
+		//
+		// 	pso.second->SetPointLights(pointLights);
+		// 	pso.second->SetDirectionalLights(dirLights);
+		// }
 
-		if(!dirLights.empty())
-			m_CascadeShadowMaps->UpdateCascadeData(invViewProj, DirectX::SimpleMath::Vector3(dirLights[0].DirectionWS));
-
-		auto cascadeData = m_CascadeShadowMaps->GetCascadeData();
-
-		for (auto& pso : m_PSOs)
-		{
-			pso.second->SetPerPassData(passCB);
-			pso.second->SetCascadeData(cascadeData);
-			pso.second->SetShadowMap(m_CascadeShadowMaps);
-
-			pso.second->SetPointLights(pointLights);
-			pso.second->SetDirectionalLights(dirLights);
-		}
+		m_GBuffer->GetGPassPSO()->SetPerPassData(passCB);
+		
+		m_DirLightPSO->SetPassData(passCB);
+		m_DirLightPSO->SetCascadeData(m_CascadeShadowMaps->GetCascadeData());
+		
+		m_PointLightPSO->SetPassData(passCB);
 	}
 
 
@@ -227,6 +325,40 @@ namespace Blainn
 
 		auto& commandQueue = m_Device->GetCommandQueue(D3D12_COMMAND_LIST_TYPE_DIRECT);
 
+		CascadeShadowMapsPass(meshes);
+		GeometryPass(meshes);
+		DeferredLightingPass();
+
+		auto commandList = commandQueue.GetCommandList();
+
+		auto swapChainBackBuffer = m_SwapChain->GetRenderTarget().GetTexture(dx12lib::AttachmentPoint::Color0);
+		auto msaaRenderTarget = m_RenderTarget.GetTexture(dx12lib::AttachmentPoint::Color0); //m_GBuffer->GetRenderTarget().GetTexture(dx12lib::AttachmentPoint::Color0);
+		//auto msaaRenderTarget = m_GBuffer->GetTexture(GBuffer::NormalSpec); //m_GBuffer->GetRenderTarget().GetTexture(dx12lib::AttachmentPoint::Color0);
+
+		//commandList->ResolveSubresource(swapChainBackBuffer, msaaRenderTarget);
+		commandList->CopyResource(swapChainBackBuffer, msaaRenderTarget);
+
+		commandQueue.ExecuteCommandList(commandList);
+
+		m_SwapChain->Present(msaaRenderTarget);
+	}
+
+
+	void DXRenderingContext::Resize(int newWidth, int newHeight)
+	{
+		m_SwapChain->Resize(newWidth, newHeight);
+
+		m_ScreenViewport = CD3DX12_VIEWPORT(0.f, 0.f, float(newWidth), float(newHeight));
+
+		m_RenderTarget.Resize(newWidth, newHeight);
+		m_GBuffer->GetRenderTarget().Resize(newWidth, newHeight);
+	}
+
+	void DXRenderingContext::CascadeShadowMapsPass(
+		const std::unordered_set<std::shared_ptr<StaticMeshComponent>>& meshes)
+	{
+		auto& commandQueue = m_Device->GetCommandQueue(D3D12_COMMAND_LIST_TYPE_DIRECT);
+
 		std::vector<std::shared_ptr<dx12lib::CommandList>> shadowCommandLists(CASCADE_COUNT);
 
 		for(int32_t i = 0; i < CASCADE_COUNT; ++i)
@@ -236,7 +368,6 @@ namespace Blainn
 
 			ShadowVisitor shadowPass(*commandList, *m_SMPSO);
 
-			auto mpPD = m_PSOs["Opaque"]->GetPerPassData();
 			auto sliceData = m_CascadeShadowMaps->GetCascadeData();
 			ShadowMapPSO::PerPassData smPassData;
 			smPassData.ViewProj = sliceData.viewProjMats[i];
@@ -278,26 +409,44 @@ namespace Blainn
 		}
 
 		commandQueue.ExecuteCommandLists(shadowCommandLists);
+	}
+
+	void DXRenderingContext::GeometryPass(const std::unordered_set<std::shared_ptr<StaticMeshComponent>>& meshes)
+	{
+		auto& commandQueue = m_Device->GetCommandQueue(D3D12_COMMAND_LIST_TYPE_DIRECT);
 
 		auto commandList = commandQueue.GetCommandList();
 
-		{
-			FLOAT clearColor[4] = { 0.274509817f, 0.509803951f, 0.705882370f, 1.f };
-			commandList->ClearTexture(m_RenderTarget.GetTexture(dx12lib::AttachmentPoint::Color0), clearColor);
-
-			commandList->ClearDepthStencilTexture(
-				m_RenderTarget.GetTexture(dx12lib::AttachmentPoint::DepthStencil),
-				D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL
-			);
-
-		}
+		m_GBuffer->ClearRenderTarget(commandList);
 
 		commandList->SetViewport(m_ScreenViewport);
 		commandList->SetScissorRect(m_ScissorRect);
-		commandList->SetRenderTarget(m_RenderTarget);
+		commandList->SetRenderTarget(m_GBuffer->GetRenderTarget());
 
-		SceneVisitor opaquePass(*commandList, *m_PSOs["Opaque"], false);
-		SceneVisitor unlitPass(*commandList, *m_PSOs["Unlit"], false);
+		GeometryVisitor geometryPass(*commandList, *m_GBuffer->GetGPassPSO());
+
+		// auto& pointLightComponents = ComponentManager::Get().GetComponents<PointLightComponent>();
+		// for (auto& pl : pointLightComponents)
+		// {
+		// 	auto owner = pl->GetOwner();
+		// 	if (!owner)
+		// 		continue;
+		//
+		// 	auto transform = owner->GetComponent<TransformComponent>();
+		// 	if (!transform)
+		// 		continue;
+		//
+		// 	auto l = pl->GetPointLight();
+		// 	l.PositionWS = SimpleMath::Vector4(transform->GetWorldPosition());
+		// 	SimpleMath::Matrix T = SimpleMath::Matrix::CreateTranslation(SimpleMath::Vector3(l.PositionWS));
+		// 	SimpleMath::Matrix S = SimpleMath::Matrix::CreateScale(l.Radius);
+		// 	SimpleMath::Matrix W = (S * T).Transpose();
+		// 	m_GBuffer->GetGPassPSO()->SetWorldMatrices({{W}});
+		// 	//m_PointLightPSO->SetObjectData({W});
+		// 	m_GBuffer->GetGPassPSO()->Apply(*commandList);
+		//
+		// 	m_SphereLightVolumeMesh->Draw(*commandList);
+		// }
 
 		for (auto& it : meshes)
 		{
@@ -318,28 +467,97 @@ namespace Blainn
 				worldMats.push_back(ttr);
 			}
 
-			m_PSOs["Opaque"]->SetWorldMatrices(worldMats);
-			it->OnRender(opaquePass);
+			m_GBuffer->GetGPassPSO()->SetWorldMatrices(worldMats);
+			it->OnRender(geometryPass);
 		}
-
-		auto swapChainBackBuffer = m_SwapChain->GetRenderTarget().GetTexture(dx12lib::AttachmentPoint::Color0);
-		auto msaaRenderTarget = m_RenderTarget.GetTexture(dx12lib::AttachmentPoint::Color0);
-
-		commandList->ResolveSubresource(swapChainBackBuffer, msaaRenderTarget);
-
+		
 		commandQueue.ExecuteCommandList(commandList);
-
-		m_SwapChain->Present();
 	}
 
-
-	void DXRenderingContext::Resize(int newWidth, int newHeight)
+	void DXRenderingContext::DeferredLightingPass()
 	{
-		m_SwapChain->Resize(newWidth, newHeight);
-
-		m_ScreenViewport = CD3DX12_VIEWPORT(0.f, 0.f, float(newWidth), float(newHeight));
-		m_RenderTarget.Resize(newWidth, newHeight);
+		DirectionalLightsPass();
+		PointLightsPass();
 	}
 
+	void DXRenderingContext::DirectionalLightsPass()
+	{
+		auto& commandQueue = m_Device->GetCommandQueue(D3D12_COMMAND_LIST_TYPE_DIRECT);
+
+		auto commandList = commandQueue.GetCommandList();
+
+
+		float clearValue[4];
+		clearValue[0] = 0.0;
+		clearValue[1] = 0.0;
+		clearValue[2] = 0.0;
+		clearValue[3] = 1.f;
+		commandList->ClearTexture(m_RenderTarget.GetTexture(dx12lib::AttachmentPoint::Color0), clearValue);
+		commandList->ClearDepthStencilTexture(m_RenderTarget.GetTexture(dx12lib::AttachmentPoint::DepthStencil), D3D12_CLEAR_FLAG_DEPTH, 1.0f);
+
+		commandList->SetViewport(m_ScreenViewport);
+		commandList->SetScissorRect(m_ScissorRect);
+		commandList->SetRenderTarget(m_RenderTarget);
+		
+		auto& dirLightComponents = ComponentManager::Get().GetComponents<DirectionalLightComponent>();
+		for (auto& dl : dirLightComponents)
+		{
+			auto owner = dl->GetOwner();
+			if (!owner)
+				continue;
+		
+			auto transform = owner->GetComponent<TransformComponent>();
+			if (!transform)
+				continue;
+		
+			auto& d = dl->GetDirectionalLight();
+			d.DirectionWS = SimpleMath::Vector4(transform->GetWorldForwardVector());
+
+			m_DirLightPSO->SetDirectionalLight(d);
+			m_DirLightPSO->Apply(*commandList);
+			commandList->SetVertexBuffer(0, m_FullQuadVertexBuffer);
+			commandList->Draw(4);
+			
+			//dirLights.push_back(d);
+		}
+		commandQueue.ExecuteCommandList(commandList);
+	}
+
+	void DXRenderingContext::PointLightsPass()
+	{
+		auto& commandQueue = m_Device->GetCommandQueue(D3D12_COMMAND_LIST_TYPE_DIRECT);
+
+		auto commandList = commandQueue.GetCommandList();
+		commandList->SetViewport(m_ScreenViewport);
+		commandList->SetScissorRect(m_ScissorRect);
+		commandList->SetRenderTarget(m_RenderTarget);
+		auto& pointLightComponents = ComponentManager::Get().GetComponents<PointLightComponent>();
+		for (auto& pl : pointLightComponents)
+		{
+			auto owner = pl->GetOwner();
+			if (!owner)
+				continue;
+		
+			auto transform = owner->GetComponent<TransformComponent>();
+			if (!transform)
+				continue;
+		
+			auto l = pl->GetPointLight();
+			l.PositionWS = SimpleMath::Vector4(transform->GetWorldPosition());
+			SimpleMath::Matrix T = SimpleMath::Matrix::CreateTranslation(SimpleMath::Vector3(l.PositionWS));
+			SimpleMath::Matrix S = SimpleMath::Matrix::CreateScale(l.Radius);
+			SimpleMath::Matrix W = (S * T).Transpose();
+			m_PointLightPSO->SetLightData(l);
+			m_PointLightPSO->SetObjectData({W});
+			m_PointLightPSO->Apply(*commandList);
+
+			m_SphereLightVolumeMesh->Draw(*commandList);
+		}
+		commandQueue.ExecuteCommandList(commandList);
+	}
+
+	void DXRenderingContext::SpotLightsPass()
+	{
+	}
 }
 
