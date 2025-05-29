@@ -145,6 +145,9 @@
   <ItemGroup>
     <ClCompile Include="src\Katamari.cpp" />
     <ClCompile Include="src\KatamariLayer.cpp" />
+    <Text Include="src\Shaders\TexturedQuad.hlsl">
+      <FileType>Document</FileType>
+    </Text>
     <None Include="src\Shaders\DeferredShading\PS_PointLight.hlsl">
       <RuntimeLibrary>MultiThreadedDebugDll</RuntimeLibrary>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>

@@ -151,7 +151,7 @@ DirectLightsPSO::DirectLightsPSO(std::shared_ptr<dx12lib::Device>& device,
     DXGI_FORMAT depthBufferFormat = DXGI_FORMAT_D32_FLOAT;
 
     // Check the best multisample quality level that can be used for the given back buffer format.
-    DXGI_SAMPLE_DESC sampleDesc = m_Device->GetMultisampleQualityLevels(backBufferFormat);
+	DXGI_SAMPLE_DESC sampleDesc = { 1, 0 };
 
     D3D12_RT_FORMAT_ARRAY rtvFormats = {};
     rtvFormats.NumRenderTargets = 1;
@@ -308,7 +308,7 @@ PointLightsPSO::PointLightsPSO(std::shared_ptr<dx12lib::Device>& device,
 
     DXGI_FORMAT backBufferFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
 	DXGI_FORMAT depthBufferFormat = DXGI_FORMAT_D32_FLOAT;
-    DXGI_SAMPLE_DESC sampleDesc = m_Device->GetMultisampleQualityLevels(backBufferFormat);
+	DXGI_SAMPLE_DESC sampleDesc = { 1, 0 };
 
     D3D12_RT_FORMAT_ARRAY rtvFormats = {};
     rtvFormats.NumRenderTargets = 1;

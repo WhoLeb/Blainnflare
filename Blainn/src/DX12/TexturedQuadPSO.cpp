@@ -1,14 +1,14 @@
-#include "pch.h"
-#include "GPassPSO.h"
+#include "TexturedQuadPSO.h"
 
 #include "dx12lib/CommandList.h"
 #include "dx12lib/Device.h"
-#include "dx12lib/Material.h"
+#include "dx12lib/Texture.h"
 #include "dx12lib/RootSignature.h"
 #include "dx12lib/VertexTypes.h"
 
-Blainn::GPassPSO::GPassPSO(std::shared_ptr<dx12lib::Device> device, Microsoft::WRL::ComPtr<ID3DBlob> vertexShaderBlob,
-							Microsoft::WRL::ComPtr<ID3DBlob> pixelShaderBlob, D3D12_PRIMITIVE_TOPOLOGY_TYPE primitiveType)
+	
+Blainn::TexturedQuadPSO::TexturedQuadPSO(std::shared_ptr<dx12lib::Device> device, Microsoft::WRL::ComPtr<ID3DBlob> vertexShaderBlob,
+							Microsoft::WRL::ComPtr<ID3DBlob> pixelShaderBlob)
 								: m_Device(device)
 {
 	D3D12_ROOT_SIGNATURE_FLAGS rootSignatureFlags =
@@ -18,13 +18,10 @@ Blainn::GPassPSO::GPassPSO(std::shared_ptr<dx12lib::Device> device, Microsoft::W
 		D3D12_ROOT_SIGNATURE_FLAG_DENY_GEOMETRY_SHADER_ROOT_ACCESS;
 
 	// Descriptor range for the textures.
-	CD3DX12_DESCRIPTOR_RANGE1 descriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 8, 1);
+	CD3DX12_DESCRIPTOR_RANGE1 descriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0);
 	
 	CD3DX12_ROOT_PARAMETER1 rootParameters[RootParameters::NumRootParameters];
-	rootParameters[RootParameters::PerPassDataCB    ].InitAsConstantBufferView(0, 0, D3D12_ROOT_DESCRIPTOR_FLAG_NONE);
-	rootParameters[RootParameters::MaterialCB       ].InitAsConstantBufferView(1, 0, D3D12_ROOT_DESCRIPTOR_FLAG_NONE, D3D12_SHADER_VISIBILITY_PIXEL);
-	rootParameters[RootParameters::PerObjectDataSB  ].InitAsShaderResourceView(0, 0, D3D12_ROOT_DESCRIPTOR_FLAG_NONE, D3D12_SHADER_VISIBILITY_VERTEX);
-	rootParameters[RootParameters::Textures         ].InitAsDescriptorTable   (1, &descriptorRange, D3D12_SHADER_VISIBILITY_PIXEL);
+	rootParameters[RootParameters::Texture].InitAsDescriptorTable(1, &descriptorRange, D3D12_SHADER_VISIBILITY_PIXEL);
 
 	auto staticSamplers = GetStaticSamplers();
 
@@ -51,27 +48,25 @@ Blainn::GPassPSO::GPassPSO(std::shared_ptr<dx12lib::Device> device, Microsoft::W
 	} pipelineStateStream;
 
 	// Create a color buffer with sRGB for gamma correction.
-	DXGI_FORMAT backBufferFormat = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+	DXGI_FORMAT backBufferFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
 	DXGI_FORMAT depthBufferFormat = DXGI_FORMAT_D32_FLOAT;
 
 	// Check the best multisample quality level that can be used for the given back buffer format.
 	DXGI_SAMPLE_DESC sampleDesc = { 1, 0 };
 	
 	D3D12_RT_FORMAT_ARRAY rtvFormats = {};
-	rtvFormats.NumRenderTargets = 4;
+	rtvFormats.NumRenderTargets = 1;
 	rtvFormats.RTFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM; // AlbedoOpacity
-	rtvFormats.RTFormats[1] = DXGI_FORMAT_R10G10B10A2_UNORM; // Normal spec
-	rtvFormats.RTFormats[2] = DXGI_FORMAT_R8G8B8A8_UNORM; // Reflectance
-	rtvFormats.RTFormats[3] = DXGI_FORMAT_R10G10B10A2_UNORM; // EmissiveAmbient
 
 	CD3DX12_RASTERIZER_DESC rasterizerState(D3D12_DEFAULT);
+	rasterizerState.FrontCounterClockwise = TRUE;
 
 	pipelineStateStream.pRootSignature = m_RootSignature->GetD3D12RootSignature().Get();
 	pipelineStateStream.VS = CD3DX12_SHADER_BYTECODE(vertexShaderBlob.Get());
 	pipelineStateStream.PS = CD3DX12_SHADER_BYTECODE(pixelShaderBlob.Get());
 	pipelineStateStream.RasterizerState = rasterizerState;
-	pipelineStateStream.InputLayout = dx12lib::VertexPositionNormalTangentBitangentTexture::InputLayout;
-	pipelineStateStream.PrimitiveTopologyType = primitiveType;
+	pipelineStateStream.InputLayout = dx12lib::VertexPosition::InputLayout;
+	pipelineStateStream.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
 	pipelineStateStream.DSVFormat = depthBufferFormat;
 	pipelineStateStream.RTVFormats = rtvFormats;
 	pipelineStateStream.SampleDesc = sampleDesc;
@@ -91,42 +86,20 @@ Blainn::GPassPSO::GPassPSO(std::shared_ptr<dx12lib::Device> device, Microsoft::W
 	m_DefaultSRV = m_Device->CreateShaderResourceView(nullptr, &defaultSRV);
 }
 
-void Blainn::GPassPSO::Apply(dx12lib::CommandList& commandList)
+void Blainn::TexturedQuadPSO::Apply(dx12lib::CommandList& commandList)
+{
+	if (m_DirtyFlags & DF_Texture)
+		BindTexture(commandList, RootParameters::Texture, 0, m_Texture);
+
+	m_DirtyFlags = DF_None;
+}
+
+void Blainn::TexturedQuadPSO::BindTexture(dx12lib::CommandList& commandList, RootParameters rootParameter, uint32_t offset, const std::shared_ptr<dx12lib::Texture>& texture)
 {
 	commandList.SetPipelineState(m_PipelineStateObject);
 	commandList.SetGraphicsRootSignature(m_RootSignature);
+	commandList.SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 
-	if (m_DirtyFlags & DF_PerObjectData)
-		commandList.SetGraphicsDynamicStructuredBuffer(RootParameters::PerObjectDataSB, m_ObjectData);
-
-	if (m_DirtyFlags & DF_PerPassData)
-		commandList.SetGraphicsDynamicConstantBuffer(RootParameters::PerPassDataCB, m_PassData);
-
-	if (m_DirtyFlags & DF_Material)
-	{
-		if (m_Material)
-		{
-			const auto& materialProps = m_Material->GetMaterialProperties();
-
-			commandList.SetGraphicsDynamicConstantBuffer(RootParameters::MaterialCB, materialProps);
-
-			using TextureType = dx12lib::Material::TextureType;
-
-			BindTexture(commandList, RootParameters::Textures, 0, m_Material->GetTexture(TextureType::Ambient));
-			BindTexture(commandList, RootParameters::Textures, 1, m_Material->GetTexture(TextureType::Emissive));
-			BindTexture(commandList, RootParameters::Textures, 2, m_Material->GetTexture(TextureType::Diffuse));
-			BindTexture(commandList, RootParameters::Textures, 3, m_Material->GetTexture(TextureType::Specular));
-			BindTexture(commandList, RootParameters::Textures, 4, m_Material->GetTexture(TextureType::SpecularPower));
-			BindTexture(commandList, RootParameters::Textures, 5, m_Material->GetTexture(TextureType::Normal));
-			BindTexture(commandList, RootParameters::Textures, 6, m_Material->GetTexture(TextureType::Bump));
-			BindTexture(commandList, RootParameters::Textures, 7, m_Material->GetTexture(TextureType::Opacity));
-		}
-	}
-}
-
-void Blainn::GPassPSO::BindTexture(dx12lib::CommandList& commandList, RootParameters rootParameter, uint32_t offset,
-	const std::shared_ptr<dx12lib::Texture>& texture)
-{
 	if (texture)
 		commandList.SetShaderResourceView(rootParameter, offset, texture,
 			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
@@ -135,7 +108,7 @@ void Blainn::GPassPSO::BindTexture(dx12lib::CommandList& commandList, RootParame
 			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 }
 
-std::array<const CD3DX12_STATIC_SAMPLER_DESC, 6> Blainn::GPassPSO::GetStaticSamplers()
+std::array<const CD3DX12_STATIC_SAMPLER_DESC, 6> Blainn::TexturedQuadPSO::GetStaticSamplers()
 {
 	const CD3DX12_STATIC_SAMPLER_DESC pointWrap(
 		0,

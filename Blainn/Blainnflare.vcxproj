@@ -195,6 +195,7 @@
     <ClInclude Include="src\DX12\GPassPSO.h" />
     <ClInclude Include="src\DX12\ShaderTypes.h" />
     <ClInclude Include="src\DX12\ShadowMap.h" />
+    <ClInclude Include="src\DX12\TexturedQuadPSO.h" />
     <ClInclude Include="src\EntryPoint.h" />
     <ClInclude Include="src\ImGui\ImGuiLayer.h" />
     <ClInclude Include="src\pch.h" />
@@ -239,6 +240,7 @@
     <ClCompile Include="src\DX12\GBuffer.cpp" />
     <ClCompile Include="src\DX12\GPassPSO.cpp" />
     <ClCompile Include="src\DX12\ShadowMap.cpp" />
+    <ClCompile Include="src\DX12\TexturedQuadPSO.cpp" />
     <ClCompile Include="src\ImGui\ImGuiLayer.cpp" />
     <ClCompile Include="src\pch.cpp" />
     <ClCompile Include="src\Core\Application.cpp" />

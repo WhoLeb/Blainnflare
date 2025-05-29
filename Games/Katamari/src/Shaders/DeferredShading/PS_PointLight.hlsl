@@ -153,12 +153,10 @@ float4 PS_PointLight(float4 position : SV_Position, float2 screenUV : TEXCOORD0)
 
     float3 N_WS = normalize(gbuffer.NormalWS); 
 
-    float attenuation = DoAttenuation(PointLightCB.ConstantAttenuation,
-                                      PointLightCB.LinearAttenuation,
-                                      PointLightCB.QuadraticAttenuation,
-                                      distance);
+    float attenuation = max(1.0f - distance / PointLightCB.Radius, 0);
+    attenuation *= attenuation;
 
-    attenuation *= saturate(1.0 - pow(distance / PointLightCB.Radius, 2.0));
+    //attenuation *= saturate(1.0 - pow(distance / PointLightCB.Radius, 2.0));
 
     float3 lightStrength = PointLightCB.Color.rgb * attenuation;
 

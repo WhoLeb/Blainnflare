@@ -20,6 +20,7 @@
 #include "EffectPSO.h"
 #include "Scene/Scene.h"
 #include "ShaderTypes.h"
+#include "TexturedQuadPSO.h"
 
 #include <unordered_set>
 
@@ -91,6 +92,43 @@ inline void GenerateCubeMesh(std::vector<dx12lib::VertexPosition>& vertices, std
 	};	
 }
 
+inline void GenerateQuad(
+	std::pair<float, float> topLeft,
+	std::pair<float, float> bottomRight,
+	std::vector<dx12lib::VertexPosition>& vertices,
+	std::vector<UINT>& indices)
+{
+	vertices.clear();
+	indices.clear();
+
+	dx12lib::VertexPosition vertex;
+	auto& pos = vertex.Position;
+	pos.x = topLeft.first;
+	pos.y = topLeft.second;
+	pos.z = 0.f;
+	vertices.push_back(vertex);
+
+	pos.x = bottomRight.first;
+	pos.y = topLeft.second;
+	pos.z = 0.f;
+	vertices.push_back(vertex);
+
+	pos.x = bottomRight.first;
+	pos.y = bottomRight.second;
+	pos.z = 0.f;
+	vertices.push_back(vertex);
+
+	pos.x = topLeft.first;
+	pos.y = bottomRight.second;
+	pos.z = 0.f;
+	vertices.push_back(vertex);
+
+	indices	= {
+		0, 2, 3,
+		0, 1, 2
+	};
+}
+
 static void GenerateSphereMesh(std::vector<dx12lib::VertexPosition>& vertices, std::vector<UINT>& indices) {
 	int segments = 16;
 	float pi = 3.1415926535f;
@@ -141,6 +179,15 @@ namespace Blainn
 	{
 		//CD3DX12_RESOURCE_DESC::Tex2D();
 
+		ID3D12Debug* dController;
+		ID3D12Debug1* dController1;
+		D3D12GetDebugInterface(IID_PPV_ARGS(&dController));
+		dController->EnableDebugLayer();
+		dController->QueryInterface(IID_PPV_ARGS(&dController1));
+		dController1->SetEnableGPUBasedValidation(true);
+
+
+
 		m_Device = dx12lib::Device::Create();
 		m_SwapChain = m_Device->CreateSwapChain(wnd->GetNativeWindow(), m_BackBufferFormat);
 		//m_SwapChain->SetVSync(false);
@@ -178,6 +225,10 @@ namespace Blainn
 		m_PointLightPSO = std::make_shared<PointLightsPSO>(m_Device, vertexShader.GetByteCode(), pixelShader.GetByteCode());
 		m_PointLightPSO->SetGBuffer(m_GBuffer);
 
+		vertexShader = DXShader(L"src\\Shaders\\TexturedQuad.hlsl", true, nullptr, "VS_TexturedQuad", "vs_5_1");
+		pixelShader = DXShader(L"src\\Shaders\\TexturedQuad.hlsl", true, nullptr, "PS_TexturedQuad", "ps_5_1");
+		m_TexturedQuadPSO = std::make_shared<TexturedQuadPSO>(m_Device, vertexShader.GetByteCode(), pixelShader.GetByteCode());
+
 		// creating necessary meshes
 		{
 			auto& queue = m_Device->GetCommandQueue(D3D12_COMMAND_LIST_TYPE_COPY);
@@ -186,6 +237,33 @@ namespace Blainn
 			dx12lib::VertexPosition pos(DirectX::SimpleMath::Vector3{ 0.0f, 0.0f, 0.0f });
 			std::vector<dx12lib::VertexPosition> positions(4, pos);
 			m_FullQuadVertexBuffer = commandList->CopyVertexBuffer(positions);
+			{
+				std::vector<dx12lib::VertexPosition> vertices;
+				std::vector<UINT> indices;
+
+				GenerateQuad({ -1.f, -1.f }, { -0.6f, -0.6f }, vertices, indices);
+				auto quad = std::make_shared<dx12lib::Mesh>();
+				auto quadVB = commandList->CopyVertexBuffer(vertices);
+				auto quadIB = commandList->CopyIndexBuffer(indices);
+				quad->SetVertexBuffer(0, quadVB);
+				quad->SetIndexBuffer(quadIB);
+				m_DebugBufferQuads.push_back(quad);
+			}
+
+			{
+	
+				std::vector<dx12lib::VertexPosition> vertices;
+
+				std::vector<UINT> indices;
+
+				GenerateQuad({ -0.6f, -1.f }, { -0.2f, -0.6f }, vertices, indices);
+				auto quad = std::make_shared<dx12lib::Mesh>();
+				auto quadVB = commandList->CopyVertexBuffer(vertices);
+				auto quadIB = commandList->CopyIndexBuffer(indices);
+				quad->SetVertexBuffer(0, quadVB);
+				quad->SetIndexBuffer(quadIB);
+				m_DebugBufferQuads.push_back(quad);
+			}
 
 			m_SphereLightVolumeMesh = std::make_shared<dx12lib::Mesh>();
 			std::vector<dx12lib::VertexPosition> sphereVertices;
@@ -200,7 +278,7 @@ namespace Blainn
 			queue.ExecuteCommandList(commandList);
 		}
 
-		DXGI_SAMPLE_DESC sampleDesc = m_Device->GetMultisampleQualityLevels(m_BackBufferFormat);
+		DXGI_SAMPLE_DESC sampleDesc = { 1, 0 };
 		width = UINT(m_ScreenViewport.Width);
 		height = UINT(m_ScreenViewport.Height);
 		auto colorDesc = CD3DX12_RESOURCE_DESC::Tex2D(m_BackBufferFormat, width, height, 1, 1,
@@ -330,6 +408,21 @@ namespace Blainn
 		DeferredLightingPass();
 
 		auto commandList = commandQueue.GetCommandList();
+		commandList->SetViewport(m_ScreenViewport);
+		commandList->SetScissorRect(m_ScissorRect);
+		commandList->SetRenderTarget(m_RenderTarget);
+		
+		m_TexturedQuadPSO->SetTexture(m_GBuffer->GetTexture(GBuffer::TextureType::AlbedoOpacity));
+		m_TexturedQuadPSO->Apply(*commandList);
+		m_DebugBufferQuads[0]->Draw(*commandList);
+		m_TexturedQuadPSO->SetTexture(m_GBuffer->GetTexture(GBuffer::TextureType::Depth));
+		m_TexturedQuadPSO->Apply(*commandList);
+		m_DebugBufferQuads[1]->Draw(*commandList);
+		commandQueue.ExecuteCommandList(commandList);
+
+
+
+		commandList = commandQueue.GetCommandList();
 
 		auto swapChainBackBuffer = m_SwapChain->GetRenderTarget().GetTexture(dx12lib::AttachmentPoint::Color0);
 		auto msaaRenderTarget = m_RenderTarget.GetTexture(dx12lib::AttachmentPoint::Color0); //m_GBuffer->GetRenderTarget().GetTexture(dx12lib::AttachmentPoint::Color0);
@@ -545,7 +638,7 @@ namespace Blainn
 			auto l = pl->GetPointLight();
 			l.PositionWS = SimpleMath::Vector4(transform->GetWorldPosition());
 			SimpleMath::Matrix T = SimpleMath::Matrix::CreateTranslation(SimpleMath::Vector3(l.PositionWS));
-			SimpleMath::Matrix S = SimpleMath::Matrix::CreateScale(l.Radius);
+			SimpleMath::Matrix S = SimpleMath::Matrix::CreateScale(l.Radius + 0.1f);
 			SimpleMath::Matrix W = (S * T).Transpose();
 			m_PointLightPSO->SetLightData(l);
 			m_PointLightPSO->SetObjectData({W});

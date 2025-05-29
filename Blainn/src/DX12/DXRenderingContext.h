@@ -21,16 +21,12 @@ namespace dx12lib
 namespace Blainn
 {
 	class SpotLightsPSO;
-}
 
-namespace Blainn
-{
 	class PointLightsPSO;
-}
 
-namespace Blainn
-{
 	class DirectLightsPSO;
+
+	class TexturedQuadPSO;
 }
 
 extern const int g_NumFrameResources;
@@ -117,9 +113,12 @@ namespace Blainn
 		std::shared_ptr<DirectLightsPSO> m_DirLightPSO;
 		std::shared_ptr<PointLightsPSO> m_PointLightPSO;
 		std::shared_ptr<SpotLightsPSO> m_SpotLighPSO;
+		std::shared_ptr<TexturedQuadPSO> m_TexturedQuadPSO;
 
 		std::shared_ptr<dx12lib::VertexBuffer> m_FullQuadVertexBuffer;
 		std::shared_ptr<dx12lib::Mesh> m_SphereLightVolumeMesh;
+
+		std::vector<std::shared_ptr<dx12lib::Mesh>> m_DebugBufferQuads;
 
 		D3D12_VIEWPORT m_ScreenViewport;
 		D3D12_RECT m_ScissorRect;
