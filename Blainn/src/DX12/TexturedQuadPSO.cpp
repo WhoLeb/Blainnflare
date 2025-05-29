@@ -42,6 +42,7 @@ Blainn::TexturedQuadPSO::TexturedQuadPSO(std::shared_ptr<dx12lib::Device> device
 		CD3DX12_PIPELINE_STATE_STREAM_RASTERIZER            RasterizerState;
 		CD3DX12_PIPELINE_STATE_STREAM_INPUT_LAYOUT          InputLayout;
 		CD3DX12_PIPELINE_STATE_STREAM_PRIMITIVE_TOPOLOGY    PrimitiveTopologyType;
+		CD3DX12_PIPELINE_STATE_STREAM_DEPTH_STENCIL			DepthStencilState;
 		CD3DX12_PIPELINE_STATE_STREAM_DEPTH_STENCIL_FORMAT  DSVFormat;
 		CD3DX12_PIPELINE_STATE_STREAM_RENDER_TARGET_FORMATS RTVFormats;
 		CD3DX12_PIPELINE_STATE_STREAM_SAMPLE_DESC           SampleDesc;
@@ -58,8 +59,11 @@ Blainn::TexturedQuadPSO::TexturedQuadPSO(std::shared_ptr<dx12lib::Device> device
 	rtvFormats.NumRenderTargets = 1;
 	rtvFormats.RTFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM; // AlbedoOpacity
 
+	CD3DX12_DEPTH_STENCIL_DESC depthStencilDesc = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
+	depthStencilDesc.DepthEnable = TRUE;
+
 	CD3DX12_RASTERIZER_DESC rasterizerState(D3D12_DEFAULT);
-	rasterizerState.FrontCounterClockwise = TRUE;
+	rasterizerState.CullMode = D3D12_CULL_MODE_NONE;
 
 	pipelineStateStream.pRootSignature = m_RootSignature->GetD3D12RootSignature().Get();
 	pipelineStateStream.VS = CD3DX12_SHADER_BYTECODE(vertexShaderBlob.Get());
@@ -67,6 +71,7 @@ Blainn::TexturedQuadPSO::TexturedQuadPSO(std::shared_ptr<dx12lib::Device> device
 	pipelineStateStream.RasterizerState = rasterizerState;
 	pipelineStateStream.InputLayout = dx12lib::VertexPosition::InputLayout;
 	pipelineStateStream.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+	pipelineStateStream.DepthStencilState = depthStencilDesc;
 	pipelineStateStream.DSVFormat = depthBufferFormat;
 	pipelineStateStream.RTVFormats = rtvFormats;
 	pipelineStateStream.SampleDesc = sampleDesc;

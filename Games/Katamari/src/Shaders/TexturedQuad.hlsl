@@ -11,11 +11,10 @@ VertexShaderOutput VS_TexturedQuad(float3 pos : POSITION, uint VertexID : SV_Ver
 	float2 positions[4] = {
 		float2(0.0f, 0.0f),
 		float2(1.0f, 0.0f),
-		float2(1.0f,  1.0f),
-		float2(0.0f,  1.0f)
+		float2(1.0f, 1.0f),
+		float2(0.0f, 1.0f)
     };
 	OUT.PositionH = float4(pos.xy, 0.f, 1.f);
-	//OUT.TexCoord = (positions[VertexID] * 0.5f) + 0.5f;
 	OUT.TexCoord = positions[VertexID];
 	return OUT;
 }

@@ -33,7 +33,7 @@ namespace Blainn
 
 		void Apply(dx12lib::CommandList& commandList);
 
-		void SetTexture(std::shared_ptr<dx12lib::Texture>& tex)
+		void SetTexture(const std::shared_ptr<dx12lib::Texture>& tex)
 		{
 			m_Texture = tex;
 			m_DirtyFlags = DF_Texture;

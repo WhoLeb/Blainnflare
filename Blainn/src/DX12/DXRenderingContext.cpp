@@ -241,7 +241,7 @@ namespace Blainn
 				std::vector<dx12lib::VertexPosition> vertices;
 				std::vector<UINT> indices;
 
-				GenerateQuad({ -1.f, -1.f }, { -0.6f, -0.6f }, vertices, indices);
+				GenerateQuad({ -1.f, 1.f }, { -0.6f, 0.6f }, vertices, indices);
 				auto quad = std::make_shared<dx12lib::Mesh>();
 				auto quadVB = commandList->CopyVertexBuffer(vertices);
 				auto quadIB = commandList->CopyIndexBuffer(indices);
@@ -251,12 +251,23 @@ namespace Blainn
 			}
 
 			{
-	
 				std::vector<dx12lib::VertexPosition> vertices;
-
 				std::vector<UINT> indices;
 
-				GenerateQuad({ -0.6f, -1.f }, { -0.2f, -0.6f }, vertices, indices);
+				GenerateQuad({ -0.6f, 1.f }, { -0.2f, 0.6f }, vertices, indices);
+				auto quad = std::make_shared<dx12lib::Mesh>();
+				auto quadVB = commandList->CopyVertexBuffer(vertices);
+				auto quadIB = commandList->CopyIndexBuffer(indices);
+				quad->SetVertexBuffer(0, quadVB);
+				quad->SetIndexBuffer(quadIB);
+				m_DebugBufferQuads.push_back(quad);
+			}
+
+			{
+				std::vector<dx12lib::VertexPosition> vertices;
+				std::vector<UINT> indices;
+
+				GenerateQuad({ -0.2f, 1.f }, { 0.2f, 0.6f }, vertices, indices);
 				auto quad = std::make_shared<dx12lib::Mesh>();
 				auto quadVB = commandList->CopyVertexBuffer(vertices);
 				auto quadIB = commandList->CopyIndexBuffer(indices);
@@ -370,21 +381,6 @@ namespace Blainn
 			m_CascadeShadowMaps->UpdateCascadeMatrices(camera, DirectX::SimpleMath::Vector3(d.DirectionWS));
 			break;
 		}
-		//
-		//
-		// 	// m_CascadeShadowMaps->UpdateCascadeData(invViewProj, DirectX::SimpleMath::Vector3(dirLights[0].DirectionWS));
-		//
-		// auto cascadeData = m_CascadeShadowMaps->GetCascadeData();
-		//
-		// for (auto& pso : m_PSOs)
-		// {
-		// 	pso.second->SetPerPassData(passCB);
-		// 	pso.second->SetCascadeData(cascadeData);
-		// 	pso.second->SetShadowMap(m_CascadeShadowMaps);
-		//
-		// 	pso.second->SetPointLights(pointLights);
-		// 	pso.second->SetDirectionalLights(dirLights);
-		// }
 
 		m_GBuffer->GetGPassPSO()->SetPerPassData(passCB);
 		
@@ -397,7 +393,7 @@ namespace Blainn
 
 	void DXRenderingContext::Draw()
 	{
-		//m_SwapChain->WaitForSwapChain();
+		m_SwapChain->WaitForSwapChain();
 
 		const auto& meshes = ComponentManager::Get().GetComponents<StaticMeshComponent>();//scene.GetRenderObjects();
 
@@ -407,33 +403,41 @@ namespace Blainn
 		GeometryPass(meshes);
 		DeferredLightingPass();
 
-		auto commandList = commandQueue.GetCommandList();
-		commandList->SetViewport(m_ScreenViewport);
-		commandList->SetScissorRect(m_ScissorRect);
-		commandList->SetRenderTarget(m_RenderTarget);
+		{
+			auto commandList = commandQueue.GetCommandList();
+			commandList->SetViewport(m_ScreenViewport);
+			commandList->SetScissorRect(m_ScissorRect);
+			commandList->SetRenderTarget(m_RenderTarget);
 		
-		m_TexturedQuadPSO->SetTexture(m_GBuffer->GetTexture(GBuffer::TextureType::AlbedoOpacity));
-		m_TexturedQuadPSO->Apply(*commandList);
-		m_DebugBufferQuads[0]->Draw(*commandList);
-		m_TexturedQuadPSO->SetTexture(m_GBuffer->GetTexture(GBuffer::TextureType::Depth));
-		m_TexturedQuadPSO->Apply(*commandList);
-		m_DebugBufferQuads[1]->Draw(*commandList);
-		commandQueue.ExecuteCommandList(commandList);
+			m_TexturedQuadPSO->SetTexture(m_GBuffer->GetTexture(GBuffer::TextureType::AlbedoOpacity));
+			m_TexturedQuadPSO->Apply(*commandList);
+			m_DebugBufferQuads[0]->Draw(*commandList);
+		
+			m_TexturedQuadPSO->SetTexture(m_GBuffer->GetTexture(GBuffer::TextureType::NormalSpec));
+			m_TexturedQuadPSO->Apply(*commandList);
+			m_DebugBufferQuads[1]->Draw(*commandList);
+		
+			m_TexturedQuadPSO->SetTexture(m_GBuffer->GetTexture(GBuffer::TextureType::Depth));
+			m_TexturedQuadPSO->Apply(*commandList);
+			m_DebugBufferQuads[2]->Draw(*commandList);
+		
+			commandQueue.ExecuteCommandList(commandList);
+		}
 
-
-
-		commandList = commandQueue.GetCommandList();
+		auto commandList = commandQueue.GetCommandList();
 
 		auto swapChainBackBuffer = m_SwapChain->GetRenderTarget().GetTexture(dx12lib::AttachmentPoint::Color0);
-		auto msaaRenderTarget = m_RenderTarget.GetTexture(dx12lib::AttachmentPoint::Color0); //m_GBuffer->GetRenderTarget().GetTexture(dx12lib::AttachmentPoint::Color0);
-		//auto msaaRenderTarget = m_GBuffer->GetTexture(GBuffer::NormalSpec); //m_GBuffer->GetRenderTarget().GetTexture(dx12lib::AttachmentPoint::Color0);
+		auto renderTarget = m_RenderTarget.GetTexture(dx12lib::AttachmentPoint::Color0);
 
-		//commandList->ResolveSubresource(swapChainBackBuffer, msaaRenderTarget);
-		commandList->CopyResource(swapChainBackBuffer, msaaRenderTarget);
+		D3D12_RESOURCE_DESC srcDesc = renderTarget->GetD3D12ResourceDesc();
+		D3D12_RESOURCE_DESC dstDesc = swapChainBackBuffer->GetD3D12ResourceDesc();
+
+		//commandList->ResolveSubresource(swapChainBackBuffer, renderTarget);
+		commandList->CopyResource(swapChainBackBuffer, renderTarget);
 
 		commandQueue.ExecuteCommandList(commandList);
 
-		m_SwapChain->Present(msaaRenderTarget);
+		m_SwapChain->Present(renderTarget);
 	}
 
 
