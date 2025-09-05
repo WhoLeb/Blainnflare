@@ -17,8 +17,8 @@ namespace Blainn
 	Camera::Camera(float fov, int width, int height, float nearPlane, float farPlane)
 		: m_FOV(fov)
 		, m_AspectRatio(float(width)/float(height))
-		, m_NearPlane(0.1f)
-		, m_FarPlane(1000.f)
+		, m_NearPlane(nearPlane)
+		, m_FarPlane(farPlane)
 		, m_ViewportWidth(width)
 		, m_ViewportHeight(height)
 	{

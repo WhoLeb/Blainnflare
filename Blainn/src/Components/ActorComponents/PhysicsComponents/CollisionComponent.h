@@ -14,12 +14,16 @@ namespace Blainn
 		using CollisionCallbackFn = std::function<void(std::shared_ptr<CollisionComponent>)>;
 		using Super = Component<CollisionComponent>;
 	public:
+		CollisionComponent(std::shared_ptr<GameObject> owner)
+			: Super(owner)
+		{}
+		virtual ~CollisionComponent()
+		{
+		}
+
 		void OnAttach()
 		{
 			Super::OnAttach();
-		}
-		virtual ~CollisionComponent()
-		{
 		}
 
 		virtual void* GetBoundingShape() = 0;

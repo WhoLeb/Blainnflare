@@ -62,7 +62,6 @@ namespace Blainn
 		inline Window& GetWindow() const { return *m_Window; }
 
 		HINSTANCE GetNativeInstance() const { return m_hInstance; }
-		std::shared_ptr<DXResourceManager> GetResourceManager() const { return m_ResourceManager; }
 		std::shared_ptr<DXRenderingContext> GetRenderingContext() const { return m_RenderingContext; }
 
 		float AspectRatio() const;
@@ -90,7 +89,6 @@ namespace Blainn
 
 		std::shared_ptr<Window> m_Window;
 		std::shared_ptr<DXRenderingContext> m_RenderingContext;
-		std::shared_ptr<DXResourceManager> m_ResourceManager;
 
 		GameTimer m_Timer;
 

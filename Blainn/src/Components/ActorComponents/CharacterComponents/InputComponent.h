@@ -10,7 +10,7 @@ namespace Blainn
 	{
 		using Super = Component<InputComponent>;
 	protected:
-		InputComponent() : Super()
+		InputComponent(std::shared_ptr<GameObject> owner) : Super(owner)
 		{
 		}
 	public:

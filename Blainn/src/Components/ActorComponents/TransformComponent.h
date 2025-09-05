@@ -21,6 +21,7 @@ namespace Blainn
 	{
 		using Super = Component<TransformComponent>;
 	public:
+		TransformComponent(std::shared_ptr<GameObject> owner);
 		~TransformComponent() = default;
 
 		void OnAttach() override;
@@ -70,8 +71,8 @@ namespace Blainn
 		DirectX::SimpleMath::Vector3 GetWorldRightVector() const { return m_RightVector; }
 		DirectX::SimpleMath::Vector3 GetWorldUpVector() const { return m_UpVector; }
 		
-		int GetFramesDirty() const { return m_NumFramesDirty; }
-		void DecreaseFramesDirty() { if (m_NumFramesDirty > 0) m_NumFramesDirty--; }
+		//int GetFramesDirty() const { return m_NumFramesDirty; }
+		//void DecreaseFramesDirty() { if (m_NumFramesDirty > 0) m_NumFramesDirty--; }
 
 		bool IsTransformDirty() const { return m_bIsTransformDirty; }
 	private:

@@ -11,8 +11,9 @@ namespace Blainn
 		using Super = InputComponent;
 
 	public:
-		OrbitalInputComponent(float sensitivity = 0.05f, float speed = 5.f, float radius = 10.f, float theta = 0.f, float phi = DirectX::XM_PIDIV2) 
-			: m_Sensitivity(sensitivity)
+		OrbitalInputComponent(std::shared_ptr<GameObject> owner, float sensitivity = 0.05f, float speed = 5.f, float radius = 10.f, float theta = 0.f, float phi = DirectX::XM_PIDIV2)
+			: Super(owner)
+			, m_Sensitivity(sensitivity)
 			, m_Radius(radius)
 			, m_Theta(theta)
 			, m_Phi(phi)

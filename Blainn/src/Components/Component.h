@@ -24,7 +24,9 @@ namespace Blainn
 	{
 		friend class GameObject;
 	protected:
-		Component() { OnInit(); }
+		Component(std::shared_ptr<GameObject> owner)
+			: m_OwningObject(owner)
+		{ OnInit(); }
 	public:
 		virtual ~Component() = default;
 		
@@ -34,10 +36,10 @@ namespace Blainn
 		virtual void OnUpdate(const GameTimer& gt) {}
 		virtual void OnDestroy();
 
-		std::shared_ptr<GameObject> GetOwner() const { return m_OwningObject; }
+		std::shared_ptr<GameObject> GetOwner() const { return m_OwningObject.lock(); }
 
 	protected:
-		std::shared_ptr<GameObject> m_OwningObject;
+		std::weak_ptr<GameObject> m_OwningObject;
 	};
 
 	template<typename Derived>

@@ -21,14 +21,14 @@ public:
 
 	void OnAttach() override
 	{
-		Super::OnAttach();
+		//Super::OnAttach();
 
 		m_Camera = AddChild<Blainn::Actor>();
-		m_CameraComponent = m_Camera->AddComponent<Blainn::CameraComponent>(1920, 1080);
+		m_CameraComponent = m_Camera->AddComponent<Blainn::CameraComponent>(1600, 800, 90.f, 0.1f, 1000.f);
 		auto cameraInput = m_Camera->AddComponent<KatamariCameraInput>();
 
 		m_StaticMesh = AddChild<Blainn::Actor>();
-		m_StaticMeshComponent = m_StaticMesh->AddComponent<Blainn::StaticMeshComponent>("../../Resources/Models/CoolTexturedCube.fbx");
+		m_StaticMeshComponent = m_StaticMesh->AddComponent<Blainn::StaticMeshComponent>("../../Resources/Models/PlainCube.fbx");
 		m_StaticMesh->AddComponent<KatamariCubeInput>();
 		m_CollisionComponent = m_StaticMesh->AddComponent<Blainn::SphereCollisionComponent>(.5f);
 

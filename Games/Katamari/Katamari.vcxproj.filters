@@ -36,4 +36,27 @@
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="src\Shaders\BasePS.hlsli" />
+    <None Include="src\Shaders\Matrix.hlsli" />
+    <None Include="src\Shaders\DeferredShading\PS_PointLight.hlsl" />
+    <None Include="src\Shaders\DeferredShading\PS_SpotLight.hlsl" />
+    <None Include="src\Shaders\DeferredShading\VS_LightVolumes.hlsl" />
+    <None Include="src\Shaders\DeferredShading\VS_FullScreenQuad.hlsl" />
+    <None Include="src\Shaders\DeferredShading\PS_GBuffer.hlsl" />
+    <None Include="src\Shaders\BasicVS.hlsl" />
+    <None Include="src\Shaders\DeferredShading\PS_DirectionalLight.hlsl" />
+    <None Include="src\Shaders\DeferredShading\ShaderStructs.hlsli" />
+    <None Include="src\Shaders\ShaderHelpers.hlsli" />
+    <None Include="src\Shaders\color.hlsl" />
+    <None Include="src\Shaders\LightingUtil.hlsl" />
+    <None Include="src\Shaders\LitPS.hlsl" />
+    <None Include="src\Shaders\ShadowMap.hlsl" />
+    <None Include="src\Shaders\UnlitPS.hlsl" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="src\Shaders\TexturedQuad.hlsl">
+      <Filter>Source Files</Filter>
+    </Text>
+  </ItemGroup>
 </Project>

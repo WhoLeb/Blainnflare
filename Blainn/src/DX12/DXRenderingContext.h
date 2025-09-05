@@ -1,34 +1,62 @@
 #pragma once
 
-#include "DXFrameResource.h"
+//#include "DXFrameResource.h"
 
 #include <dxgi1_4.h>
 #include <d3d12.h>
 #include <memory>
 #include <unordered_set>
 #include <wrl.h>
+
 #include "Util/d3dx12.h"
+
+#include "dx12lib/RenderTarget.h"
+
+namespace dx12lib
+{
+	class Mesh;
+	class VertexBuffer;
+}
+
+namespace Blainn
+{
+	class SpotLightsPSO;
+
+	class PointLightsPSO;
+
+	class DirectLightsPSO;
+
+	class TexturedQuadPSO;
+}
 
 extern const int g_NumFrameResources;
 extern const UINT32 g_NumObjects;
 
 namespace dx12lib
 {
+	class Device;
 	class DescriptorAllocator;
 	class DescriptorAllocation;
+	class PipelineStateObject;
+	class RenderTarget;
 	class RootSignature;
+	class SwapChain;
 }
 
 namespace Blainn
 {
+	class GBuffer;
+	class CascadeShadowMaps;
 	class Camera;
 	class DXDevice;
 	class DXMaterial;
 	class DXModel;
 	class DXResourceManager;
 	class DXShader;
+	class EffectPSO;
 	class GameTimer;
 	class Scene;
+	class ShadowMapPSO;
 	class StaticMeshComponent;
 	class Window;
 
@@ -39,10 +67,7 @@ namespace Blainn
 		~DXRenderingContext();
 
 		void Init(std::shared_ptr<Window> wnd);
-		void CreateResources(std::shared_ptr<DXResourceManager> resourceManager);
-
-		void BeginFrame();
-		void EndFrame();
+		void CreateResources();
 
 		void Draw();
 
@@ -54,86 +79,52 @@ namespace Blainn
 		);
 
 		void Resize(int newWidth, int newHeight);
-		void FlushCommandQueue();
-		void WaitForGPU();
 
 		bool IsInitialized() const { return m_bIsInitialized; }
 
-		std::shared_ptr<DXDevice> GetDevice() const { return m_Device; }
-		Microsoft::WRL::ComPtr<ID3D12CommandQueue> GetCommandQueue() const { return m_CommandQueue; }
+		std::shared_ptr<dx12lib::Device> GetDevice() const { return m_Device; }
+		
+	protected:
+		void CascadeShadowMapsPass(const std::unordered_set<std::shared_ptr<StaticMeshComponent>>& meshes);
+		void GeometryPass(const std::unordered_set<std::shared_ptr<StaticMeshComponent>>& meshes);
+		void DeferredLightingPass();
 
-		Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> GetCommandList() const { return m_CommandList; }
-
-	private:
-		void CreateDepthStencilBuffer(int width, int height);
-
-		void BuildDescriptorHeaps();
-		void BuildRootSignature();
-		void BuildPipelineState(); // the legendary PSO
-		void BuildFrameResources();
-
-		ID3D12Resource* CurrentBackBuffer() const
-		{
-			return m_SwapChainBuffer[m_CurrBackBuffer].Get();
-		}
-		D3D12_CPU_DESCRIPTOR_HANDLE DepthStencilView() const;
-		D3D12_CPU_DESCRIPTOR_HANDLE CurrentBackBufferView() const;
-
-		static std::array<const CD3DX12_STATIC_SAMPLER_DESC, 6> GetStaticSamplers();
+		void DirectionalLightsPass();
+		void PointLightsPass();
+		void SpotLightsPass();
+		
 
 	private:
 		Microsoft::WRL::ComPtr<IDXGIFactory4> m_DXGIFactory;
-		std::shared_ptr<DXDevice> m_Device;
-		std::shared_ptr<DXResourceManager> m_ResourceManager;
+		std::shared_ptr<dx12lib::Device> m_Device;
 
-		Microsoft::WRL::ComPtr<IDXGISwapChain> m_SwapChain;
-		static const int s_SwapChainBufferCount = 2;
-		Microsoft::WRL::ComPtr<ID3D12Resource> m_SwapChainBuffer[s_SwapChainBufferCount];
-		int m_CurrBackBuffer = 0;
+		std::shared_ptr<dx12lib::SwapChain> m_SwapChain;
 
-		Microsoft::WRL::ComPtr<ID3D12Fence> m_Fence;
-		UINT64 m_CurrentFence;
-		HANDLE m_FenceEvent;
+		dx12lib::RenderTarget m_RenderTarget;
+		std::shared_ptr<CascadeShadowMaps> m_CascadeShadowMaps;
 
-		// TODO: should probably create some Pipeline class that would encapsulate
-		// the pipeline creation and some pipeline manager to bind pipeline and stuff
-		//Microsoft::WRL::ComPtr<ID3D12RootSignature> m_RootSignature;
 		std::shared_ptr<dx12lib::RootSignature> m_RootSignature;
 
-		std::unordered_map<std::string, Microsoft::WRL::ComPtr<ID3D12PipelineState>> m_PSOs;
+		std::shared_ptr<GBuffer> m_GBuffer;
 
-		// TODO: this should also be moved into another shader manager(or library, 
-		// like in Hazel) class that would manage shaders and give them out based
-		// on what the pipeline asks for
-		std::unordered_map<std::string, std::shared_ptr<DXShader>> m_Shaders;
+		std::unordered_map<std::string, std::shared_ptr<EffectPSO>> m_PSOs;
+		std::shared_ptr<ShadowMapPSO> m_SMPSO;
+		
+		std::shared_ptr<DirectLightsPSO> m_DirLightPSO;
+		std::shared_ptr<PointLightsPSO> m_PointLightPSO;
+		std::shared_ptr<SpotLightsPSO> m_SpotLighPSO;
+		std::shared_ptr<TexturedQuadPSO> m_TexturedQuadPSO;
 
-		Microsoft::WRL::ComPtr<ID3D12CommandQueue> m_CommandQueue;
-		Microsoft::WRL::ComPtr<ID3D12CommandAllocator> m_DirectCmdListAlloc;
-		Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> m_CommandList;
+		std::shared_ptr<dx12lib::VertexBuffer> m_FullQuadVertexBuffer;
+		std::shared_ptr<dx12lib::Mesh> m_SphereLightVolumeMesh;
 
-		Microsoft::WRL::ComPtr<ID3D12Resource> m_DepthStencilBuffer;
-
-		std::unique_ptr<dx12lib::DescriptorAllocation> m_RTVAllocation;
-		std::unique_ptr<dx12lib::DescriptorAllocation> m_DSVAllocation;
-		std::unique_ptr<dx12lib::DescriptorAllocation> m_SRVAllocation;
-		std::unique_ptr<dx12lib::DescriptorAllocation> m_CBVAllocation;
-
-		// These frame resources hold per object and per-frame data
-		std::vector<std::unique_ptr<DXFrameResource>> m_FrameResources;
-		DXFrameResource* m_CurrentFrameResource;
-		UINT m_CurrentFrameResourceIndex = 0;
-		UINT m_PassConstantBufferOffset;
-
-		UINT m_RtvDescriptorSize = 0;
-		UINT m_DsvDescriptorSize = 0;
-		UINT m_CbvSrvUavDescriptorSize = 0;
+		std::vector<std::shared_ptr<dx12lib::Mesh>> m_DebugBufferQuads;
 
 		D3D12_VIEWPORT m_ScreenViewport;
 		D3D12_RECT m_ScissorRect;
 
-		D3D_DRIVER_TYPE m_D3dDriverType = D3D_DRIVER_TYPE_HARDWARE;
 		DXGI_FORMAT m_BackBufferFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
-		DXGI_FORMAT m_DepthStencilFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
+		DXGI_FORMAT m_DepthStencilFormat = DXGI_FORMAT_D32_FLOAT;
 
 		bool m_bIsInitialized = false;
 	};

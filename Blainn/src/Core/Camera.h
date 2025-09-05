@@ -37,6 +37,9 @@ namespace Blainn
 		int GetViewportHeight() const { return m_ViewportHeight; }
 		float GetNearPlane() const { return m_NearPlane; }
 		float GetFarPlane() const { return m_FarPlane; }
+		float GetFieldOfView() const { return m_FOV; }
+		float GetAspectRatio() const { return m_AspectRatio; }
+		
 	private:
 		void UpdateViewMatrix();
 		void UpdateProjectionMatrix();

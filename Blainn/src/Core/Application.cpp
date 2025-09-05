@@ -4,7 +4,6 @@
 
 #include "Components/ActorComponents/CharacterComponents/CameraComponent.h"
 #include "DX12/DXRenderingContext.h"
-#include "DX12/DXResourceManager.h"
 #include "Input.h"
 #include "Util/ComboboxSelector.h"
 
@@ -61,12 +60,7 @@ namespace Blainn
 		m_RenderingContext = std::make_shared<DXRenderingContext>();
 		m_RenderingContext->Init(m_Window);
 
-		m_ResourceManager = std::make_shared<DXResourceManager>(
-			m_RenderingContext->GetDevice(),
-			m_RenderingContext->GetCommandQueue()
-		);
-
-		m_RenderingContext->CreateResources(m_ResourceManager);
+		m_RenderingContext->CreateResources();
 
 		m_Scene = std::make_shared<Scene>();
 
@@ -136,10 +130,10 @@ namespace Blainn
 
 		m_Scene->UpdateScene(timer);
 		if (m_Scene->GetMainCamera())
-			Application::Get().GetRenderingContext()->UpdateMainPassConstantBuffers(
+			m_RenderingContext->UpdateMainPassConstantBuffers(
 				timer, m_Scene->GetMainCamera()->GetCamera()
 			);
-		Application::Get().GetRenderingContext()->UpdateObjectsConstantBuffers();
+		m_RenderingContext->UpdateObjectsConstantBuffers();
 
 		Input::UpdateMouseDelta(0, 0);
 	}

@@ -1,16 +1,19 @@
 #pragma once
 
-#include "Components/ComponentManager.h"
 #include "Components/Component.h"
-#include "Core/CBIndexManager.h"
-#include "Core/GameObject.h"
-
-#include "DX12/DXModel.h"
 
 #include <filesystem>
 
+namespace dx12lib
+{
+	class Scene;
+	class Visitor;
+}
+
 namespace Blainn
 {
+	class DXModel;
+	class SceneVisitor;
 
 	class StaticMeshComponent : public Blainn::Component<StaticMeshComponent>
 	{
@@ -18,31 +21,25 @@ namespace Blainn
 		using Super = Blainn::Component<StaticMeshComponent>;
 
 	public:
-		StaticMeshComponent(std::filesystem::path filepath)
-		 : Blainn::Component<StaticMeshComponent>()
-		{
-			m_Model = (std::make_shared<DXModel>(filepath));
-		}
-		StaticMeshComponent(std::shared_ptr<DXModel> model)
-			: m_Model(model)
-		{}
+		static std::shared_ptr<StaticMeshComponent> Create(
+			std::shared_ptr<GameObject> owner,
+			const std::filesystem::path& filepath);
 
-		~StaticMeshComponent()
-		{
-			m_Model = nullptr;
-		}
+		~StaticMeshComponent();
 
-		void OnAttach() override
-		{
-			Super::OnAttach();
-			Blainn::CBIndexManager::Get().AssignCBIdx(GetOwner()->GetUUID());
-		}
+		void OnAttach() override;
 
-		void OnRender(DXFrameInfo& frameInfo) { m_Model->Render(frameInfo); };
+		void OnRender(dx12lib::Visitor& frameInfo);
 
-		std::shared_ptr<DXModel> GetModel() const { return m_Model; }
+		std::shared_ptr<DXModel> GetModel() const;
+
+		const std::vector<std::weak_ptr<GameObject>>& GetOwners() const { return m_Owners; }
+		
+	private:
+		StaticMeshComponent(std::shared_ptr<GameObject> owner, const std::filesystem::path& filepath);
 
 	private:
 		std::shared_ptr<DXModel> m_Model;
+		std::vector<std::weak_ptr<GameObject>> m_Owners;
 	};
 }
