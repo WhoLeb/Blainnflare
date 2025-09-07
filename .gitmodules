@@ -9,3 +9,6 @@
 	path = Dependencies/LearningDX12
 	url = https://github.com/WhoLeb/LearningDirectX12Fork.git
 	branch = MyChanges
+[submodule "Dependencies/assimp"]
+	path = Dependencies/assimp
+	url = https://github.com/assimp/assimp.git
